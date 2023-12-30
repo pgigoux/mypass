@@ -1,7 +1,8 @@
+import os
 import json
 import sqlite3 as sq
 from crypt import Crypt
-from utils import filter_control_characters, timestamp_to_string
+from utils import filter_control_characters, timestamp_to_string, get_string_timestamp
 
 # Keywords used to export the database to json
 # common
@@ -22,6 +23,9 @@ KEY_FIELDS = 'fields'
 # fields
 KEY_VALUE = 'value'
 KEY_ENCRYPTED = 'encrypted'
+
+# Temporary file used when saving database
+TEMP_FILE = 'db.tmp'
 
 
 class Database:
@@ -218,7 +222,7 @@ class Database:
         """
         output_dict = {}
 
-        # Get the tag and field mappins to convert ids into names
+        # Get the tag and field mappings to convert ids into names
         tag_mapping = self.get_tag_table_id_mapping()
         field_mapping = self.get_field_table_id_mapping()
 
@@ -291,6 +295,20 @@ class Database:
                 f_tid = field_mapping[field[KEY_NAME]][0]
                 print(f'\t\t{f_id} ({f_tid}) {field[KEY_NAME]} {field[KEY_VALUE]} {field[KEY_ENCRYPTED]}')
 
+    def read_mode(self) -> str:
+        """
+        Return the file write mode depending on whether encryption is enabled
+        :return: write mode
+        """
+        return 'r' if self.crypt_key is None else 'rb'
+
+    def write_mode(self) -> str:
+        """
+        Return the file write mode depending on whether encryption is enabled
+        :return: write mode
+        """
+        return 'w' if self.crypt_key is None else 'wb'
+
     def import_from_json(self):
         """
         TODO - low priority
@@ -325,19 +343,47 @@ class Database:
         self.connection.backup(c)
         c.close()
 
-    def write(self, file_name: str):
-        data = self.convert_to_json()
-        with open(file_name, 'w') as f:
-            f.write(data)
-        f.close()
+    def read(self):
+        with open(self.file_name, self.read_mode()) as f_in:
+            data = f_in.read()
+            if self.crypt_key is not None:
+                assert isinstance(data, bytes)
+                try:
+                    data = self.crypt_key.decrypt_byte2str(data)
+                except Exception as e:
+                    raise ValueError(f'failed to decrypt data: {repr(e)}')
+
+        try:
+            json_data = json.loads(data)
+        except Exception as e:
+            raise ValueError(f'failed to read the data: {repr(e)}')
+
+        print(json_data)
+
+    def write(self):
+        """
+        Write database to disk
+        """
+        json_data = self.convert_to_json()
+        data = json_data if self.crypt_key is None else self.crypt_key.encrypt_str2byte(json_data)
+
+        # Write the data to a temporary file first
+        with open(TEMP_FILE, self.write_mode()) as f_out:
+            f_out.write(data)
+        f_out.close()
+
+        # Rename files. The old file is renamed using a time stamp.
+        if os.path.exists(self.file_name):
+            os.rename(self.file_name, self.file_name + '-' + get_string_timestamp())
+        os.rename(TEMP_FILE, self.file_name)
 
 
 if __name__ == '__main__':
-    pass
-    db = Database('test.db', password='test')
-    db.import_from_sql('backup.db')
-    db.dump()
-    db.write('junk.db')
+    db = Database('pw.db', password='test')
+    db.read()
+    # db.import_from_sql('backup.db')
+    # db.dump()
+    # db.write()
 
     # db.cursor.execute('insert into tag_table values (?,?,?)', (None, 't_one', 0))
     # db.cursor.execute('insert into tag_table values (?,?,?)', (None, 't_two', 0))
