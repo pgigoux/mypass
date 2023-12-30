@@ -73,10 +73,10 @@ sub-dictionaries. Only a few elements in the items are really relevant.
 }
 """
 import json
-# import argparse
-# from crypt import Crypt
+import argparse
+from crypt import Crypt
 from db import Database
-from utils import trimmed_string, timestamp_to_string, filter_control_characters
+from utils import get_password, trimmed_string
 
 # Files used to save tables into separate files
 FIELD_FILE_NAME = 'fields.csv'
@@ -86,6 +86,9 @@ TAG_FILE_NAME = 'tags.csv'
 # The uid value is arbitrary, but follows the format of other uid for consistency
 TAG_DEFAULT_UID = '00000000-0000-0000-0000-000000000000'
 TAG_DEFAULT_NAME = 'default'
+
+# Default database name when importing data
+DEFAULT_DATABASE_NAME = 'pw.db'
 
 
 def process_field(field: dict) -> tuple:
@@ -270,9 +273,14 @@ def import_items(db: Database, item_list: list, tag_mapping: dict):
                     tag_list.append(tag_mapping[folder])
             elif key == 'fields':  # list
                 for field in value:
+                    f_encrypted = False
                     try:
                         f_name, f_value, f_sensitive = process_field(field)
-                        field_list.append((f_name, f_value, f_sensitive))
+                        if f_sensitive and db.crypt_key is not None:
+                            assert isinstance(db.crypt_key, Crypt)
+                            f_value = db.crypt_key.encrypt_str2str(f_value)
+                            f_encrypted = True
+                        field_list.append((f_name, f_value, f_encrypted))
                         # print('field', f_name, f_value, f_sensitive)
                     except ValueError:
                         # can be safely ignored
@@ -282,12 +290,6 @@ def import_items(db: Database, item_list: list, tag_mapping: dict):
         if len(tag_list) == 0:
             tag_list.append(tag_mapping[TAG_DEFAULT_UID])
 
-        # print('-- item ------\n')
-        # print(f'name=[{item_name}], time=[{timestamp_to_string(time_stamp)}], note=[{filter_control_characters(note)}]')
-        #
-        # print('\ttags=', tag_list)
-        # print('\tfields=', field_list)
-
         # Insert the item into the database
         db.cursor.execute('insert into items values (?,?,?,?)',
                           (None, item_name, time_stamp, note))
@@ -296,77 +298,77 @@ def import_items(db: Database, item_list: list, tag_mapping: dict):
             # print('-', t_id)
             db.cursor.execute('insert into tags values (?,?,?)',
                               (None, t_id, item_id))
-        for f_name, f_value, f_sensitive in field_list:
+
+        for f_name, f_value, f_encrypted in field_list:
             f_id = field_mapping[f_name][0]
-            # print('\t', f_id, f_name, f_value, f_sensitive)
             db.cursor.execute('insert into fields values (?,?,?,?,?)',
-                              (None, f_id, item_id, f_value, False))
+                              (None, f_id, item_id, f_value, f_encrypted))
 
 
-def import_database(input_file_name: str, output_file_name: str, password: str):
+def import_database(input_file_name: str, output_file_name: str, password: str, dump_database=False):
+    """
+
+    :param input_file_name:
+    :param output_file_name:
+    :param password:
+    :param dump_database:
+    :return:
+    """
     with open(input_file_name, 'r') as f:
         json_data = json.load(f)
     f.close()
     assert isinstance(json_data, dict)
 
-    db = Database(output_file_name)
-    # db.print_tables()
+    db = Database(output_file_name, password=password)
 
     tag_mapping = import_tags(db, json_data['folders'])
     import_fields(db, json_data['items'])
     import_items(db, json_data['items'], tag_mapping)
     db.connection.commit()
 
-    db.export_to_sql('backup.db')
-    save_tables(db)
-
-
-    # print_field_table(db)
-
-    # print(tag_mapping)
-    # print_tag_table(db)
-    # print_field_table(db)
-
-    db.export_to_json('test.json')
+    if dump_database:
+        save_tables(db)
+        db.export_to_sql('backup.db')
+        db.export_to_json('test.json')
+        db.dump()
 
     db.connection.close()
 
 
 if __name__ == '__main__':
     # Command line arguments
-    # parser = argparse.ArgumentParser(description='Import Enpass database')
-    #
-    # parser.add_argument('input_file',
-    #                     action='store',
-    #                     type=str,
-    #                     help='Input file name in JSON format')
-    #
-    # parser.add_argument('-o', '--output',
-    #                     dest='output_file',
-    #                     action='store',
-    #                     type=str,
-    #                     default=DEFAULT_DATABASE_NAME,
-    #                     help='Output database file')
-    #
-    # parser.add_argument('-d',
-    #                     dest='dump',
-    #                     action='store_true',
-    #                     help='Print output database to stdout')
+    parser = argparse.ArgumentParser(description='Import Enpass database')
+
+    parser.add_argument('input_file',
+                        action='store',
+                        type=str,
+                        help='Input file name in JSON format')
+
+    parser.add_argument('-o', '--output',
+                        dest='output_file',
+                        action='store',
+                        type=str,
+                        default=DEFAULT_DATABASE_NAME,
+                        help='Output database file')
+
+    parser.add_argument('-d',
+                        dest='dump',
+                        action='store_true',
+                        help='Print output database to stdout')
 
     # Testing
     # import_database('pdb.json', args.output_file, '', dump_database=False)
     # exit(0)
 
-    # args = parser.parse_args()
+    args = parser.parse_args()
 
     # Get the password to encrypt the output database
-    # input_password = get_password()
-    # input_password = ''
+    input_password = get_password()
 
     # Import the data
-    # try:
-    #     import_database(args.input_file, args.output_file, input_password, dump_database=args.dump)
-    # except Exception as e:
-    #     print(f'Error while importing file {e}')
+    try:
+        import_database(args.input_file, args.output_file, input_password, dump_database=args.dump)
+    except Exception as e:
+        print(f'Error while importing file {e}')
 
-    import_database('pdb.json', '', '')
+    # import_database(args.input_file, args.output_file, input_password, args.dump)

@@ -1,5 +1,6 @@
 import json
 import sqlite3 as sq
+from crypt import Crypt
 from utils import filter_control_characters, timestamp_to_string
 
 # Keywords used to export the database to json
@@ -27,7 +28,6 @@ class Database:
 
     def __init__(self, file_name: str, password=''):
         """
-
         :param file_name: database file name
         :param password: password to encode data
         """
@@ -36,6 +36,8 @@ class Database:
         self.connection = sq.connect(':memory:')
         self.cursor = self.connection.cursor()
         self.create_tables()
+        # The database will be encrypted if a password is supplied
+        self.crypt_key = Crypt(password) if password else None
 
     def create_tables(self):
         """
@@ -206,12 +208,13 @@ class Database:
             output_list.append({KEY_ID: f_id, KEY_NAME: f_name, KEY_SENSITIVE: bool(f_sensitive), KEY_COUNT: f_count})
         return output_list
 
-    def items_to_dict(self) -> dict:
+    def items_to_dict(self, decrypt_flag=False) -> dict:
         """
         Convert the items in the database into a dictionary. Aside from the fixed
         item attributes (name, timestamp, note), the dictionary also contains the
         list of tags and a dictionary with the field information.
-        :return:
+        :param decrypt_flag: decrypt field values if encryption is enabled?
+        :return: dictionary with items
         """
         output_dict = {}
 
@@ -238,6 +241,8 @@ class Database:
             field_fetch_list = self.cursor.fetchall()
             field_dict = {}
             for field_id, f_id, _, field_value, f_encrypted in field_fetch_list:
+                if decrypt_flag and f_encrypted and db.crypt_key is not None:
+                    field_value = db.crypt_key.decrypt_str2str(field_value)
                 tmp_dict = {KEY_NAME: field_mapping[f_id][0], KEY_VALUE: field_value,
                             KEY_ENCRYPTED: bool(f_encrypted)}
                 field_dict[field_id] = tmp_dict
@@ -326,9 +331,10 @@ class Database:
             f.write(data)
         f.close()
 
+
 if __name__ == '__main__':
     pass
-    db = Database('test.db')
+    db = Database('test.db', password='test')
     db.import_from_sql('backup.db')
     db.dump()
     db.write('junk.db')
