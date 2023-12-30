@@ -344,21 +344,61 @@ class Database:
         c.close()
 
     def read(self):
-        with open(self.file_name, self.read_mode()) as f_in:
-            data = f_in.read()
+        """
+        Read database from disk
+        """
+        with open(self.file_name, self.read_mode()) as f:
+            data = f.read()
             if self.crypt_key is not None:
                 assert isinstance(data, bytes)
                 try:
                     data = self.crypt_key.decrypt_byte2str(data)
                 except Exception as e:
                     raise ValueError(f'failed to decrypt data: {repr(e)}')
-
         try:
             json_data = json.loads(data)
+            db.cursor.execute(f'')
         except Exception as e:
             raise ValueError(f'failed to read the data: {repr(e)}')
 
-        print(json_data)
+        # Read the tag table
+        try:
+            for tag in json_data[KEY_TAG_SECTION]:
+                db.cursor.execute('insert into tag_table values(?,?,?)',
+                                  (int(tag[KEY_ID]), tag[KEY_NAME], tag[KEY_COUNT]))
+                # print(tag)
+        except Exception as e:
+            # self.clear()
+            raise ValueError(f'failed to read tag table: {repr(e)}')
+
+        # Read the field table
+        try:
+            for field in json_data[KEY_FIELD_SECTION]:
+                db.cursor.execute('insert into field_table values(?,?,?,?)',
+                                  (int(field[KEY_ID]), field[KEY_NAME],
+                                   bool(field[KEY_SENSITIVE]), field[KEY_COUNT]))
+        except Exception as e:
+            # self.clear()
+            raise ValueError(f'failed to read field table: {repr(e)}')
+
+        # Read items
+        tag_mapping = db.get_tag_table_name_mapping()
+        field_mapping = db.get_field_table_name_mapping()
+        try:
+            for item_id in json_data[KEY_ITEM_SECTION]:
+                item = json_data[KEY_ITEM_SECTION][item_id]
+                db.cursor.execute('insert into items values(?,?,?,?)',
+                                  (None, item[KEY_NAME], int(item[KEY_TIMESTAMP]), item[KEY_NOTE]))
+                for tag in item[KEY_TAGS]:
+                    db.cursor.execute('insert into tags values(?,?,?)',
+                                      (None, tag_mapping[tag][0], int(item_id)))
+                for field_id in item[KEY_FIELDS]:
+                    field = item[KEY_FIELDS][field_id]
+                    db.cursor.execute('insert into fields values(?,?,?,?,?)',
+                                      (None, int(field_mapping[field[KEY_NAME]][0]), int(item_id),
+                                       field[KEY_VALUE], field[KEY_ENCRYPTED]))
+        except Exception as e:
+            raise ValueError(f'failed to read items: {repr(e)}')
 
     def write(self):
         """
@@ -379,8 +419,10 @@ class Database:
 
 
 if __name__ == '__main__':
-    db = Database('pw.db', password='test')
+    db = Database('pw.db')
     db.read()
+    db.write()
+    db.dump()
     # db.import_from_sql('backup.db')
     # db.dump()
     # db.write()
