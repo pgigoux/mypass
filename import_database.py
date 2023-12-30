@@ -314,17 +314,19 @@ def import_database(input_file_name: str, output_file_name: str, password: str, 
     :param dump_database:
     :return:
     """
+    # Read the data from the enpass json file
     with open(input_file_name, 'r') as f:
         json_data = json.load(f)
     f.close()
     assert isinstance(json_data, dict)
 
+    # Import data into database
     db = Database(output_file_name, password=password)
-
     tag_mapping = import_tags(db, json_data['folders'])
     import_fields(db, json_data['items'])
     import_items(db, json_data['items'], tag_mapping)
     db.connection.commit()
+    db.write()
 
     if dump_database:
         save_tables(db)
