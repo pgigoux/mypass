@@ -328,10 +328,11 @@ def import_database(input_file_name: str, output_file_name: str, password: str, 
     db.connection.commit()
     db.write()
 
+    save_tables(db)
+    db.export_to_sql('backup.db')
+    db.export_to_json('backup.json')
+
     if dump_database:
-        save_tables(db)
-        db.export_to_sql('backup.db')
-        db.export_to_json('test.json')
         db.dump()
 
     db.connection.close()

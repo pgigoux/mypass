@@ -368,9 +368,9 @@ class Database:
         data = json_data if self.crypt_key is None else self.crypt_key.encrypt_str2byte(json_data)
 
         # Write the data to a temporary file first
-        with open(TEMP_FILE, self.write_mode()) as f_out:
-            f_out.write(data)
-        f_out.close()
+        with open(TEMP_FILE, self.write_mode()) as f:
+            f.write(data)
+        f.close()
 
         # Rename files. The old file is renamed using a time stamp.
         if os.path.exists(self.file_name):
