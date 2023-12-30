@@ -309,7 +309,7 @@ def import_database(input_file_name: str, output_file_name: str, password: str):
     f.close()
     assert isinstance(json_data, dict)
 
-    db = Database(input_file_name)
+    db = Database(output_file_name)
     # db.print_tables()
 
     tag_mapping = import_tags(db, json_data['folders'])
