@@ -1,6 +1,6 @@
 import json
 import sqlite3 as sq
-from utils import filter_control_characters
+from utils import filter_control_characters, timestamp_to_string
 
 # Keywords used to export the database to json
 # common
@@ -208,6 +208,9 @@ class Database:
 
     def items_to_dict(self) -> dict:
         """
+        Convert the items in the database into a dictionary. Aside from the fixed
+        item attributes (name, timestamp, note), the dictionary also contains the
+        list of tags and a dictionary with the field information.
         :return:
         """
         output_dict = {}
@@ -219,44 +222,48 @@ class Database:
         # Query the database to get all items
         self.cursor.execute('select * from items')
         item_fetch_list = self.cursor.fetchall()
-        # print('if', item_fetch_list)
 
+        # Iterate over all items
         for item_id, item_name, item_date, item_note in item_fetch_list:
-            # Item
+            # Item fixed attributes
             item_dict = {KEY_NAME: item_name, KEY_TIMESTAMP: item_date, KEY_NOTE: item_note}
 
-            # Item tags
+            # Process the item tags
             self.cursor.execute(f'select * from tags where item_id={item_id}')
             tag_fetch_list = self.cursor.fetchall()
-            # print('tf', tag_fetch_list)
-            tmp_list = []
-            for _, tag_id, _ in tag_fetch_list:
-                tmp_list.append(tag_mapping[tag_id][0])
-            item_dict[KEY_TAGS] = tmp_list
-            # print('dt', item_dict)
+            item_dict[KEY_TAGS] = [tag_mapping[tag_id][0] for _, tag_id, _ in tag_fetch_list]
 
-            # Item fields
+            # Process the item fields
             self.cursor.execute(f'select * from fields where item_id={item_id}')
             field_fetch_list = self.cursor.fetchall()
-            # print('ff', field_fetch_list)
             field_dict = {}
             for field_id, f_id, _, field_value, f_encrypted in field_fetch_list:
                 tmp_dict = {KEY_NAME: field_mapping[f_id][0], KEY_VALUE: field_value,
                             KEY_ENCRYPTED: bool(f_encrypted)}
                 field_dict[field_id] = tmp_dict
             item_dict[KEY_FIELDS] = field_dict
-            # print('fd', field_dict)
-            # print('id', item_dict)
 
             output_dict[item_id] = item_dict
 
         return output_dict
 
+    def convert_to_json(self) -> str:
+        """
+        Convert the database to json
+        :return: json string
+        """
+        d = {KEY_TAG_SECTION: self.tag_table_to_list(),
+             KEY_FIELD_SECTION: self.field_table_to_list(),
+             KEY_ITEM_SECTION: self.items_to_dict()}
+        return json.dumps(d)
+
     def dump(self):
         """
-        Dump database contents to the terminal
-        :return:
+        Dump database contents to the terminal (debugging)
         """
+        tag_mapping = self.get_tag_table_name_mapping()
+        field_mapping = self.get_field_table_name_mapping()
+
         print('Tags')
         for t_id, t_name, t_count in self.get_tag_table_list():
             print(f'\t{t_id:2} {t_name} {t_count}')
@@ -268,60 +275,71 @@ class Database:
         for i_id in item_dict:
             print(f'\t{i_id}')
             item = item_dict[i_id]
-            print(f'\t\tname={item[KEY_NAME]}')
-            print(f'\t\tdate={item[KEY_TIMESTAMP]}')
-            print(f'\t\tnote={filter_control_characters(item[KEY_NOTE])}')
-            print(f'\t\ttags={item[KEY_TAGS]}')
+            tag_list = [(tag_mapping[_][0], _) for _ in item[KEY_TAGS]]
             field_dict = item[KEY_FIELDS]
-            # print('--', field_dict)
+            print(f'\t\tname={item[KEY_NAME]}')
+            print(f'\t\tdate={item[KEY_TIMESTAMP]} ({timestamp_to_string(item[KEY_TIMESTAMP])})')
+            print(f'\t\tnote={filter_control_characters(item[KEY_NOTE])}')
+            print(f'\t\ttags={tag_list}')
             for f_id in field_dict:
                 field = field_dict[f_id]
-                print(f'\t\t{f_id} {field[KEY_NAME]} {field[KEY_VALUE]} {field[KEY_ENCRYPTED]}')
+                f_tid = field_mapping[field[KEY_NAME]][0]
+                print(f'\t\t{f_id} ({f_tid}) {field[KEY_NAME]} {field[KEY_VALUE]} {field[KEY_ENCRYPTED]}')
 
     def import_from_json(self):
+        """
+        TODO - low priority
+        """
         pass
 
     def export_to_json(self, file_name: str):
         """
         :return:
         """
-        d = {KEY_TAG_SECTION: self.tag_table_to_list(),
-             KEY_FIELD_SECTION: self.field_table_to_list(),
-             KEY_ITEM_SECTION: self.items_to_dict()}
-
         with open(file_name, 'w') as f:
-            f.write(json.dumps(d))
+            f.write(self.convert_to_json())
         f.close()
 
     def import_from_sql(self, file_name: str):
+        """
+        Import the database from an sqlite file
+        :param file_name: output file name
+        :return:
+        """
         sc = sq.connect(file_name)
         dc = self.connection
         sc.backup(dc)
 
     def export_to_sql(self, file_name: str):
         """
-        :param file_name:
+        Export the database to an sqlite file
+        :param file_name: output file name
         :return:
         """
         c = sq.connect(file_name)
         self.connection.backup(c)
         c.close()
 
+    def write(self, file_name: str):
+        data = self.convert_to_json()
+        with open(file_name, 'w') as f:
+            f.write(data)
+        f.close()
 
 if __name__ == '__main__':
     pass
     db = Database('test.db')
     db.import_from_sql('backup.db')
+    db.dump()
+    db.write('junk.db')
 
-    db.cursor.execute('insert into tag_table values (?,?,?)', (None, 't_one', 0))
-    db.cursor.execute('insert into tag_table values (?,?,?)', (None, 't_two', 0))
+    # db.cursor.execute('insert into tag_table values (?,?,?)', (None, 't_one', 0))
+    # db.cursor.execute('insert into tag_table values (?,?,?)', (None, 't_two', 0))
     # print(db.get_tag_table_id_mapping())
     # print(db.get_tag_table_name_mapping())
 
-    db.cursor.execute('insert into field_table values (?,?,?,?)', (None, 'f_one', False, 0))
-    db.cursor.execute('insert into field_table values (?,?,?,?)', (None, 'f_two', True, 0))
-    db.cursor.execute('insert into field_table values (?,?,?,?)', (None, 'f_three', False, 0))
+    # db.cursor.execute('insert into field_table values (?,?,?,?)', (None, 'f_one', False, 0))
+    # db.cursor.execute('insert into field_table values (?,?,?,?)', (None, 'f_two', True, 0))
+    # db.cursor.execute('insert into field_table values (?,?,?,?)', (None, 'f_three', False, 0))
     # print(db.get_field_table_id_mapping())
     # print(db.get_field_table_name_mapping())
-
-    db.dump()
