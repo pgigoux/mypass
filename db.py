@@ -106,14 +106,14 @@ class Database:
 
         return output_dict
 
-    def convert_to_json(self) -> str:
+    def convert_to_json(self, decrypt_flag=False) -> str:
         """
         Convert the database to json
         :return: json string
         """
         d = {KEY_TAG_SECTION: self.tag_table_to_list(),
              KEY_FIELD_SECTION: self.field_table_to_list(),
-             KEY_ITEM_SECTION: self.items_to_dict()}
+             KEY_ITEM_SECTION: self.items_to_dict(decrypt_flag=decrypt_flag)}
         return json.dumps(d)
 
     def dump(self):
@@ -165,12 +165,12 @@ class Database:
         """
         pass
 
-    def export_to_json(self, file_name: str):
+    def export_to_json(self, file_name: str, decrypt_flag=False):
         """
         :return:
         """
         with open(file_name, 'w') as f:
-            f.write(self.convert_to_json())
+            f.write(self.convert_to_json(decrypt_flag=decrypt_flag))
         f.close()
 
     def read(self):
@@ -226,6 +226,10 @@ class Database:
         """
         Write database to disk
         """
+        # Make sure all the changes are saved to the database
+        self.sql.connection.commit()
+
+        # Export the database to json and encrypt if a password was defined
         json_data = self.convert_to_json()
         data = json_data if self.crypt_key is None else self.crypt_key.encrypt_str2byte(json_data)
 
@@ -239,23 +243,18 @@ class Database:
             os.rename(self.file_name, self.file_name + '-' + get_string_timestamp())
         os.rename(TEMP_FILE, self.file_name)
 
+    def close(self):
+        """
+        Close the database
+        """
+        self.sql.connection.close()
+
 
 if __name__ == '__main__':
-    db = Database('pw.db', password='test')
+    db = Database('pw.db', password='')
     db.read()
     db.write()
+    db.export_to_json('pw.json')
     db.dump()
-    # db.import_from_sql('backup.db')
-    # db.dump()
-    # db.write()
+    db.close()
 
-    # db.cursor.execute('insert into tag_table values (?,?,?)', (None, 't_one', 0))
-    # db.cursor.execute('insert into tag_table values (?,?,?)', (None, 't_two', 0))
-    # print(db.get_tag_table_id_mapping())
-    # print(db.get_tag_table_name_mapping())
-
-    # db.cursor.execute('insert into field_table values (?,?,?,?)', (None, 'f_one', False, 0))
-    # db.cursor.execute('insert into field_table values (?,?,?,?)', (None, 'f_two', True, 0))
-    # db.cursor.execute('insert into field_table values (?,?,?,?)', (None, 'f_three', False, 0))
-    # print(db.get_field_table_id_mapping())
-    # print(db.get_field_table_name_mapping())
