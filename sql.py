@@ -123,7 +123,6 @@ class Sql:
         the dictionary will contain the tag name and count.
         :return: tag table dictionary
         """
-        # self.cursor.execute('select * from tag_table')
         tmp_list = self.get_tag_table_list()
         return {t_name: (t_id, t_count) for t_id, t_name, t_count in tmp_list}
 
@@ -133,7 +132,6 @@ class Sql:
         the dictionary will contain the tag id and count.
         :return: tag table dictionary
         """
-        # self.cursor.execute('select * from tag_table')
         tmp_list = self.get_tag_table_list()
         return {t_id: (t_name, t_count) for t_id, t_name, t_count in tmp_list}
 
@@ -153,7 +151,6 @@ class Sql:
         the dictionary will contain the field name, sensitive flag and count.
         :return:
         """
-        # self.cursor.execute('select * from field_table')
         tmp_list = self.get_field_table_list()
         return {f_id: (f_name, bool(f_sensitive), f_count) for f_id, f_name, f_sensitive, f_count in tmp_list}
 
@@ -163,7 +160,6 @@ class Sql:
         the dictionary will contain the field id, sensitive flag and count.
         :return:
         """
-        # self.cursor.execute('select * from field_table')
         tmp_list = self.get_field_table_list()
         return {f_name: (f_id, bool(f_sensitive), f_count) for f_id, f_name, f_sensitive, f_count in tmp_list}
 
