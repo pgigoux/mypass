@@ -1,6 +1,6 @@
 import os
 import json
-import sqlite3 as sq
+from sql import Sql
 from crypt import Crypt
 from utils import filter_control_characters, timestamp_to_string, get_string_timestamp
 
@@ -35,167 +35,20 @@ class Database:
         :param file_name: database file name
         :param password: password to encode data
         """
+        self.sql = Sql()
         self.file_name = file_name
         self.password = password
-        self.connection = sq.connect(':memory:')
-        self.cursor = self.connection.cursor()
-        self.create_tables()
         # The database will be encrypted if a password is supplied
         self.crypt_key = Crypt(password) if password else None
 
-    def create_tables(self):
-        """
-        Create the database tables. The uses four tables to store the data: tag_table,
-        field_table, tags, fields and items.
-        """
-        # Tag table
-        table = """
-                create table tag_table (
-                    id integer primary key autoincrement,
-                    name varchar(25) not null,
-                    count integer default 0
-                );
-                """
-        self.cursor.execute(table)
-
-        # Field table
-        table = """
-                create table field_table (
-                    id integer primary key autoincrement,
-                    name varchar(25) not null,
-                    sensitive bool default false,
-                    count integer default 0
-                );
-                """
-        self.cursor.execute(table)
-
-        # Items
-        table = """
-                create table items (
-                    id integer primary key autoincrement,
-                    name varchar(30) not null,
-                    date integer not null,
-                    note text
-                );
-                """
-        self.cursor.execute(table)
-
-        # Tags
-        table = """
-                create table tags (
-                    id integer primary key autoincrement,
-                    tag_id integer not null,
-                    item_id integer not null,
-                    foreign key(tag_id) references tag_table(id),
-                    foreign key(item_id) references items(id)
-                );
-                """
-        self.cursor.execute(table)
-
-        # Fields
-        table = """
-                create table fields (
-                    id integer primary key autoincrement,
-                    field_id integer not null,
-                    item_id integer not null,
-                    value text not null,
-                    encrypted bool default false,
-                    foreign key(item_id) references items(id)
-                    foreign key(field_id) references field_table(id)
-                );
-                """
-        self.cursor.execute(table)
-        self.connection.commit()
-
-    def print_tables(self):
-        """
-        Print the table structures
-        :return:
-        """
-        self._print_table_structure('tag_table')
-        self._print_table_structure('field_table')
-        self._print_table_structure('items')
-        self._print_table_structure('tags')
-        self._print_table_structure('fields')
-
-    def _print_table_structure(self, table_name: str):
-        """
-        Print the structure of a table
-        :param table_name:
-        :return:
-        """
-        print(f'-- {table_name}')
-        tbl = self.cursor.execute(f'pragma table_info({table_name});')
-        for _ in tbl:
-            print('+', _)
-
-    def get_tag_table_list(self) -> list:
-        """
-        Return the tag_table as a list of tuples containing the tag id, tag name
-        and tag count.
-        :return: tag list
-        """
-        self.cursor.execute('select * from tag_table')
-        return self.cursor.fetchall()
-
-    def get_tag_table_name_mapping(self) -> dict:
-        """
-        Return the tag_table as a dictionary indexed by the tag id. Each element of
-        the dictionary will contain the tag name and count.
-        :return: tag table dictionary
-        """
-        self.cursor.execute('select * from tag_table')
-        return {t_name: (t_id, t_count) for t_id, t_name, t_count in self.cursor.fetchall()}
-
-    def get_tag_table_id_mapping(self) -> dict:
-        """
-        Return the tag_table as a dictionary indexed by the tag name. Each element of
-        the dictionary will contain the tag id and count.
-        :return: tag table dictionary
-        """
-        self.cursor.execute('select * from tag_table')
-        return {t_id: (t_name, t_count) for t_id, t_name, t_count in self.cursor.fetchall()}
-
-    def get_field_table_list(self) -> list:
-        """
-        Return the field_table as a list of tuples containing the field id, field name,
-        sensitive flag and count.
-        and tag count.
-        :return: field list
-        """
-        self.cursor.execute('select * from field_table')
-        return self.cursor.fetchall()
-
-    def get_field_table_id_mapping(self) -> dict:
-        """
-        Return the field_table as a dictionary indexed by the field id. Each element of
-        the dictionary will contain the field name, sensitive flag and count.
-        :return:
-        """
-        self.cursor.execute('select * from field_table')
-        return {f_id: (f_name, bool(f_sensitive), f_count) for f_id, f_name, f_sensitive, f_count in
-                self.cursor.fetchall()}
-
-    def get_field_table_name_mapping(self) -> dict:
-        """
-        Return the field_table as a dictionary indexed by the field name. Each element of
-        the dictionary will contain the field id, sensitive flag and count.
-        :return:
-        """
-        self.cursor.execute('select * from field_table')
-        return {f_name: (f_id, bool(f_sensitive), f_count) for f_id, f_name, f_sensitive, f_count in
-                self.cursor.fetchall()}
-
     def tag_table_to_list(self) -> list:
         """
-        Return the tag_table as a list of where each element is the tag id, tag name and count.
-        :return:
+        Return the tag_table as a list of where each element is a dictionary
+        containing the tag id, tag name and count.
+        :return: list of tags
         """
-        self.cursor.execute(f'select * from tag_table')
-        fetch_list = self.cursor.fetchall()
-        # print(tag_list)
         output_list = []
-        for tag_id, t_name, t_count in fetch_list:
+        for tag_id, t_name, t_count in self.sql.get_tag_table_list():
             output_list.append({KEY_ID: tag_id, KEY_NAME: t_name, KEY_COUNT: t_count})
         return output_list
 
@@ -203,12 +56,12 @@ class Database:
         """
         Return the tag_table as a list of where each element is a dictionary
         containing the tag id, tag name and count.
-        :return:
+        :return: list of fields
         """
-        self.cursor.execute(f'select * from field_table')
-        fetch_list = self.cursor.fetchall()
+        # self.cursor.execute(f'select * from field_table')
+        # fetch_list = self.cursor.fetchall()
         output_list = []
-        for f_id, f_name, f_sensitive, f_count in fetch_list:
+        for f_id, f_name, f_sensitive, f_count in self.sql.get_field_table_list():
             output_list.append({KEY_ID: f_id, KEY_NAME: f_name, KEY_SENSITIVE: bool(f_sensitive), KEY_COUNT: f_count})
         return output_list
 
@@ -223,12 +76,11 @@ class Database:
         output_dict = {}
 
         # Get the tag and field mappings to convert ids into names
-        tag_mapping = self.get_tag_table_id_mapping()
-        field_mapping = self.get_field_table_id_mapping()
+        tag_mapping = self.sql.get_tag_table_id_mapping()
+        field_mapping = self.sql.get_field_table_id_mapping()
 
         # Query the database to get all items
-        self.cursor.execute('select * from items')
-        item_fetch_list = self.cursor.fetchall()
+        item_fetch_list = self.sql.get_item_list()
 
         # Iterate over all items
         for item_id, item_name, item_date, item_note in item_fetch_list:
@@ -236,13 +88,11 @@ class Database:
             item_dict = {KEY_NAME: item_name, KEY_TIMESTAMP: item_date, KEY_NOTE: item_note}
 
             # Process the item tags
-            self.cursor.execute(f'select * from tags where item_id={item_id}')
-            tag_fetch_list = self.cursor.fetchall()
+            tag_fetch_list = self.sql.get_tag_list(item_id=item_id)
             item_dict[KEY_TAGS] = [tag_mapping[tag_id][0] for _, tag_id, _ in tag_fetch_list]
 
             # Process the item fields
-            self.cursor.execute(f'select * from fields where item_id={item_id}')
-            field_fetch_list = self.cursor.fetchall()
+            field_fetch_list = self.sql.get_field_list(item_id=item_id)
             field_dict = {}
             for field_id, f_id, _, field_value, f_encrypted in field_fetch_list:
                 if decrypt_flag and f_encrypted and db.crypt_key is not None:
@@ -270,14 +120,14 @@ class Database:
         """
         Dump database contents to the terminal (debugging)
         """
-        tag_mapping = self.get_tag_table_name_mapping()
-        field_mapping = self.get_field_table_name_mapping()
+        tag_mapping = self.sql.get_tag_table_name_mapping()
+        field_mapping = self.sql.get_field_table_name_mapping()
 
         print('Tags')
-        for t_id, t_name, t_count in self.get_tag_table_list():
+        for t_id, t_name, t_count in self.sql.get_tag_table_list():
             print(f'\t{t_id:2} {t_name} {t_count}')
         print('Fields')
-        for f_id, f_name, f_sensitive, f_count in self.get_field_table_list():
+        for f_id, f_name, f_sensitive, f_count in self.sql.get_field_table_list():
             print(f'\t{f_id:2} {f_name} {bool(f_sensitive)} {f_count}')
         print('Items')
         item_dict = self.items_to_dict()
@@ -323,29 +173,9 @@ class Database:
             f.write(self.convert_to_json())
         f.close()
 
-    def import_from_sql(self, file_name: str):
-        """
-        Import the database from an sqlite file
-        :param file_name: output file name
-        :return:
-        """
-        sc = sq.connect(file_name)
-        dc = self.connection
-        sc.backup(dc)
-
-    def export_to_sql(self, file_name: str):
-        """
-        Export the database to an sqlite file
-        :param file_name: output file name
-        :return:
-        """
-        c = sq.connect(file_name)
-        self.connection.backup(c)
-        c.close()
-
     def read(self):
         """
-        Read database from disk
+        Read database from disk. The file name was specified when the database was created.
         """
         with open(self.file_name, self.read_mode()) as f:
             data = f.read()
@@ -357,46 +187,38 @@ class Database:
                     raise ValueError(f'failed to decrypt data: {repr(e)}')
         try:
             json_data = json.loads(data)
-            db.cursor.execute(f'')
         except Exception as e:
             raise ValueError(f'failed to read the data: {repr(e)}')
 
         # Read the tag table
         try:
             for tag in json_data[KEY_TAG_SECTION]:
-                db.cursor.execute('insert into tag_table values(?,?,?)',
-                                  (int(tag[KEY_ID]), tag[KEY_NAME], tag[KEY_COUNT]))
-                # print(tag)
+                db.sql.insert_into_tag_table(int(tag[KEY_ID]), tag[KEY_NAME], tag[KEY_COUNT])
         except Exception as e:
-            # self.clear()
             raise ValueError(f'failed to read tag table: {repr(e)}')
 
         # Read the field table
         try:
             for field in json_data[KEY_FIELD_SECTION]:
-                db.cursor.execute('insert into field_table values(?,?,?,?)',
-                                  (int(field[KEY_ID]), field[KEY_NAME],
-                                   bool(field[KEY_SENSITIVE]), field[KEY_COUNT]))
+                db.sql.insert_into_field_table(int(field[KEY_ID]), field[KEY_NAME],
+                                               bool(field[KEY_SENSITIVE]), field[KEY_COUNT])
         except Exception as e:
             # self.clear()
             raise ValueError(f'failed to read field table: {repr(e)}')
 
         # Read items
-        tag_mapping = db.get_tag_table_name_mapping()
-        field_mapping = db.get_field_table_name_mapping()
+        tag_mapping = self.sql.get_tag_table_name_mapping()
+        field_mapping = self.sql.get_field_table_name_mapping()
         try:
             for item_id in json_data[KEY_ITEM_SECTION]:
                 item = json_data[KEY_ITEM_SECTION][item_id]
-                db.cursor.execute('insert into items values(?,?,?,?)',
-                                  (None, item[KEY_NAME], int(item[KEY_TIMESTAMP]), item[KEY_NOTE]))
+                db.sql.insert_into_items(None, item[KEY_NAME], int(item[KEY_TIMESTAMP]), item[KEY_NOTE])
                 for tag in item[KEY_TAGS]:
-                    db.cursor.execute('insert into tags values(?,?,?)',
-                                      (None, tag_mapping[tag][0], int(item_id)))
+                    db.sql.insert_into_tags(None, tag_mapping[tag][0], int(item_id))
                 for field_id in item[KEY_FIELDS]:
                     field = item[KEY_FIELDS][field_id]
-                    db.cursor.execute('insert into fields values(?,?,?,?,?)',
-                                      (None, int(field_mapping[field[KEY_NAME]][0]), int(item_id),
-                                       field[KEY_VALUE], field[KEY_ENCRYPTED]))
+                    db.sql.insert_into_fields(None, int(field_mapping[field[KEY_NAME]][0]), int(item_id),
+                                              field[KEY_VALUE], field[KEY_ENCRYPTED])
         except Exception as e:
             raise ValueError(f'failed to read items: {repr(e)}')
 
@@ -419,7 +241,7 @@ class Database:
 
 
 if __name__ == '__main__':
-    db = Database('pw.db')
+    db = Database('pw.db', password='test')
     db.read()
     db.write()
     db.dump()

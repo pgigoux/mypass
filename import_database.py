@@ -174,13 +174,13 @@ def save_tables(db: Database):
     """
     # Field table
     with open(FIELD_FILE_NAME, 'w') as f:
-        for f_name, f_uid, f_sensitive, f_count in db.get_field_table_list():
+        for f_name, f_uid, f_sensitive, f_count in db.sql.get_field_table_list():
             f.write(f'{f_name},{f_uid},{f_sensitive},{f_count}\n')
         f.close()
 
     # Tag table
     with open(TAG_FILE_NAME, 'w') as f:
-        for t_name, t_uid, t_count in db.get_tag_table_list():
+        for t_name, t_uid, t_count in db.sql.get_tag_table_list():
             f.write(f'{t_name},{t_uid},{t_count}\n')
         f.close()
 
@@ -191,19 +191,15 @@ def import_tags(db: Database, folder_list: list) -> dict:
     :param folder_list: list of folders/tags
     :return:
     """
-    tag_dict = {}
-
     # Create default tag for items that have no folder
-    db.cursor.execute('insert into tag_table values(?, ?, ?)', (None, TAG_DEFAULT_NAME, 0))
-    tag_dict[TAG_DEFAULT_UID] = (db.cursor.lastrowid, TAG_DEFAULT_NAME)
+    tag_dict = {TAG_DEFAULT_UID: db.sql.insert_into_tag_table(None, TAG_DEFAULT_NAME, 0)}
 
     # Iterate over all the folder definitions and create the dictionary with a
     # mapping between the uid from the input database and the id that will be
     # used in the new database.
     for folder in folder_list:
         t_name, t_uid = process_tag(folder['title'], folder['uuid'])
-        db.cursor.execute('insert into tag_table values(?, ?, ?)', (None, t_name, 0))
-        tag_dict[t_uid] = (db.cursor.lastrowid, t_name)
+        tag_dict[t_uid] = db.sql.insert_into_tag_table(None, t_name, 0)
 
     return tag_dict
 
@@ -228,24 +224,11 @@ def import_fields(db: Database, item_list: list):
 
     # Insert fields in the field table
     for f_name, f_sensitive in field_set:
-        db.cursor.execute('insert into field_table values (?,?,?,?)',
-                          (None, f_name, f_sensitive, 0))
-
-
-def print_tag_table(db: Database):
-    print('-- tag table --')
-    for t_id, t_name, t_count in db.get_tag_table_list():
-        print(t_id, t_name, t_count)
-
-
-def print_field_table(db: Database):
-    print('-- field table --')
-    for f_id, f_name, f_sensitive, f_count in db.get_field_table_list():
-        print(f_id, f_name, f_sensitive, f_count)
+        db.sql.insert_into_field_table(None, f_name, f_sensitive, 0)
 
 
 def import_items(db: Database, item_list: list, tag_mapping: dict):
-    field_mapping = db.get_field_table_name_mapping()
+    field_mapping = db.sql.get_field_table_name_mapping()
 
     for item in item_list:
 
@@ -281,7 +264,6 @@ def import_items(db: Database, item_list: list, tag_mapping: dict):
                             f_value = db.crypt_key.encrypt_str2str(f_value)
                             f_encrypted = True
                         field_list.append((f_name, f_value, f_encrypted))
-                        # print('field', f_name, f_value, f_sensitive)
                     except ValueError:
                         # can be safely ignored
                         continue
@@ -291,18 +273,12 @@ def import_items(db: Database, item_list: list, tag_mapping: dict):
             tag_list.append(tag_mapping[TAG_DEFAULT_UID])
 
         # Insert the item into the database
-        db.cursor.execute('insert into items values (?,?,?,?)',
-                          (None, item_name, time_stamp, note))
-        item_id = db.cursor.lastrowid
-        for t_id, _ in tag_list:
-            # print('-', t_id)
-            db.cursor.execute('insert into tags values (?,?,?)',
-                              (None, t_id, item_id))
-
+        item_id = db.sql.insert_into_items(None, item_name, int(time_stamp), note)
+        for t_id in tag_list:
+            db.sql.insert_into_tags(None, t_id, item_id)
         for f_name, f_value, f_encrypted in field_list:
             f_id = field_mapping[f_name][0]
-            db.cursor.execute('insert into fields values (?,?,?,?,?)',
-                              (None, f_id, item_id, f_value, f_encrypted))
+            db.sql.insert_into_fields(None, f_id, item_id, f_value, f_encrypted)
 
 
 def import_database(input_file_name: str, output_file_name: str, password: str, dump_database=False):
@@ -325,20 +301,24 @@ def import_database(input_file_name: str, output_file_name: str, password: str, 
     tag_mapping = import_tags(db, json_data['folders'])
     import_fields(db, json_data['items'])
     import_items(db, json_data['items'], tag_mapping)
-    db.connection.commit()
+    db.sql.connection.commit()
     db.write()
 
     save_tables(db)
-    db.export_to_sql('backup.db')
+    db.sql.export_to_sql('backup.db')
     db.export_to_json('backup.json')
 
     if dump_database:
         db.dump()
 
-    db.connection.close()
+    db.sql.connection.close()
 
 
 if __name__ == '__main__':
+    # Testing
+    # import_database('pdb.json', 'pw.db', '', dump_database=False)
+    # exit(0);
+
     # Command line arguments
     parser = argparse.ArgumentParser(description='Import Enpass database')
 
@@ -359,10 +339,6 @@ if __name__ == '__main__':
                         action='store_true',
                         help='Print output database to stdout')
 
-    # Testing
-    # import_database('pdb.json', args.output_file, '', dump_database=False)
-    # exit(0)
-
     args = parser.parse_args()
 
     # Get the password to encrypt the output database
@@ -373,5 +349,3 @@ if __name__ == '__main__':
         import_database(args.input_file, args.output_file, input_password, dump_database=args.dump)
     except Exception as e:
         print(f'Error while importing file {e}')
-
-    # import_database(args.input_file, args.output_file, input_password, args.dump)
