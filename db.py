@@ -58,8 +58,6 @@ class Database:
         containing the tag id, tag name and count.
         :return: list of fields
         """
-        # self.cursor.execute(f'select * from field_table')
-        # fetch_list = self.cursor.fetchall()
         output_list = []
         for f_id, f_name, f_sensitive, f_count in self.sql.get_field_table_list():
             output_list.append({KEY_ID: f_id, KEY_NAME: f_name, KEY_SENSITIVE: bool(f_sensitive), KEY_COUNT: f_count})
@@ -253,8 +251,8 @@ class Database:
 if __name__ == '__main__':
     db = Database('pw.db', password='')
     db.read()
-    db.write()
-    db.export_to_json('pw.json')
+    db.sql.update_counters()
+    # db.write()
+    # db.export_to_json('pw.json')
     db.dump()
     db.close()
-
