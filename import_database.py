@@ -283,14 +283,13 @@ def import_items(db: Database, item_list: list, tag_mapping: dict):
 
 def import_database(input_file_name: str, output_file_name: str, password: str, dump_database=False):
     """
-
-    :param input_file_name:
-    :param output_file_name:
-    :param password:
-    :param dump_database:
-    :return:
+    Import an Enpass database in json format
+    :param input_file_name: input file name (json format)
+    :param output_file_name: output file name
+    :param password: password to encrypt the output database
+    :param dump_database: print the database to the terminal?
     """
-    # Read the data from the enpass json file
+    # Read the data from the json file
     with open(input_file_name, 'r') as f:
         json_data = json.load(f)
     f.close()
@@ -301,17 +300,16 @@ def import_database(input_file_name: str, output_file_name: str, password: str, 
     tag_mapping = import_tags(db, json_data['folders'])
     import_fields(db, json_data['items'])
     import_items(db, json_data['items'], tag_mapping)
-    db.sql.connection.commit()
     db.write()
 
+    # Save the tag and field tables as csv for reference
     save_tables(db)
-    db.sql.export_to_sql('backup.db')
-    db.export_to_json('backup.json')
 
+    # Dump the database to the terminal
     if dump_database:
         db.dump()
 
-    db.sql.connection.close()
+    db.close()
 
 
 if __name__ == '__main__':
