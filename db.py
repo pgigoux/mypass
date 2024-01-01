@@ -24,6 +24,9 @@ KEY_FIELDS = 'fields'
 KEY_VALUE = 'value'
 KEY_ENCRYPTED = 'encrypted'
 
+
+DEFAULT_DATABASE_NAME = 'pw.db'
+
 # Temporary file used when saving database
 TEMP_FILE = 'db.tmp'
 

@@ -63,7 +63,7 @@ sub-dictionaries. Only a few elements in the items are really relevant.
             "note": "",
             "subtitle": "",
             "template_type": "misc.voicemail",
-            "title": "LATAM",
+            "title": "Some company",
             "trashed": 0,
             "updated_at": 1527696294,
             "uuid": "2d4dc0e9-b0df-4197-9c93-cbf422688520"
@@ -75,7 +75,7 @@ sub-dictionaries. Only a few elements in the items are really relevant.
 import json
 import argparse
 from crypt import Crypt
-from db import Database
+from db import Database, DEFAULT_DATABASE_NAME
 from utils import get_password, trimmed_string
 
 # Files used to save tables into separate files
@@ -83,12 +83,9 @@ FIELD_FILE_NAME = 'fields.csv'
 TAG_FILE_NAME = 'tags.csv'
 
 # Default tag for those items that do not have a tag/folder defined
-# The uid value is arbitrary, but follows the format of other uid for consistency
+# The uid value is completely arbitrary, but follows the format of other uid for consistency
 TAG_DEFAULT_UID = '00000000-0000-0000-0000-000000000000'
 TAG_DEFAULT_NAME = 'default'
-
-# Default database name when importing data
-DEFAULT_DATABASE_NAME = 'pw.db'
 
 
 def process_field(field: dict) -> tuple:
