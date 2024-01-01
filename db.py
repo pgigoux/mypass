@@ -1,6 +1,6 @@
 import os
 import json
-from sql import Sql
+from sql import Sql, TABLE_LIST
 from crypt import Crypt
 from utils import filter_control_characters, timestamp_to_string, get_string_timestamp
 
@@ -23,7 +23,6 @@ KEY_FIELDS = 'fields'
 # fields
 KEY_VALUE = 'value'
 KEY_ENCRYPTED = 'encrypted'
-
 
 DEFAULT_DATABASE_NAME = 'pw.db'
 
@@ -146,6 +145,20 @@ class Database:
                 f_tid = field_mapping[field[KEY_NAME]][0]
                 print(f'\t\t{f_id} ({f_tid}) {field[KEY_NAME]} {field[KEY_VALUE]} {field[KEY_ENCRYPTED]}')
 
+    def database_report(self):
+        """
+        Print a database report
+        """
+        print('Table lengths')
+        for table in TABLE_LIST:
+            n_rows = self.sql.get_table_count(table)
+            print(f'\t{table} {n_rows}')
+        print('Table information')
+        for table in TABLE_LIST:
+            print(f'\t{table}')
+            for _, c_name, c_type, _, _, _ in self.sql.get_table_info(table):
+                print(f'\t\t{c_name} {c_type}')
+
     def read_mode(self) -> str:
         """
         Return the file write mode depending on whether encryption is enabled
@@ -203,7 +216,7 @@ class Database:
         try:
             for field in json_data[KEY_FIELD_SECTION]:
                 self.sql.insert_into_field_table(int(field[KEY_ID]), field[KEY_NAME],
-                                               bool(field[KEY_SENSITIVE]), field[KEY_COUNT])
+                                                 bool(field[KEY_SENSITIVE]), field[KEY_COUNT])
         except Exception as e:
             # self.clear()
             raise ValueError(f'failed to read field table: {repr(e)}')
@@ -220,7 +233,7 @@ class Database:
                 for field_id in item[KEY_FIELDS]:
                     field = item[KEY_FIELDS][field_id]
                     self.sql.insert_into_fields(None, int(field_mapping[field[KEY_NAME]][0]), int(item_id),
-                                              field[KEY_VALUE], field[KEY_ENCRYPTED])
+                                                field[KEY_VALUE], field[KEY_ENCRYPTED])
         except Exception as e:
             raise ValueError(f'failed to read items: {repr(e)}')
 
