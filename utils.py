@@ -130,7 +130,32 @@ def trace(label: str, *args):
         print(f'TRACE: {label}')
 
 
+def error(message: str, *args):
+    """
+    Report an error
+    :param message: error message
+    :param args: arguments
+    """
+    arg_msg = ''
+    if args:
+        for arg in args:
+            if isinstance(arg, Exception):
+                arg_msg += f' {repr(arg)}'
+            else:
+                arg_msg += f' {arg}'
+    print(f'Error: {message}{arg_msg}')
+
+
+def confirm(prompt: str) -> bool:
+    """
+    Prompt the user for confirmation
+    :param prompt: prompt text
+    :return: True if the user answered 'yes', False otherwise
+    """
+    print(prompt)
+    answer = input('Do you want to proceed (yes/no)? ')
+    return answer == 'yes'
+
+
 if __name__ == '__main__':
-    trace('hello')
-    trace_toggle()
-    trace('bye')
+    pass
