@@ -96,8 +96,8 @@ class Database:
             field_fetch_list = self.sql.get_field_list(item_id=item_id)
             field_dict = {}
             for field_id, f_id, _, field_value, f_encrypted in field_fetch_list:
-                if decrypt_flag and f_encrypted and db.crypt_key is not None:
-                    field_value = db.crypt_key.decrypt_str2str(field_value)
+                if decrypt_flag and f_encrypted and self.crypt_key is not None:
+                    field_value = self.crypt_key.decrypt_str2str(field_value)
                 tmp_dict = {KEY_NAME: field_mapping[f_id][0], KEY_VALUE: field_value,
                             KEY_ENCRYPTED: bool(f_encrypted)}
                 field_dict[field_id] = tmp_dict
@@ -178,6 +178,7 @@ class Database:
         """
         Read database from disk. The file name was specified when the database was created.
         """
+        print('db read: ', self.file_name)
         with open(self.file_name, self.read_mode()) as f:
             data = f.read()
             if self.crypt_key is not None:
@@ -194,14 +195,14 @@ class Database:
         # Read the tag table
         try:
             for tag in json_data[KEY_TAG_SECTION]:
-                db.sql.insert_into_tag_table(int(tag[KEY_ID]), tag[KEY_NAME], tag[KEY_COUNT])
+                self.sql.insert_into_tag_table(int(tag[KEY_ID]), tag[KEY_NAME], tag[KEY_COUNT])
         except Exception as e:
             raise ValueError(f'failed to read tag table: {repr(e)}')
 
         # Read the field table
         try:
             for field in json_data[KEY_FIELD_SECTION]:
-                db.sql.insert_into_field_table(int(field[KEY_ID]), field[KEY_NAME],
+                self.sql.insert_into_field_table(int(field[KEY_ID]), field[KEY_NAME],
                                                bool(field[KEY_SENSITIVE]), field[KEY_COUNT])
         except Exception as e:
             # self.clear()
@@ -213,12 +214,12 @@ class Database:
         try:
             for item_id in json_data[KEY_ITEM_SECTION]:
                 item = json_data[KEY_ITEM_SECTION][item_id]
-                db.sql.insert_into_items(None, item[KEY_NAME], int(item[KEY_TIMESTAMP]), item[KEY_NOTE])
+                self.sql.insert_into_items(None, item[KEY_NAME], int(item[KEY_TIMESTAMP]), item[KEY_NOTE])
                 for tag in item[KEY_TAGS]:
-                    db.sql.insert_into_tags(None, tag_mapping[tag][0], int(item_id))
+                    self.sql.insert_into_tags(None, tag_mapping[tag][0], int(item_id))
                 for field_id in item[KEY_FIELDS]:
                     field = item[KEY_FIELDS][field_id]
-                    db.sql.insert_into_fields(None, int(field_mapping[field[KEY_NAME]][0]), int(item_id),
+                    self.sql.insert_into_fields(None, int(field_mapping[field[KEY_NAME]][0]), int(item_id),
                                               field[KEY_VALUE], field[KEY_ENCRYPTED])
         except Exception as e:
             raise ValueError(f'failed to read items: {repr(e)}')
@@ -252,10 +253,11 @@ class Database:
 
 
 if __name__ == '__main__':
-    db = Database('pw.db', password='')
-    db.read()
-    db.sql.update_counters()
-    # db.write()
-    # db.export_to_json('pw.json')
-    db.dump()
-    db.close()
+    # db = Database('pw.db', password='')
+    # db.read()
+    # db.sql.update_counters()
+    # # db.write()
+    # # db.export_to_json('pw.json')
+    # db.dump()
+    # db.close()
+    pass
