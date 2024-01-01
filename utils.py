@@ -142,7 +142,7 @@ def error(message: str, *args):
             if isinstance(arg, Exception):
                 arg_msg += f' {repr(arg)}'
             else:
-                arg_msg += f' {arg}'
+                arg_msg += f' {str(arg)}'
     print(f'Error: {message}{arg_msg}')
 
 
