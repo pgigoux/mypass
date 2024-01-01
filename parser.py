@@ -20,7 +20,6 @@ class Parser:
         self.lexer = Lexer()
         self.cmd = ''
         self.cp = CommandProcessor()
-        trace_toggle()
 
     def get_token(self) -> Token:
         """
@@ -385,16 +384,13 @@ class Parser:
     # Misc
     # -------------------------------------------------------------
 
-    def misc_commands(self, token: Token):
+    @staticmethod
+    def misc_commands(token: Token):
         """
-        misc_commands: REPORT |
-                       TRACE |
-        :param token:
-        :return:
+        misc_commands: TRACE |
+        :param token: input token
         """
         trace('misc_command', token)
-        # if token.tid == Tid.REPORT:
-        #     self.cp.database_report()
         if token.tid == Tid.TRACE:
             trace_toggle()
         else:

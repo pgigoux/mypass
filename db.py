@@ -191,7 +191,6 @@ class Database:
         """
         Read database from disk. The file name was specified when the database was created.
         """
-        print('db read: ', self.file_name)
         with open(self.file_name, self.read_mode()) as f:
             data = f.read()
             if self.crypt_key is not None:
