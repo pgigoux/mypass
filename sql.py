@@ -1,6 +1,9 @@
 import sqlite3 as sq
 from typing import Optional
 
+# List of tables in the database
+TABLE_LIST = ['tag_table', 'field_table', 'tags', 'fields', 'items']
+
 
 class Sql:
 
@@ -22,7 +25,7 @@ class Sql:
         table = """
                 create table tag_table (
                     id integer primary key autoincrement,
-                    name varchar(25) not null,
+                    name varchar(30) not null,
                     count integer default 0
                 );
                 """
@@ -32,7 +35,7 @@ class Sql:
         table = """
                 create table field_table (
                     id integer primary key autoincrement,
-                    name varchar(25) not null,
+                    name varchar(30) not null,
                     sensitive bool default false,
                     count integer default 0
                 );
@@ -298,6 +301,24 @@ class Sql:
         self.connection.backup(c)
         c.close()
 
+    def get_table_count(self, table: str) -> int:
+        """
+        Get the number of rows in a table
+        :param table: table name
+        :return: number of rows
+        """
+        self.cursor.execute(f'select count() from {table}')
+        return int(self.cursor.fetchone()[0])
+
+    def get_table_info(self, table: str) -> list:
+        """
+        Get the table structure
+        :param table: table name
+        :return: list with table information
+        """
+        self.cursor.execute(f"pragma table_info('{table}')")
+        return self.cursor.fetchall()
+
 
 if __name__ == '__main__':
     sql = Sql()
@@ -355,4 +376,4 @@ if __name__ == '__main__':
     sql.export_to_sql('junk.db')
 
     print('-' * 20)
-    sql.dump()
+    # sql.dump()
