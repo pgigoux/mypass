@@ -3,7 +3,7 @@ from enum import Enum, auto
 from os.path import exists
 from typing import Optional
 from db import Database, DEFAULT_DATABASE_NAME
-from sql import NAME_TAG_TABLE, NAME_FIELD_TABLE, NAME_TAGS, NAME_FIELDS, NAME_ITEMS
+from sql import NAME_TAG_TABLE, NAME_FIELD_TABLE, NAME_TAGS, NAME_FIELDS, NAME_ITEMS, INDEX_COUNT
 from utils import get_password, get_timestamp, timestamp_to_string, print_line, sensitive_mark, error, confirm, trace
 
 
@@ -172,13 +172,16 @@ class CommandProcessor:
         """
         if self.db_loaded():
             assert isinstance(self.db, Database)
-            # TODO
-            # try:
-            #     self.db.tag_table.remove(name=name)
-            #
-            #     pass
-            # except Exception as e:
-            #     error(f'cannot delete tag {name}', e)
+            self.db.sql.update_counters()
+            tag_mapping = self.db.sql.get_tag_table_name_mapping()
+            if name in tag_mapping:
+                if tag_mapping[name][INDEX_COUNT] == 0:
+                    n = self.db.sql.delete_from_tag_table(name)
+                    print(f'removed {n} tags')
+                else:
+                    error(f'tag {name} is being used')
+            else:
+                error(f'tag {name} does not exist')
 
     def tag_dump(self):
         """
@@ -253,7 +256,7 @@ class CommandProcessor:
         if self.db_loaded():
             assert isinstance(self.db, Database)
             try:
-                self.db.sql.field_table.rename(old_name, new_name)
+                self.db.sql.rename_field_table_entry(old_name, new_name)
             except Exception as e:
                 error(f'cannot rename tag {old_name} to {new_name}', e)
 
@@ -265,11 +268,15 @@ class CommandProcessor:
         trace('field_delete', name)
         if self.db_loaded():
             assert isinstance(self.db, Database)
-            # TODO
-            # try:
-            #     self.db.field_table.remove(name=name)
-            # except Exception as e:
-            #     error('cannot remove field {name}', e)
+            field_mapping = self.db.sql.get_field_table_name_mapping()
+            if name in field_mapping:
+                if field_mapping[name][INDEX_COUNT] == 0:
+                    n = self.db.sql.delete_from_field_table(name)
+                    print(f'removed {n} fields')
+                else:
+                    error(f'field {name} is being used')
+            else:
+                error(f'field {name} does not exist')
 
     def field_dump(self):
         """
