@@ -9,6 +9,18 @@ NAME_FIELDS = 'fields'
 NAME_ITEMS = 'items'
 TABLE_LIST = [NAME_TAG_TABLE, NAME_FIELD_TABLE, NAME_TAGS, NAME_FIELDS, NAME_ITEMS]
 
+# Indices used to access mapping elements
+INDEX_ID = 0
+INDEX_NAME = 0
+INDEX_COUNT = 1
+INDEX_SENSITIVE = 2
+
+
+# INDEX_FIELD_ID = 0
+# INDEX_FIELD_NAME = 0
+# INDEX_FIELD_SENSITIVE = 1
+# INDEX_FIELD_COUNT = 2
+
 
 class Sql:
 
@@ -116,6 +128,8 @@ class Sql:
         print('fields', self.get_field_list())
         print('items', self.get_item_list())
 
+    # -- TAG TABLE
+
     def get_tag_table_list(self) -> list:
         """
         Return the tag_table as a list of tuples containing the tag id, tag name
@@ -143,6 +157,38 @@ class Sql:
         tmp_list = self.get_tag_table_list()
         return {t_id: (t_name, t_count) for t_id, t_name, t_count in tmp_list}
 
+    def insert_into_tag_table(self, tag_id: int | None, tag_name: str, tag_count: Optional[int] = 0) -> int:
+        """
+        Insert a new tag into the tag table
+        :param tag_id: tag id (or None if autoincrement)
+        :param tag_name: tag name
+        :param tag_count: number of times the tag is used
+        :return tag id
+        """
+        self.cursor.execute('insert into tag_table values(?,?,?)', (tag_id, tag_name, tag_count))
+        return self.cursor.lastrowid if tag_id is None else tag_id
+
+    def delete_from_tag_table(self, tag_name: str):
+        """
+        Delete a tag from the tag table
+        :param tag_name: tag name
+        :return: number of changes made (1 if ok, 0 if the tag didn't exist)
+        """
+        self.cursor.execute('delete from tag_table where name=?', (tag_name,))
+        return self.cursor.rowcount
+
+    def rename_tag_table_entry(self, old_name: str, new_name: str) -> int:
+        """
+        Rename a tag.
+        :param old_name: old tag nanme
+        :param new_name: new tag name
+        :return: number of changes made (1 if ok, 0 if the tag didn't exist)
+        """
+        self.cursor.execute(f'update tag_table set name=? where name=?', (new_name, old_name))
+        return self.cursor.rowcount
+
+    # -- FIELD TABLE
+
     def get_field_table_list(self) -> list:
         """
         Return the field_table as a list of tuples containing the field id, field name,
@@ -156,11 +202,11 @@ class Sql:
     def get_field_table_id_mapping(self) -> dict:
         """
         Return the field_table as a dictionary indexed by the field id. Each element of
-        the dictionary will contain the field name, sensitive flag and count.
+        the dictionary will contain the field name, count and sensitive flag.
         :return:
         """
         tmp_list = self.get_field_table_list()
-        return {f_id: (f_name, bool(f_sensitive), f_count) for f_id, f_name, f_sensitive, f_count in tmp_list}
+        return {f_id: (f_name, f_count, bool(f_sensitive)) for f_id, f_name, f_sensitive, f_count in tmp_list}
 
     def get_field_table_name_mapping(self) -> dict:
         """
@@ -169,61 +215,7 @@ class Sql:
         :return:
         """
         tmp_list = self.get_field_table_list()
-        return {f_name: (f_id, bool(f_sensitive), f_count) for f_id, f_name, f_sensitive, f_count in tmp_list}
-
-    def get_tag_list(self, item_id: Optional[int] = None) -> list:
-        """
-        Select all tags for a given item id, or all tags if item id is None.
-        Return a list of tuples containing the tag id, tag table id and item id.
-        :param item_id: item id
-        :return: list of tuples with tag data
-        """
-        cmd = f'select * from tags' if item_id is None else f'select * from tags where item_id={item_id}'
-        self.cursor.execute(cmd)
-        return self.cursor.fetchall()
-
-    def get_field_list(self, item_id: Optional[int] = None) -> list:
-        """
-        Select all fields for a given item id, or all fields if item id is None.
-        Return a list of tuples containing the field id, field table id, item id, field value and encrypted value flag
-        :param item_id: item id
-        :return: list of tuples with field data
-        """
-        cmd = f'select * from fields' if item_id is None else f'select * from fields where item_id={item_id}'
-        self.cursor.execute(cmd)
-        return self.cursor.fetchall()
-
-    def get_item_list(self, item_id: Optional[int] = None) -> list:
-        """
-        Select all items for a given item id (one), or all items if item id is None.
-        Return a list of tuples containing the item id, item name, timestamp and  note.
-        :param item_id: item id
-        :return: list of tuples with item data
-        """
-        cmd = f'select * from items' if item_id is None else f'select * from items where id={item_id}'
-        self.cursor.execute(cmd)
-        return self.cursor.fetchall()
-
-    def insert_into_tag_table(self, tag_id: int | None, tag_name: str, tag_count: Optional[int] = 0) -> int:
-        """
-        Insert a new tag into the tag table
-        :param tag_id: tag id (or None if autoincrement)
-        :param tag_name: tag name
-        :param tag_count: number of times the tag is used
-        :return tag id
-        """
-        self.cursor.execute('insert into tag_table values(?,?,?)', (tag_id, tag_name, tag_count))
-        return self.cursor.lastrowid if tag_id is None else tag_id
-
-    def rename_tag_table_entry(self, old_name: str, new_name: str) -> int:
-        """
-        Rename a tag.
-        :param old_name: old tag nanme
-        :param new_name: new tag name
-        :return: number of changes made (1 if ok, 0 if the tag didn't exist)
-        """
-        self.cursor.execute(f'update tag_table set name=? where name=?', (new_name, old_name))
-        return self.cursor.rowcount
+        return {f_name: (f_id, f_count, bool(f_sensitive)) for f_id, f_name, f_sensitive, f_count in tmp_list}
 
     def insert_into_field_table(self, field_id: int | None, field_name: str, field_sensitive: bool,
                                 field_count: Optional[int] = 0) -> int:
@@ -239,6 +231,38 @@ class Sql:
                             (field_id, field_name, field_sensitive, field_count))
         return self.cursor.lastrowid if field_id is None else field_id
 
+    def delete_from_field_table(self, field_name: str):
+        """
+        Delete a tag from the tag table
+        :param field_name: field name
+        :return: number of changes made (1 if ok, 0 if the field didn't exist)
+        """
+        self.cursor.execute('delete from field_table where name=?', (field_name,))
+        return self.cursor.rowcount
+
+    def rename_field_table_entry(self, old_name: str, new_name: str) -> int:
+        """
+        Rename a tag.
+        :param old_name: old field nanme
+        :param new_name: new field name
+        :return: number of changes made (1 if ok, 0 if the tag didn't exist)
+        """
+        self.cursor.execute(f'update field_table set name=? where name=?', (new_name, old_name))
+        return self.cursor.rowcount
+
+    # -- TAGS
+
+    def get_tag_list(self, item_id: Optional[int] = None) -> list:
+        """
+        Select all tags for a given item id, or all tags if item id is None.
+        Return a list of tuples containing the tag id, tag table id and item id.
+        :param item_id: item id
+        :return: list of tuples with tag data
+        """
+        cmd = f'select * from tags' if item_id is None else f'select * from tags where item_id={item_id}'
+        self.cursor.execute(cmd)
+        return self.cursor.fetchall()
+
     def insert_into_tags(self, tag_id: int | None, tag_table_id: int, item_id: int) -> int:
         """
         Insert a new tag
@@ -249,6 +273,19 @@ class Sql:
         """
         self.cursor.execute('insert into tags values(?,?,?)', (tag_id, tag_table_id, item_id))
         return self.cursor.lastrowid if tag_id is None else tag_id
+
+    # -- FIELDS
+
+    def get_field_list(self, item_id: Optional[int] = None) -> list:
+        """
+        Select all fields for a given item id, or all fields if item id is None.
+        Return a list of tuples containing the field id, field table id, item id, field value and encrypted value flag
+        :param item_id: item id
+        :return: list of tuples with field data
+        """
+        cmd = f'select * from fields' if item_id is None else f'select * from fields where item_id={item_id}'
+        self.cursor.execute(cmd)
+        return self.cursor.fetchall()
 
     def insert_into_fields(self, field_id: int | None, field_table_id: int, item_id: int,
                            field_value: str, encrypted_value=False) -> int:
@@ -265,15 +302,18 @@ class Sql:
                             (field_id, field_table_id, item_id, field_value, encrypted_value))
         return self.cursor.lastrowid if field_id is None else field_id
 
-    def rename_field_table_entry(self, old_name: str, new_name: str) -> int:
+    # -- ITEMS
+
+    def get_item_list(self, item_id: Optional[int] = None) -> list:
         """
-        Rename a tag.
-        :param old_name: old field nanme
-        :param new_name: new field name
-        :return: number of changes made (1 if ok, 0 if the tag didn't exist)
+        Select all items for a given item id (one), or all items if item id is None.
+        Return a list of tuples containing the item id, item name, timestamp and  note.
+        :param item_id: item id
+        :return: list of tuples with item data
         """
-        self.cursor.execute(f'update field_table set name=? where name=?', (new_name, old_name))
-        return self.cursor.rowcount
+        cmd = f'select * from items' if item_id is None else f'select * from items where id={item_id}'
+        self.cursor.execute(cmd)
+        return self.cursor.fetchall()
 
     def insert_into_items(self, item_id: int | None, item_name: str, item_timestamp: int, item_note: str) -> int:
         """
@@ -287,6 +327,8 @@ class Sql:
         self.cursor.execute('insert into items values(?,?,?,?)',
                             (item_id, item_name, item_timestamp, item_note))
         return self.cursor.lastrowid if item_id is None else item_id
+
+    # -- GENERAL
 
     def update_counters(self):
         """
