@@ -64,6 +64,13 @@ class Parser:
                 s_tok = self.get_token()
                 sensitive = True if s_tok.tid == Tid.SW_SENSITIVE else False
                 self.cp.field_add(tok.value, sensitive)
+        elif token.tid == Tid.RENAME:
+            tok1 = self.get_token()
+            tok2 = self.get_token()
+            if tok1.tid in LEX_STRINGS and tok2.tid in LEX_STRINGS:
+                self.cp.field_rename(tok1.value, tok2.value)
+            else:
+                error('bad tag name', tok1, tok2)
         else:
             error(ERROR_UNKNOWN_SUBCOMMAND, token)
 
