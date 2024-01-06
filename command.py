@@ -291,10 +291,8 @@ class CommandProcessor:
         trace('item_list')
         if self.db_loaded():
             assert isinstance(self.db, Database)
-            # TODO
-            # for item in self.db.item_collection.next():
-            #     assert isinstance(item, Item)
-            #     print(f'{item.get_id()} - {item.name}')
+            for t_uid, t_name, item_timestamp, _ in self.db.sql.get_item_list():
+                print(f'{t_uid:5d}  {timestamp_to_string(item_timestamp, date_only=True)}  {t_name}')
 
     def item_print(self, uid: int, show_sensitive: bool):
         """
