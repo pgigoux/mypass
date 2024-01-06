@@ -2,7 +2,12 @@ import sqlite3 as sq
 from typing import Optional
 
 # List of tables in the database
-TABLE_LIST = ['tag_table', 'field_table', 'tags', 'fields', 'items']
+NAME_TAG_TABLE = 'tag_table'
+NAME_FIELD_TABLE = 'field_table'
+NAME_TAGS = 'tags'
+NAME_FIELDS = 'fields'
+NAME_ITEMS = 'items'
+TABLE_LIST = [NAME_TAG_TABLE, NAME_FIELD_TABLE, NAME_TAGS, NAME_FIELDS, NAME_ITEMS]
 
 
 class Sql:
@@ -210,6 +215,16 @@ class Sql:
         self.cursor.execute('insert into tag_table values(?,?,?)', (tag_id, tag_name, tag_count))
         return self.cursor.lastrowid if tag_id is None else tag_id
 
+    def rename_tag_table_entry(self, old_name: str, new_name: str) -> int:
+        """
+        Rename a tag.
+        :param old_name: old tag nanme
+        :param new_name: new tag name
+        :return: number of changes made (1 if ok, 0 if the tag didn't exist)
+        """
+        self.cursor.execute(f'update tag_table set name=? where name=?', (new_name, old_name))
+        return self.cursor.rowcount
+
     def insert_into_field_table(self, field_id: int | None, field_name: str, field_sensitive: bool,
                                 field_count: Optional[int] = 0) -> int:
         """
@@ -249,6 +264,16 @@ class Sql:
         self.cursor.execute('insert into fields values (?,?,?,?,?)',
                             (field_id, field_table_id, item_id, field_value, encrypted_value))
         return self.cursor.lastrowid if field_id is None else field_id
+
+    def rename_field_table_entry(self, old_name: str, new_name: str) -> int:
+        """
+        Rename a tag.
+        :param old_name: old field nanme
+        :param new_name: new field name
+        :return: number of changes made (1 if ok, 0 if the tag didn't exist)
+        """
+        self.cursor.execute(f'update field_table set name=? where name=?', (new_name, old_name))
+        return self.cursor.rowcount
 
     def insert_into_items(self, item_id: int | None, item_name: str, item_timestamp: int, item_note: str) -> int:
         """
