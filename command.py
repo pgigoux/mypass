@@ -338,8 +338,7 @@ class CommandProcessor:
         trace('item_count')
         if self.db_loaded():
             assert isinstance(self.db, Database)
-            # TODO
-            # print(len(self.db.item_collection))
+            print(self.db.sql.get_table_count(NAME_ITEMS))
 
     def item_search(self, pattern: str, name_flag: bool, tag_flag: bool,
                     field_name_flag: bool, field_value_flag: bool, note_flag: bool):
