@@ -1,6 +1,6 @@
 import os
 import json
-from sql import Sql, TABLE_LIST
+from sql import Sql, TABLE_LIST, INDEX_ID, INDEX_NAME, INDEX_COUNT, INDEX_SENSITIVE
 from crypt import Crypt
 from utils import filter_control_characters, timestamp_to_string, get_string_timestamp
 
@@ -89,7 +89,7 @@ class Database:
 
             # Process the item tags
             tag_fetch_list = self.sql.get_tag_list(item_id=item_id)
-            item_dict[KEY_TAGS] = [tag_mapping[tag_id][0] for _, tag_id, _ in tag_fetch_list]
+            item_dict[KEY_TAGS] = [tag_mapping[tag_id][INDEX_NAME] for _, tag_id, _ in tag_fetch_list]
 
             # Process the item fields
             field_fetch_list = self.sql.get_field_list(item_id=item_id)
@@ -97,7 +97,7 @@ class Database:
             for field_id, f_id, _, field_value, f_encrypted in field_fetch_list:
                 if decrypt_flag and f_encrypted and self.crypt_key is not None:
                     field_value = self.crypt_key.decrypt_str2str(field_value)
-                tmp_dict = {KEY_NAME: field_mapping[f_id][0], KEY_VALUE: field_value,
+                tmp_dict = {KEY_NAME: field_mapping[f_id][INDEX_NAME], KEY_VALUE: field_value,
                             KEY_ENCRYPTED: bool(f_encrypted)}
                 field_dict[field_id] = tmp_dict
             item_dict[KEY_FIELDS] = field_dict
@@ -134,7 +134,7 @@ class Database:
         for i_id in item_dict:
             print(f'\t{i_id}')
             item = item_dict[i_id]
-            tag_list = [(tag_mapping[_][0], _) for _ in item[KEY_TAGS]]
+            tag_list = [(tag_mapping[_][INDEX_ID], _) for _ in item[KEY_TAGS]]
             field_dict = item[KEY_FIELDS]
             print(f'\t\tname={item[KEY_NAME]}')
             print(f'\t\tdate={item[KEY_TIMESTAMP]} ({timestamp_to_string(item[KEY_TIMESTAMP])})')
@@ -142,7 +142,7 @@ class Database:
             print(f'\t\ttags={tag_list}')
             for f_id in field_dict:
                 field = field_dict[f_id]
-                f_tid = field_mapping[field[KEY_NAME]][0]
+                f_tid = field_mapping[field[KEY_NAME]][INDEX_ID]
                 print(f'\t\t{f_id} ({f_tid}) {field[KEY_NAME]} {field[KEY_VALUE]} {field[KEY_ENCRYPTED]}')
 
     def database_report(self):
