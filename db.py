@@ -241,6 +241,7 @@ class Database:
         Write database to disk
         """
         # Make sure all the changes are saved to the database
+        self.sql.update_counters()
         self.sql.connection.commit()
 
         # Export the database to json and encrypt if a password was defined
