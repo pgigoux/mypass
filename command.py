@@ -3,6 +3,7 @@ from enum import Enum, auto
 from os.path import exists
 from typing import Optional
 from db import Database, DEFAULT_DATABASE_NAME
+from sql import NAME_TAG_TABLE, NAME_FIELD_TABLE, NAME_TAGS, NAME_FIELDS, NAME_ITEMS
 from utils import get_password, get_timestamp, timestamp_to_string, print_line, sensitive_mark, error, confirm, trace
 
 
@@ -125,9 +126,8 @@ class CommandProcessor:
         """
         if self.db_loaded():
             assert isinstance(self.db, Database)
-            # TODO
-            # for t_uid, t_name, t_count in self.db.tag_table.next():
-            #     print(f'{t_uid} {t_count:4d} {t_name}')
+            for t_uid, t_name, t_count in self.db.sql.get_tag_table_list():
+                print(f'{t_uid} {t_count:3d} {t_name}')
 
     def tag_count(self):
         """
@@ -135,8 +135,7 @@ class CommandProcessor:
         """
         if self.db_loaded():
             assert isinstance(self.db, Database)
-            # TODO
-            # print(len(self.db.tag_table))
+            print(self.db.sql.get_table_count(NAME_TAG_TABLE))
 
     def tag_add(self, name: str):
         """
@@ -161,11 +160,8 @@ class CommandProcessor:
         """
         if self.db_loaded():
             assert isinstance(self.db, Database)
-            # TODO
-            # try:
-            #     self.db.tag_table.rename(old_name, new_name)
-            # except Exception as e:
-            #     error(f'cannot rename tag {old_name} to {new_name}', e)
+            if self.db.sql.rename_tag_table_entry(old_name, new_name) == 0:
+                error(f'cannot rename tag {old_name}')
 
     def tag_delete(self, name: str):
         """
@@ -204,9 +200,8 @@ class CommandProcessor:
         trace('field_list')
         if self.db_loaded():
             assert isinstance(self.db, Database)
-            # TODO
-            # for f_uid, f_name, f_count, f_sensitive in self.db.field_table.next():
-            #     print(f'{f_uid} {f_count:4d} {sensitive_mark(f_sensitive)} {f_name}')
+            for f_uid, f_name, f_sensitive, f_count in self.db.sql.get_field_table_list():
+                print(f'{f_uid} {f_count:4d} {sensitive_mark(f_sensitive)} {f_name}')
 
     def field_count(self):
         """
@@ -215,8 +210,7 @@ class CommandProcessor:
         trace('field_count')
         if self.db_loaded():
             assert isinstance(self.db, Database)
-            # TODO
-            # print(len(self.db.field_table))
+            print(self.db.sql.get_table_count(NAME_FIELD_TABLE))
 
     def field_search(self, pattern: str):
         """
@@ -246,6 +240,20 @@ class CommandProcessor:
             #     self.db.field_table.add(name=name, sensitive=sensitive_flag)
             # except Exception as e:
             #     error('cannot add field {name}', e)
+
+    def field_rename(self, old_name: str, new_name: str):
+        """
+        Rename existing tag
+        :param old_name: old field name
+        :param new_name: new field name
+        :return:
+        """
+        if self.db_loaded():
+            assert isinstance(self.db, Database)
+            try:
+                self.db.sql.field_table.rename(old_name, new_name)
+            except Exception as e:
+                error(f'cannot rename tag {old_name} to {new_name}', e)
 
     def field_delete(self, name: str):
         """
