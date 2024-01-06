@@ -60,14 +60,15 @@ def get_string_timestamp() -> str:
     return time.strftime("%Y%m%d%H%M%S", time.gmtime())
 
 
-def timestamp_to_string(time_stamp: int) -> str:
+def timestamp_to_string(time_stamp: int, date_only=False) -> str:
     """
     Convert a Unix time stamp into a string, up to the second
     :param time_stamp: unix time stamp
-    :return: string of the form 'YYYYMMDDHHMMSS'
+    :return: string of the form 'YYYYMMDDHHMMSS' or 'YYYYMMDD'
     """
     try:
-        return datetime.utcfromtimestamp(time_stamp).strftime('%d/%b/%Y %H:%M:%S')
+        format_string = '%d/%b/%Y' if date_only else '%d/%b/%Y %H:%M:%S'
+        return datetime.utcfromtimestamp(time_stamp).strftime(format_string)
     except OverflowError:
         return 'overflow'
 
