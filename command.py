@@ -127,7 +127,7 @@ class CommandProcessor:
         if self.db_loaded():
             assert isinstance(self.db, Database)
             for t_uid, t_name, t_count in self.db.sql.get_tag_table_list():
-                print(f'{t_uid} {t_count:3d} {t_name}')
+                print(f'{t_uid:2d} {t_count:3d} {t_name}')
 
     def tag_count(self):
         """
@@ -145,11 +145,12 @@ class CommandProcessor:
         """
         if self.db_loaded():
             assert isinstance(self.db, Database)
-            # TODO
-            # try:
-            #     self.db.tag_table.add(name)
-            # except Exception as e:
-            #     error(f'cannot add tag {name}', e)
+            tag_mapping = self.db.sql.get_tag_table_name_mapping()
+            if name in tag_mapping:
+                error(f'tag {name} already exists')
+            else:
+                t_id = self.db.sql.insert_into_tag_table(None, name)
+                print(f'Added tag {name} with id {t_id}')
 
     def tag_rename(self, old_name: str, new_name: str):
         """
@@ -201,7 +202,7 @@ class CommandProcessor:
         if self.db_loaded():
             assert isinstance(self.db, Database)
             for f_uid, f_name, f_sensitive, f_count in self.db.sql.get_field_table_list():
-                print(f'{f_uid} {f_count:4d} {sensitive_mark(f_sensitive)} {f_name}')
+                print(f'{f_uid:3d} {f_count:4d} {sensitive_mark(f_sensitive)} {f_name}')
 
     def field_count(self):
         """
@@ -235,11 +236,12 @@ class CommandProcessor:
         trace('field_add', name, sensitive_flag)
         if self.db_loaded():
             assert isinstance(self.db, Database)
-            # TODO
-            # try:
-            #     self.db.field_table.add(name=name, sensitive=sensitive_flag)
-            # except Exception as e:
-            #     error('cannot add field {name}', e)
+            field_mapping = self.db.sql.get_field_table_name_mapping()
+            if name in field_mapping:
+                error(f'field {name} already exists')
+            else:
+                f_id = self.db.sql.insert_into_field_table(None, name, sensitive_flag)
+                print(f'Added field {name} with id {f_id}')
 
     def field_rename(self, old_name: str, new_name: str):
         """
@@ -368,10 +370,10 @@ class CommandProcessor:
         trace(f'item_delete {uid}')
         if self.db_loaded():
             assert isinstance(self.db, Database)
-            try:
-                self.db.item_collection.remove(uid)
-            except Exception as e:
-                error('error while removing item', e)
+            # try:
+            #     self.db.item_collection.remove(uid)
+            # except Exception as e:
+            #     error('error while removing item', e)
 
     def item_create(self, item_name: str, tag_list: list, field_list, note: str, multiline_note: bool):
         """
