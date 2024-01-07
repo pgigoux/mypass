@@ -99,7 +99,7 @@ class Sql:
 
     def print_tables(self):
         """
-        Print the table structures
+        Print the table structures (debugging)
         :return:
         """
         self._print_table_structure('tag_table')
@@ -110,7 +110,7 @@ class Sql:
 
     def _print_table_structure(self, table_name: str):
         """
-        Print the structure of a table
+        Print the structure of a table (debugging)
         :param table_name:
         :return:
         """
@@ -121,6 +121,7 @@ class Sql:
 
     def dump(self):
         """
+        Dump table contents (debugging)
         """
         print('tag_table', self.get_tag_table_list())
         print('field_table', self.get_field_table_list())
@@ -442,5 +443,5 @@ if __name__ == '__main__':
 
     sql.export_to_sql('junk.db')
 
-    print('-' * 20)
+    # print('-' * 20)
     # sql.dump()
