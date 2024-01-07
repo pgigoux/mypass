@@ -42,8 +42,6 @@ class Parser:
         trace('field_command', token)
         if token.tid == Tid.LIST:
             self.cp.field_list()
-        elif token.tid == Tid.DUMP:
-            self.cp.field_dump()
         elif token.tid == Tid.COUNT:
             self.cp.field_count()
         elif token.tid in [Tid.SEARCH, Tid.DELETE]:
@@ -86,8 +84,6 @@ class Parser:
         trace('tag_command', token)
         if token.tid == Tid.LIST:
             self.cp.tag_list()
-        elif token.tid == Tid.DUMP:
-            self.cp.tag_dump()
         elif token.tid == Tid.COUNT:
             self.cp.tag_count()
         elif token.tid == Tid.ADD:
@@ -293,7 +289,7 @@ class Parser:
                 elif token.tid == Tid.COPY:
                     self.cp.item_copy(tok.value)
                 else:
-                    self.cp.item_dump(tok.value)
+                    error('Unknown item subcommand', tok)
             else:
                 error('item id expected')
         elif token.tid == Tid.COUNT:

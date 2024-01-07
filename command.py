@@ -3,7 +3,8 @@ from enum import Enum, auto
 from os.path import exists
 from typing import Optional
 from db import Database, DEFAULT_DATABASE_NAME
-from sql import NAME_TAG_TABLE, NAME_FIELD_TABLE, NAME_TAGS, NAME_FIELDS, NAME_ITEMS, INDEX_COUNT
+from sql import NAME_TAG_TABLE, NAME_FIELD_TABLE, NAME_TAGS, NAME_FIELDS, NAME_ITEMS
+from sql import INDEX_ID, INDEX_NAME, INDEX_COUNT
 from utils import get_password, get_timestamp, timestamp_to_string, print_line, sensitive_mark, error, confirm, trace
 
 
@@ -67,6 +68,7 @@ class CommandProcessor:
         trace('database_read', file_name)
         if self.db_loaded(overwrite=True):
             return
+        print(f'Reading from {file_name}')
         try:
             self.db = Database(file_name, get_password())
             self.db.read()
@@ -74,11 +76,13 @@ class CommandProcessor:
         except Exception as e:
             error(f'failed to read database {file_name}', e)
             self.db = None
+            self.file_name = DEFAULT_DATABASE_NAME
 
     def database_write(self):
         trace('database_write')
         if self.db_loaded():
             assert isinstance(self.db, Database)
+            print(f'Writing to {self.file_name}')
             try:
                 self.db.write()
             except Exception as e:
@@ -183,16 +187,6 @@ class CommandProcessor:
             else:
                 error(f'tag {name} does not exist')
 
-    def tag_dump(self):
-        """
-        Dump tag table
-        :return:
-        """
-        if self.db_loaded():
-            assert isinstance(self.db, Database)
-            # TODO
-            # self.db.tag_table.dump()
-
     # -----------------------------------------------------------------
     # Field commands
     # -----------------------------------------------------------------
@@ -278,16 +272,6 @@ class CommandProcessor:
             else:
                 error(f'field {name} does not exist')
 
-    def field_dump(self):
-        """
-        Dump the field table
-        """
-        trace('field_dump')
-        if self.db_loaded():
-            assert isinstance(self.db, Database)
-            # TODO
-            # self.db.field_table.dump()
-
     # -----------------------------------------------------------------
     # Item commands
     # -----------------------------------------------------------------
@@ -303,39 +287,40 @@ class CommandProcessor:
             for t_uid, t_name, item_timestamp, _ in self.db.sql.get_item_list():
                 print(f'{t_uid:5d}  {timestamp_to_string(item_timestamp, date_only=True)}  {t_name}')
 
-    def item_print(self, uid: int, show_sensitive: bool):
+    def item_print(self, item_id: int, show_sensitive: bool):
         """
         Print item
-        :param uid: item uid
+        :param item_id: item uid
         :param show_sensitive: print sensitive fields unencrypted
         """
-        trace('print_item', uid)
+        trace('print_item', item_id)
         if self.db_loaded():
             print_line()
             assert isinstance(self.db, Database)
-            # TODO
-            # if uid in self.db.item_collection:
-            #     try:
-            #         item = self.db.item_collection.get(uid)
-            #         assert isinstance(item, Item)
-            #         print(f'UID:  {item.get_id()}')
-            #         print(f'Name: {item.get_name()}')
-            #         print(f'Date: {timestamp_to_string(item.get_timestamp())}')
-            #         print(f'Tags: {self.db.tag_table.get_tag_name_list(item.get_tags())}')
-            #         print('Fields:')
-            #         for field in item.next_field():
-            #             assert isinstance(field, Field)
-            #             f_value = field.get_decrypted_value(self.db.crypt_key) if show_sensitive else field.get_value()
-            #             f_sensitive = field.get_sensitive()
-            #             print(f'   {field.get_id()} {sensitive_mark(f_sensitive)} {field.get_name()} {f_value}')
-            #         print('Note:')
-            #         if len(item.get_note()) > 0:
-            #             print(f'{item.get_note()}')
-            #     except Exception as e:
-            #         error(f'cannot print item {uid}', e)
-            #     print_line()
-            # else:
-            #     error(f'item {uid} not found')
+
+            # Get item and field information
+            tag_mapping = self.db.sql.get_tag_table_id_mapping()
+            field_mapping = self.db.sql.get_field_table_id_mapping()
+            tag_list = self.db.sql.get_tag_list(item_id=item_id)
+            field_list = self.db.sql.get_field_list(item_id=item_id)
+            item_list = self.db.sql.get_item_list(item_id=item_id)
+
+            # Iterate over the list of items (it should be just one)
+            if len(item_list) > 0:
+                for i_id, i_name, i_timestamp, i_note in item_list:
+                    print(f'id:    {i_id}')
+                    print(f'name:  {i_name}')
+                    print(f'date:  {timestamp_to_string(i_timestamp)}')
+                    print(f'tags:  {[tag_mapping[t_id][INDEX_NAME] for _, t_id, _ in tag_list]}')
+                    print('fields:')
+                    for f_id, field_id, _, f_value, f_encrypted in field_list:
+                        f_name = field_mapping[field_id][INDEX_NAME]
+                        print(f'   {f_id} {sensitive_mark(f_encrypted)} {f_name} {f_value}')
+                    print('note:')
+                    if len(i_note) > 0:
+                        print(f'{i_note}')
+            else:
+                error(f'item {item_id} does not exist')
 
     def item_count(self):
         """
@@ -573,23 +558,23 @@ class CommandProcessor:
             # except Exception as e:
             #     print('cannot make copy of item', e)
 
-    def item_dump(self, uid: int):
-        """
-        Dump item contents
-        :param uid: item uid
-        """
-        trace('item_dump', uid)
-        if self.db_loaded():
-            assert isinstance(self.db, Database)
-            # TODO
-            # if uid in self.db.item_collection:
-            #     item = self.db.item_collection.get(uid)
-            #     assert isinstance(item, Item)
-            #     print_line()
-            #     item.dump()
-            #     print_line()
-            # else:
-            #     error(f'item {uid} not found')
+    # def item_dump(self, uid: int):
+    #     """
+    #     Dump item contents
+    #     :param uid: item uid
+    #     """
+    #     trace('item_dump', uid)
+    #     if self.db_loaded():
+    #         assert isinstance(self.db, Database)
+    #         # TODO
+    #         # if uid in self.db.item_collection:
+    #         #     item = self.db.item_collection.get(uid)
+    #         #     assert isinstance(item, Item)
+    #         #     print_line()
+    #         #     item.dump()
+    #         #     print_line()
+    #         # else:
+    #         #     error(f'item {uid} not found')
 
     # -----------------------------------------------------------------
     # Misc commands
