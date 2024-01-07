@@ -86,6 +86,17 @@ class Parser:
             self.cp.tag_list()
         elif token.tid == Tid.COUNT:
             self.cp.tag_count()
+        elif token.tid in [Tid.SEARCH, Tid.DELETE]:
+            tok = self.get_token()
+            if tok.tid in LEX_STRINGS:
+                if token.tid == Tid.SEARCH:
+                    trace('tag search', tok)
+                    self.cp.tag_search(tok.value)
+                else:
+                    trace('tag delete', tok)
+                    self.cp.tag_delete(tok.value)
+            else:
+                error('bad/missing tag name', tok)
         elif token.tid == Tid.ADD:
             tok = self.get_token()
             if tok.tid in LEX_STRINGS:
@@ -97,10 +108,6 @@ class Parser:
                 self.cp.tag_rename(tok1.value, tok2.value)
             else:
                 error('bad tag name', tok1, tok2)
-        elif token.tid == Tid.DELETE:
-            tok = self.get_token()
-            if tok.tid in LEX_STRINGS:
-                self.cp.tag_delete(tok.value)
         else:
             error(ERROR_UNKNOWN_SUBCOMMAND, token)
 

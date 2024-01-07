@@ -141,6 +141,16 @@ class CommandProcessor:
             assert isinstance(self.db, Database)
             print(self.db.sql.get_table_count(NAME_TAG_TABLE))
 
+    def tag_search(self, pattern: str):
+        """
+        Search for tags matching a pattern
+        :param pattern: regexp pattern
+        """
+        trace('tag_search', pattern)
+        if self.db_loaded():
+            assert isinstance(self.db, Database)
+            # TODO
+
     def tag_add(self, name: str):
         """
         Add new tag
