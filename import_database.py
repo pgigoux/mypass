@@ -137,6 +137,7 @@ def process_field(field: dict) -> tuple:
         f_name = 'ID'
     elif 'Security Answer' in f_name:
         f_name = f_name.replace('Security Answer', 'Security answer')
+        f_sensitive = True
     elif 'Securiry' in f_name:
         f_name = f_name.replace('Securiry', 'Security')
     elif 'Security answer' in f_name:
