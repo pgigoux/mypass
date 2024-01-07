@@ -188,6 +188,15 @@ class Sql:
         self.cursor.execute(f'update tag_table set name=? where name=?', (new_name, old_name))
         return self.cursor.rowcount
 
+    def search_tag_table(self, pattern: str) -> list:
+        """
+        Search for a tag that matches a given pattern
+        :param pattern: pattern to search for
+        :return: list of tags matching the
+        """
+        self.cursor.execute(f'select * from tag_table where name like ?', (f'%{pattern}%',))
+        return self.cursor.fetchall()
+
     # -- FIELD TABLE
 
     def get_field_table_list(self) -> list:
@@ -250,6 +259,15 @@ class Sql:
         """
         self.cursor.execute(f'update field_table set name=? where name=?', (new_name, old_name))
         return self.cursor.rowcount
+
+    def search_field_table(self, pattern: str) -> list:
+        """
+        Search for a field that matches a given pattern
+        :param pattern: pattern to search for
+        :return: list of fields matching the
+        """
+        self.cursor.execute(f'select * from field_table where name like ?', (f'%{pattern}%',))
+        return self.cursor.fetchall()
 
     # -- TAGS
 
@@ -441,7 +459,8 @@ if __name__ == '__main__':
     print(sql.get_field_list(item_id=5))
     print(sql.get_field_list(item_id=6))
 
-    sql.export_to_sql('junk.db')
+
+    # sql.export_to_sql('junk.db')
 
     # print('-' * 20)
     # sql.dump()
