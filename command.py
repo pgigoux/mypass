@@ -124,14 +124,18 @@ class CommandProcessor:
     # Tag commands
     # -----------------------------------------------------------------
 
+    @staticmethod
+    def _format_tag(tag_id: int, tag_name: str, tag_count: int) -> str:
+        return f'{tag_id:2d} {tag_count:3d} {tag_name}'
+
     def tag_list(self):
         """
         List all tags
         """
         if self.db_loaded():
             assert isinstance(self.db, Database)
-            for t_uid, t_name, t_count in self.db.sql.get_tag_table_list():
-                print(f'{t_uid:2d} {t_count:3d} {t_name}')
+            for t_id, t_name, t_count in self.db.sql.get_tag_table_list():
+                print(self._format_tag(t_id, t_name, t_count))
 
     def tag_count(self):
         """
@@ -149,7 +153,8 @@ class CommandProcessor:
         trace('tag_search', pattern)
         if self.db_loaded():
             assert isinstance(self.db, Database)
-            # TODO
+            for t_id, t_name, t_count in self.db.sql.search_tag_table(pattern):
+                print(self._format_tag(t_id, t_name, t_count))
 
     def tag_add(self, name: str):
         """
@@ -201,6 +206,10 @@ class CommandProcessor:
     # Field commands
     # -----------------------------------------------------------------
 
+    @staticmethod
+    def _format_field(field_id: int, field_name: str, field_sensitive: bool, field_count: int) -> str:
+        return f'{field_id:3d} {field_count:4d} {sensitive_mark(field_sensitive)} {field_name}'
+
     def field_list(self):
         """
         List all fields
@@ -208,8 +217,8 @@ class CommandProcessor:
         trace('field_list')
         if self.db_loaded():
             assert isinstance(self.db, Database)
-            for f_uid, f_name, f_sensitive, f_count in self.db.sql.get_field_table_list():
-                print(f'{f_uid:3d} {f_count:4d} {sensitive_mark(f_sensitive)} {f_name}')
+            for f_id, f_name, f_sensitive, f_count in self.db.sql.get_field_table_list():
+                print(self._format_field(f_id, f_name, f_sensitive, f_count))
 
     def field_count(self):
         """
@@ -228,10 +237,11 @@ class CommandProcessor:
         trace('field_search', pattern)
         if self.db_loaded():
             assert isinstance(self.db, Database)
-            # TODO
-            # for f_uid, f_name, f_count, f_sensitive in self.db.field_table.next():
-            #     if re.search(pattern, f_name):
-            #         print(f'{f_uid} {f_count:4d} {sensitive_mark(f_sensitive)} {f_name}')
+            trace('field_search', pattern)
+            if self.db_loaded():
+                assert isinstance(self.db, Database)
+                for f_id, f_name, f_sensitive, f_count in self.db.sql.search_field_table(pattern):
+                    print(self._format_field(f_id, f_name, f_sensitive, f_count))
 
     def field_add(self, name: str, sensitive_flag: bool):
         """
@@ -325,7 +335,7 @@ class CommandProcessor:
                     print('fields:')
                     for f_id, field_id, _, f_value, f_encrypted in field_list:
                         f_name = field_mapping[field_id][INDEX_NAME]
-                        print(f'   {f_id} {sensitive_mark(f_encrypted)} {f_name} {f_value}')
+                        print(f'  {f_id:4d} {sensitive_mark(f_encrypted)} {f_name} {f_value}')
                     print('note:')
                     if len(i_note) > 0:
                         print(f'{i_note}')
