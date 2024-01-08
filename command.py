@@ -309,11 +309,11 @@ class CommandProcessor:
             for item_id, item_name, item_timestamp, _ in self.db.sql.get_item_list():
                 print(self._format_item(item_id, item_name, item_timestamp))
 
-    def item_print(self, item_id: int, show_sensitive: bool):
+    def item_print(self, item_id: int, show_encrypted: bool):
         """
         Print item
         :param item_id: item uid
-        :param show_sensitive: print sensitive fields unencrypted
+        :param show_encrypted: print sensitive fields unencrypted
         """
         trace('print_item', item_id)
         if self.db_loaded():
@@ -337,7 +337,10 @@ class CommandProcessor:
                     print('fields:')
                     for f_id, field_id, _, f_value, f_encrypted in field_list:
                         f_name = field_mapping[field_id][INDEX_NAME]
+                        f_value = self.db.crypt_key.decrypt_str2str(
+                            f_value) if f_encrypted and show_encrypted else f_value
                         print(f'  {f_id:4d} {sensitive_mark(f_encrypted)} {f_name} {f_value}')
+                        del f_value
                     print('note:')
                     if len(i_note) > 0:
                         print(f'{i_note}')
