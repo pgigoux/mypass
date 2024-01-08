@@ -385,10 +385,12 @@ class CommandProcessor:
         trace(f'item_delete {item_id}')
         if self.db_loaded():
             assert isinstance(self.db, Database)
-            # try:
-            #     self.db.item_collection.remove(uid)
-            # except Exception as e:
-            #     error('error while removing item', e)
+            n_tags = self.db.sql.delete_from_tags(item_id)
+            n_fields = self.db.sql.delete_from_fields(item_id)
+            if self.db.sql.delete_from_items(item_id) > 0:
+                print(f'removed item {item_id}: {n_tags} tags and {n_fields} fields')
+            else:
+                error(f'Item {item_id} does not exist: tags={n_tags}, fields={n_fields}')
 
     def item_create(self, item_name: str, tag_list: list, field_list, note: str, multiline_note: bool):
         """
