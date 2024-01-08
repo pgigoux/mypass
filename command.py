@@ -125,7 +125,7 @@ class CommandProcessor:
     # -----------------------------------------------------------------
 
     @staticmethod
-    def _format_tag(tag_id: int, tag_name: str, tag_count: int) -> str:
+    def _format_table_tag(tag_id: int, tag_name: str, tag_count: int) -> str:
         return f'{tag_id:2d} {tag_count:3d} {tag_name}'
 
     def tag_list(self):
@@ -135,7 +135,7 @@ class CommandProcessor:
         if self.db_loaded():
             assert isinstance(self.db, Database)
             for t_id, t_name, t_count in self.db.sql.get_tag_table_list():
-                print(self._format_tag(t_id, t_name, t_count))
+                print(self._format_table_tag(t_id, t_name, t_count))
 
     def tag_count(self):
         """
@@ -154,7 +154,7 @@ class CommandProcessor:
         if self.db_loaded():
             assert isinstance(self.db, Database)
             for t_id, t_name, t_count in self.db.sql.search_tag_table(pattern):
-                print(self._format_tag(t_id, t_name, t_count))
+                print(self._format_table_tag(t_id, t_name, t_count))
 
     def tag_add(self, name: str):
         """
@@ -207,7 +207,7 @@ class CommandProcessor:
     # -----------------------------------------------------------------
 
     @staticmethod
-    def _format_field(field_id: int, field_name: str, field_sensitive: bool, field_count: int) -> str:
+    def _format_table_field(field_id: int, field_name: str, field_sensitive: bool, field_count: int) -> str:
         return f'{field_id:3d} {field_count:4d} {sensitive_mark(field_sensitive)} {field_name}'
 
     def field_list(self):
@@ -218,7 +218,7 @@ class CommandProcessor:
         if self.db_loaded():
             assert isinstance(self.db, Database)
             for f_id, f_name, f_sensitive, f_count in self.db.sql.get_field_table_list():
-                print(self._format_field(f_id, f_name, f_sensitive, f_count))
+                print(self._format_table_field(f_id, f_name, f_sensitive, f_count))
 
     def field_count(self):
         """
@@ -241,7 +241,7 @@ class CommandProcessor:
             if self.db_loaded():
                 assert isinstance(self.db, Database)
                 for f_id, f_name, f_sensitive, f_count in self.db.sql.search_field_table(pattern):
-                    print(self._format_field(f_id, f_name, f_sensitive, f_count))
+                    print(self._format_table_field(f_id, f_name, f_sensitive, f_count))
 
     def field_add(self, name: str, sensitive_flag: bool):
         """
@@ -295,17 +295,19 @@ class CommandProcessor:
     # -----------------------------------------------------------------
     # Item commands
     # -----------------------------------------------------------------
+    @staticmethod
+    def _format_item(item_id: int, item_name: str, item_timestamp: int) -> str:
+        return f'{item_id:5d}  {timestamp_to_string(item_timestamp, date_only=True)}  {item_name}'
 
     def item_list(self):
         """
         List all items
-
         """
         trace('item_list')
         if self.db_loaded():
             assert isinstance(self.db, Database)
-            for t_uid, t_name, item_timestamp, _ in self.db.sql.get_item_list():
-                print(f'{t_uid:5d}  {timestamp_to_string(item_timestamp, date_only=True)}  {t_name}')
+            for item_id, item_name, item_timestamp, _ in self.db.sql.get_item_list():
+                print(self._format_item(item_id, item_name, item_timestamp))
 
     def item_print(self, item_id: int, show_sensitive: bool):
         """
@@ -366,13 +368,11 @@ class CommandProcessor:
         trace('item_search', pattern, name_flag, tag_flag, field_name_flag, field_value_flag, note_flag)
         if self.db_loaded():
             assert isinstance(self.db, Database)
-            # TODO
-            # item_list = self.db.search(pattern, item_name_flag=name_flag, tag_flag=tag_flag,
-            #                            field_name_flag=field_name_flag, field_value_flag=field_value_flag,
-            #                            note_flag=note_flag)
-            # for item in item_list:
-            #     assert isinstance(item, Item)
-            #     print(f'{item.get_id()} - {item.name}')
+            item_list = self.db.search(pattern, item_name_flag=name_flag, tag_flag=tag_flag,
+                                       field_name_flag=field_name_flag, field_value_flag=field_value_flag,
+                                       note_flag=note_flag)
+            for item_id, item_name, item_timestamp in item_list:
+                print(self._format_item(item_id, item_name, item_timestamp))
 
     def item_delete(self, uid: int):
         """

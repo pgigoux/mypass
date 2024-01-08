@@ -1,4 +1,5 @@
 import os
+import re
 import json
 from sql import Sql, TABLE_LIST, INDEX_ID, INDEX_NAME, INDEX_COUNT, INDEX_SENSITIVE
 from crypt import Crypt
@@ -186,6 +187,45 @@ class Database:
         with open(file_name, 'w') as f:
             f.write(self.convert_to_json(decrypt_flag=decrypt_flag))
         f.close()
+
+    def search(self, pattern: str, item_name_flag=True, tag_flag=False,
+               field_name_flag=False, field_value_flag=False, note_flag=False) -> list:
+        """
+        Search for items in the database using different matching criteria
+        :param pattern: pattern to search for
+        :param item_name_flag: search in the item name? (default)
+        :param tag_flag: search in the tags?
+        :param field_name_flag: search in the field name?
+        :param field_value_flag: search in the (unencypted) field value?
+        :param note_flag: search in the note?
+        :return: list of items matching the search criteria
+        """
+        output_list = []
+        compiled_pattern = re.compile(pattern, flags=re.IGNORECASE)
+        tag_mapping = self.sql.get_tag_table_id_mapping()
+        field_mapping = self.sql.get_field_table_id_mapping()
+        for item_id, item_name, item_timestamp, item_note in self.sql.get_item_list():
+            # print(item_id, item_name)
+            tup = (item_id, item_name, item_timestamp)
+            if item_name_flag and compiled_pattern.search(item_name):
+                output_list.append(tup)
+            if note_flag and compiled_pattern.search(item_note):
+                output_list.append(tup)
+            if tag_flag:
+                tag_list = self.sql.get_tag_list(item_id)
+                for _, tag_id, _ in tag_list:
+                    if compiled_pattern.search(tag_mapping[tag_id][INDEX_NAME]):
+                        output_list.append(tup)
+            if field_name_flag or field_value_flag:
+                field_list = self.sql.get_field_list(item_id)
+                for _, field_id, _, field_value, field_encrypted in field_list:
+                    if field_name_flag:
+                        if compiled_pattern.search(field_mapping[field_id][INDEX_NAME]):
+                            output_list.append(tup)
+                    elif not field_encrypted:
+                        if compiled_pattern.search(field_value):
+                            output_list.append(tup)
+        return output_list
 
     def read(self):
         """
