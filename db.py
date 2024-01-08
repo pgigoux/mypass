@@ -205,7 +205,6 @@ class Database:
         tag_mapping = self.sql.get_tag_table_id_mapping()
         field_mapping = self.sql.get_field_table_id_mapping()
         for item_id, item_name, item_timestamp, item_note in self.sql.get_item_list():
-            # print(item_id, item_name)
             tup = (item_id, item_name, item_timestamp)
             if item_name_flag and compiled_pattern.search(item_name):
                 output_list.append(tup)
