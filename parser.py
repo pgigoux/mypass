@@ -253,7 +253,7 @@ class Parser:
 
     def item_add(self, token: Token):
         """
-        :param token: item uid token
+        :param token: item id token
         """
         trace('item_add', token)
         try:
@@ -265,7 +265,7 @@ class Parser:
 
     def item_edit(self, token: Token):
         """
-        :param token: item uid token
+        :param token: item id token
         :return:
         """
         trace('item_edit', token)

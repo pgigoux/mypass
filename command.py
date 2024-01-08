@@ -312,7 +312,7 @@ class CommandProcessor:
     def item_print(self, item_id: int, show_encrypted: bool):
         """
         Print item
-        :param item_id: item uid
+        :param item_id: item id
         :param show_encrypted: print sensitive fields unencrypted
         """
         trace('print_item', item_id)
@@ -377,12 +377,12 @@ class CommandProcessor:
             for item_id, item_name, item_timestamp in item_list:
                 print(self._format_item(item_id, item_name, item_timestamp))
 
-    def item_delete(self, uid: int):
+    def item_delete(self, item_id: int):
         """
         Delete item
-        :param uid: item uid
+        :param item_id: item id
         """
-        trace(f'item_delete {uid}')
+        trace(f'item_delete {item_id}')
         if self.db_loaded():
             assert isinstance(self.db, Database)
             # try:
@@ -435,25 +435,25 @@ class CommandProcessor:
             # except Exception as e:
             #     error(f'Error while adding item {item_name}', e)
 
-    def item_add(self, uid: int, item_name: str, tag_list: list,
+    def item_add(self, item_id: int, item_name: str, tag_list: list,
                  field_list: list, note: str, multiline_note: bool):
         """
         Add item
-        :param uid: item uid
+        :param item_id: item id
         :param item_name: item name
         :param tag_list: tag list
         :param field_list: list of tuples with the field,value pairs to add/edit
         :param note: item note
         :param multiline_note: multiline note?
         """
-        self.item_add_edit(uid, item_name, tag_list, field_list, [], note, multiline_note, add_flag=True)
+        self.item_add_edit(item_id, item_name, tag_list, field_list, [], note, multiline_note, add_flag=True)
 
-    def item_edit(self, uid: int, item_name: str, tag_list: list,
+    def item_edit(self, item_id: int, item_name: str, tag_list: list,
                   field_list: list[tuple], field_delete_list: list,
                   note: str, multiline_note: bool):
         """
         Edit item
-        :param uid: item uid
+        :param item_id: item id
         :param item_name: item name
         :param tag_list: tag list
         :param field_list: list of tuples with the field,value pairs to add/edit
@@ -461,15 +461,15 @@ class CommandProcessor:
         :param note: item note
         :param multiline_note: multiline note?
         """
-        self.item_add_edit(uid, item_name, tag_list, field_list, field_delete_list, note, multiline_note)
+        self.item_add_edit(item_id, item_name, tag_list, field_list, field_delete_list, note, multiline_note)
 
-    def item_add_edit(self, uid: int, item_name: str, tag_list: list,
+    def item_add_edit(self, item_id: int, item_name: str, tag_list: list,
                       field_list: list, field_delete_list: list,
                       note: str, multiline_note: bool,
                       add_flag: Optional[bool] = False):
         """
         Edit existing item
-        :param uid: item uid
+        :param item_id: item id
         :param item_name: item name
         :param tag_list: tag list
         :param field_list: list of tuples with the field,value pairs to add/edit
@@ -478,7 +478,7 @@ class CommandProcessor:
         :param multiline_note: multiline note?
         :param add_flag: allow adding items? (used for tags only)
         """
-        trace('item_edit', uid)
+        trace('item_edit', item_id)
         if self.db_loaded():
             assert isinstance(self.db, Database)
             # TODO
@@ -555,13 +555,13 @@ class CommandProcessor:
             #     error('error when creating item', e)
             #     return
 
-    def item_copy(self, uid: int):
+    def item_copy(self, item_id: int):
         """
-        Create a copy of an item with a different uid
+        Create a copy of an item with a different id
         The field collection is recreated and the timestamp updated.
-        :param uid: item uid
+        :param item_id: item id
         """
-        trace('item_copy', uid)
+        trace('item_copy', item_id)
         if self.db_loaded():
             assert isinstance(self.db, Database)
             # TODO
