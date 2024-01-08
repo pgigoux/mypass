@@ -197,6 +197,19 @@ class Sql:
         self.cursor.execute(f'select * from tag_table where name like ?', (f'%{pattern}%',))
         return self.cursor.fetchall()
 
+    def update_tag_table_counters(self):
+        """
+        Update the tag table counters
+        :return:
+        """
+        tag_counters = {t: 0 for t, _, _ in self.get_tag_table_list()}
+        for item_id, _, _, _ in self.get_item_list():
+            for _, t_id, _ in self.get_tag_list(item_id=item_id):
+                tag_counters[t_id] += 1
+        for t_id, _, _ in self.get_tag_table_list():
+            self.cursor.execute('update tag_table set count = ? where id = ?', (tag_counters[t_id], t_id))
+        self.connection.commit()
+
     # -- FIELD TABLE
 
     def get_field_table_list(self) -> list:
@@ -269,6 +282,18 @@ class Sql:
         self.cursor.execute(f'select * from field_table where name like ?', (f'%{pattern}%',))
         return self.cursor.fetchall()
 
+    def update_field_table_counters(self):
+        """
+        Update the field table counters
+        """
+        field_counters = {f: 0 for f, _, _, _ in self.get_field_table_list()}
+        for item_id, _, _, _ in self.get_item_list():
+            for _, f_id, _, _, f_count in self.get_field_list(item_id=item_id):
+                field_counters[f_id] += 1
+        for f_id, _, _, _ in self.get_field_table_list():
+            self.cursor.execute('update field_table set count = ? where id = ?', (field_counters[f_id], f_id))
+        self.connection.commit()
+
     # -- TAGS
 
     def get_tag_list(self, item_id: Optional[int] = None) -> list:
@@ -292,6 +317,15 @@ class Sql:
         """
         self.cursor.execute('insert into tags values(?,?,?)', (tag_id, tag_table_id, item_id))
         return self.cursor.lastrowid if tag_id is None else tag_id
+
+    def delete_from_tags(self, item_id: int) -> int:
+        """
+        Remove tags associated with a given item id
+        :param item_id: item id
+        :return: number of rows deleted
+        """
+        self.cursor.execute('delete from tags where item_id=?', (item_id,))
+        return self.cursor.rowcount
 
     # -- FIELDS
 
@@ -321,6 +355,15 @@ class Sql:
                             (field_id, field_table_id, item_id, field_value, encrypted_value))
         return self.cursor.lastrowid if field_id is None else field_id
 
+    def delete_from_fields(self, item_id: int) -> int:
+        """
+        Remove fields associated with a given item id
+        :param item_id: item id
+        :return: number of rows deleted
+        """
+        self.cursor.execute('delete from fields where item_id=?', (item_id,))
+        return self.cursor.rowcount
+
     # -- ITEMS
 
     def get_item_list(self, item_id: Optional[int] = None) -> list:
@@ -347,24 +390,33 @@ class Sql:
                             (item_id, item_name, item_timestamp, item_note))
         return self.cursor.lastrowid if item_id is None else item_id
 
+    def delete_from_items(self, item_id: int) -> int:
+        """
+        Remove an item associated with a given item id
+        :param item_id: item id
+        :return: number of rows deleted (1 if sucessful, 0 otherwise)
+        """
+        self.cursor.execute('delete from items where id=?', (item_id,))
+        return self.cursor.rowcount
+
     # -- GENERAL
 
-    def update_counters(self):
-        """
-        Update the tag and field table counters from the item data
-        """
-        tag_counters = {t: 0 for t, _, _ in self.get_tag_table_list()}
-        field_counters = {f: 0 for f, _, _, _ in self.get_field_table_list()}
-        for item_id, _, _, _ in self.get_item_list():
-            for _, t_id, _ in self.get_tag_list(item_id=item_id):
-                tag_counters[t_id] += 1
-            for _, f_id, _, _, f_count in self.get_field_list(item_id=item_id):
-                field_counters[f_id] += 1
-        for t_id, _, _ in self.get_tag_table_list():
-            self.cursor.execute('update tag_table set count = ? where id = ?', (tag_counters[t_id], t_id))
-        for f_id, _, _, _ in self.get_field_table_list():
-            self.cursor.execute('update field_table set count = ? where id = ?', (field_counters[f_id], f_id))
-        self.connection.commit()
+    # def update_counters(self):
+    #     """
+    #     Update the tag and field table counters from the item data
+    #     """
+    #     tag_counters = {t: 0 for t, _, _ in self.get_tag_table_list()}
+    #     field_counters = {f: 0 for f, _, _, _ in self.get_field_table_list()}
+    #     for item_id, _, _, _ in self.get_item_list():
+    #         for _, t_id, _ in self.get_tag_list(item_id=item_id):
+    #             tag_counters[t_id] += 1
+    #         for _, f_id, _, _, f_count in self.get_field_list(item_id=item_id):
+    #             field_counters[f_id] += 1
+    #     for t_id, _, _ in self.get_tag_table_list():
+    #         self.cursor.execute('update tag_table set count = ? where id = ?', (tag_counters[t_id], t_id))
+    #     for f_id, _, _, _ in self.get_field_table_list():
+    #         self.cursor.execute('update field_table set count = ? where id = ?', (field_counters[f_id], f_id))
+    #     self.connection.commit()
 
     def import_from_sql(self, file_name: str):
         """
@@ -458,7 +510,6 @@ if __name__ == '__main__':
     print(sql.get_field_list(item_id=4))
     print(sql.get_field_list(item_id=5))
     print(sql.get_field_list(item_id=6))
-
 
     # sql.export_to_sql('junk.db')
 
