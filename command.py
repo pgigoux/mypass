@@ -1,7 +1,5 @@
-import re
 from enum import Enum, auto
 from os.path import exists
-from typing import Optional
 from db import Database, DEFAULT_DATABASE_NAME
 from sql import NAME_TAG_TABLE, NAME_FIELD_TABLE, NAME_TAGS, NAME_FIELDS, NAME_ITEMS
 from sql import MAP_TAG_ID, MAP_TAG_NAME, MAP_TAG_COUNT
@@ -402,171 +400,6 @@ class CommandProcessor:
             else:
                 error(f'Item {item_id} does not exist: tags={n_tags}, fields={n_fields}')
 
-    def item_create(self, item_name: str, tag_list: list, field_list, note: str, multiline_note: bool):
-        """
-        Create new item
-        :param item_name:
-        :param tag_list:
-        :param field_list:
-        :param note:
-        :param multiline_note:
-        """
-        trace('item_create')
-        if self.db_loaded():
-            assert isinstance(self.db, Database)
-            # TODO
-            # # Make sure the name is specified
-            # if not item_name:
-            #     error('item name is required')
-            #     return
-            #
-            # # Process tags
-            # try:
-            #     tag_uid_list = self.db.tag_table.get_tag_uid_list(tag_list)
-            # except Exception as e:
-            #     error(f'Error while processing tag list', e)
-            #     return
-            # trace(f'tag uid list {tag_uid_list}')
-            #
-            # # Process fields
-            # fc = FieldCollection()
-            # f_name = ''
-            # try:
-            #     for f_name, f_value in field_list:
-            #         fc.add(Field(f_name, f_value, self.db.field_table.is_sensitive(name=f_name)))
-            # except Exception as e:
-            #     error(f'Error while adding field {f_name}', e)
-            #     return
-            # trace('field collection', fc)
-            #
-            # try:
-            #     item = Item(item_name, tag_uid_list, note, fc, time_stamp=get_timestamp())
-            #     # item.dump()
-            #     self.db.item_collection.add(item)
-            #     print(f'Added item {item.get_id()}')
-            # except Exception as e:
-            #     error(f'Error while adding item {item_name}', e)
-
-    def item_add(self, item_id: int, item_name: str, tag_list: list,
-                 field_list: list, note: str, multiline_note: bool):
-        """
-        Add item
-        :param item_id: item id
-        :param item_name: item name
-        :param tag_list: tag list
-        :param field_list: list of tuples with the field,value pairs to add/edit
-        :param note: item note
-        :param multiline_note: multiline note?
-        """
-        self.item_add_edit(item_id, item_name, tag_list, field_list, [], note, multiline_note, add_flag=True)
-
-    def item_edit(self, item_id: int, item_name: str, tag_list: list,
-                  field_list: list[tuple], field_delete_list: list,
-                  note: str, multiline_note: bool):
-        """
-        Edit item
-        :param item_id: item id
-        :param item_name: item name
-        :param tag_list: tag list
-        :param field_list: list of tuples with the field,value pairs to add/edit
-        :param field_delete_list: list of field names to delete
-        :param note: item note
-        :param multiline_note: multiline note?
-        """
-        self.item_add_edit(item_id, item_name, tag_list, field_list, field_delete_list, note, multiline_note)
-
-    def item_add_edit(self, item_id: int, item_name: str, tag_list: list,
-                      field_list: list, field_delete_list: list,
-                      note: str, multiline_note: bool,
-                      add_flag: Optional[bool] = False):
-        """
-        Edit existing item
-        :param item_id: item id
-        :param item_name: item name
-        :param tag_list: tag list
-        :param field_list: list of tuples with the field,value pairs to add/edit
-        :param field_delete_list: list of field names to delete
-        :param note: item note
-        :param multiline_note: multiline note?
-        :param add_flag: allow adding items? (used for tags only)
-        """
-        trace('item_edit', item_id)
-        if self.db_loaded():
-            assert isinstance(self.db, Database)
-            # TODO
-            # try:
-            #     item = self.db.item_collection.get(uid)
-            #     assert isinstance(item, Item)
-            # except Exception as e:
-            #     error(f'item {uid} does not exist', e)
-            #     return
-            #
-            # # Set new name and note
-            # new_name = item_name if item_name else item.get_name()
-            # new_note = note if note else item.get_note()
-            # trace(f'new name={new_name}, note={new_note}')
-            #
-            # # Process tags
-            # if tag_list:
-            #     try:
-            #         tag_uid_list = self.db.tag_table.get_tag_uid_list(tag_list)
-            #         if add_flag:
-            #             new_tag_list = list(set(tag_uid_list + item.get_tags()))
-            #         else:
-            #             new_tag_list = tag_uid_list
-            #     except Exception as e:
-            #         error(f'Error while processing tag list', e)
-            #         return
-            # else:
-            #     new_tag_list = item.get_tags()
-            # trace(f'new tag list {new_tag_list}')
-            #
-            # # Process fields
-            # field_dict = {k: v for k, v in field_list}
-            # trace('field_dict', field_dict)
-            # fc = FieldCollection()
-            # try:
-            #     # Iterate over all the fields in the existing item
-            #     for field in item.next_field():
-            #         assert isinstance(field, Field)
-            #         f_name, f_value, f_sensitive = field.get_name(), field.get_value(), field.get_sensitive()
-            #
-            #         # Skip fields that should be deleted
-            #         if f_name in field_delete_list:
-            #             trace('skipped', f_name)
-            #             continue
-            #
-            #         # Add fields to the new field collection
-            #         # Use the (new) value from the field_ dict if the field is there
-            #         # Otherwise keep the old value
-            #         trace('existing field', f_name, f_value, f_sensitive)
-            #         if f_name in field_dict:
-            #             fc.add(Field(f_name, field_dict[f_name], f_sensitive))
-            #             trace(f'field value for {f_name} updated from {f_value} to {field_dict[f_name]}')
-            #             del field_dict[f_name]  # remove used field
-            #         else:
-            #             trace(f'field value for {f_name} preserved {f_value}')
-            #             fc.add(Field(f_name, f_value, f_sensitive))
-            #
-            #     # Add any fields in the field_dict that were not processed already
-            #     # This will done regardless of the value of the add flag
-            #     for f_name in field_dict:
-            #         f_sensitive = self.db.field_table.is_sensitive(name=f_name)
-            #         trace(f'adding new field {f_name} {field_dict[f_name]}, {f_sensitive}')
-            #         fc.add(Field(f_name, field_dict[f_name], f_sensitive))
-            #
-            # except Exception as e:
-            #     print(e)
-            #
-            # # Create the new item
-            # try:
-            #     new_item = Item(new_name, new_tag_list, new_note, fc, time_stamp=get_timestamp(), uid=item.get_id())
-            #     new_item.dump()
-            #     self.db.item_collection.update(new_item)
-            # except Exception as e:
-            #     error('error when creating item', e)
-            #     return
-
     def item_copy(self, item_id: int):
         """
         Create a copy of an item with a different id
@@ -590,6 +423,38 @@ class CommandProcessor:
             else:
                 print(f'item {item_id} does not exist')
 
+    def item_add(self, item_name: str, tag_list: list, note: str):
+        """
+        Add/create new item
+        :param item_name: item name
+        :param tag_list: tag name list
+        :param note: note
+        """
+        trace('item_add', item_name, tag_list, note)
+        if self.db_loaded():
+            item_id = self.db.sql.insert_into_items(None, item_name, get_timestamp(), note)
+            trace('item_id', item_id)
+            if tag_list:
+                tag_mapping = self.db.sql.get_tag_table_name_mapping()
+                for tag in tag_list:
+                    trace('adding tag', tag)
+                    self.db.sql.insert_into_tags(None, tag_mapping[tag][MAP_TAG_ID], item_id)
+            print(f'added {item_id}')
+
+    def item_update(self, item_id: int, item_name: str, note: str):
+        """
+        Update item contents
+        :param item_id: item id
+        :param item_name: item name
+        :param note: item note
+        """
+        if self.db_loaded():
+            if item_name or note:
+                n = self.db.sql.update_item(item_id, item_name, get_timestamp(), note)
+                print(f'updated {n} items')
+            else:
+                print('nothing to update')
+
     # -----------------------------------------------------------------
     # Misc commands
     # -----------------------------------------------------------------
@@ -602,7 +467,4 @@ class CommandProcessor:
 
 
 if __name__ == '__main__':
-    cp = CommandProcessor()
-    cp.database_read(DEFAULT_DATABASE_NAME)
-    cp.item_list()
-    cp.item_dump(2710)
+    pass
