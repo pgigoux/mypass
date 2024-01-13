@@ -48,7 +48,7 @@ copy   <item_id>
 
 class CommandInterpreter(Cmd):
     prompt = 'cmd> '
-    intro = ''
+    intro = 'Welcome to mypass'
 
     def __init__(self, p: Parser):
         super().__init__()
