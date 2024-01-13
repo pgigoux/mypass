@@ -3,46 +3,49 @@ from cmd import Cmd
 from parser import Parser
 
 HELP = """
-db    <command_options>
-tag   <command_options>
-field <command_options>
-item  <command_options>
+db    <command_options>         Database commands
+tag   <command_options>         Tag commands
+field <command_options>         Field commands
+item  <command_options>         Item commands
+trace                           Toggle code trace
 """
 
 HELP_DB = """
-create <file_name>
-read [file_name]
-write
-export sql|json <file_name>
-dump
-report
+create <file_name>              Create empty database
+read [file_name]                Read database from file
+write                           Write database
+export sql|json <file_name>     Export database as sql or json
+dump                            Dump database (debugging)
+report                          Print database report (debugging)
 """
 
 HELP_TAG = """
-list
-count
-search <name>
-add    <name>
-delete <name>
-rename <old_name> <new_name>
+list                            List available tags
+count                           Return number of tags
+search <name>                   Search for a tag by name
+add    <name>                   Add a new tag
+delete <name>                   Delete an existing tag
+rename <old_name> <new_name>    Rename an existing tag
 """
 
 HELP_FIELD = """
-list
-count
-search <name>
-add    <name>
-delete <name>
-rename <old_name> <new_name>
+list                            List available fields
+count                           Return number of tags
+search <name>                   Search for a field by name
+add    <name>                   Add a new field
+delete <name>                   Delete an existing field
+rename <old_name> <new_name>    Rename an existing field
 """
 
 HELP_ITEM = """
-list
-count
-print  <item_id>
-search <string> [-n] [-t] [-fn] [-fv] [--note]
-delete <item_id>
-copy   <item_id>
+list                                                List available items
+count                                               Return number of items
+print  <item_id>                                    Print item contents
+search <string> [-n] [-t] [-fn] [-fv] [-note]       Search for an item
+delete <item_id>                                    Delete an existing item
+copy   <item_id>                                    Copy/duplicate an item
+add    [-n <string>] [-t tag] [-note <string>]      Add new item
+update <item_name> [-n <string>] [-note <string>]   Update an existing item
 """
 
 
