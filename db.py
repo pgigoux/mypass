@@ -1,7 +1,8 @@
 import os
 import re
 import json
-from sql import Sql, TABLE_LIST, INDEX_ID, INDEX_NAME, INDEX_COUNT, INDEX_SENSITIVE
+from sql import Sql, TABLE_LIST
+from sql import MAP_TAG_ID, MAP_TAG_NAME, MAP_TAG_COUNT, MAP_FIELD_ID, MAP_FIELD_NAME, MAP_FIELD_SENSITIVE, MAP_FIELD_COUNT
 from crypt import Crypt
 from utils import filter_control_characters, timestamp_to_string, get_string_timestamp
 
@@ -90,7 +91,7 @@ class Database:
 
             # Process the item tags
             tag_fetch_list = self.sql.get_tag_list(item_id=item_id)
-            item_dict[KEY_TAGS] = [tag_mapping[tag_id][INDEX_NAME] for _, tag_id, _ in tag_fetch_list]
+            item_dict[KEY_TAGS] = [tag_mapping[tag_id][MAP_TAG_NAME] for _, tag_id, _ in tag_fetch_list]
 
             # Process the item fields
             field_fetch_list = self.sql.get_field_list(item_id=item_id)
@@ -98,7 +99,7 @@ class Database:
             for field_id, f_id, _, field_value, f_encrypted in field_fetch_list:
                 if decrypt_flag and f_encrypted and self.crypt_key is not None:
                     field_value = self.crypt_key.decrypt_str2str(field_value)
-                tmp_dict = {KEY_NAME: field_mapping[f_id][INDEX_NAME], KEY_VALUE: field_value,
+                tmp_dict = {KEY_NAME: field_mapping[f_id][MAP_FIELD_NAME], KEY_VALUE: field_value,
                             KEY_ENCRYPTED: bool(f_encrypted)}
                 field_dict[field_id] = tmp_dict
             item_dict[KEY_FIELDS] = field_dict
@@ -135,7 +136,7 @@ class Database:
         for i_id in item_dict:
             print(f'\t{i_id}')
             item = item_dict[i_id]
-            tag_list = [(tag_mapping[_][INDEX_ID], _) for _ in item[KEY_TAGS]]
+            tag_list = [(tag_mapping[_][MAP_TAG_ID], _) for _ in item[KEY_TAGS]]
             field_dict = item[KEY_FIELDS]
             print(f'\t\tname={item[KEY_NAME]}')
             print(f'\t\tdate={item[KEY_TIMESTAMP]} ({timestamp_to_string(item[KEY_TIMESTAMP])})')
@@ -143,7 +144,7 @@ class Database:
             print(f'\t\ttags={tag_list}')
             for f_id in field_dict:
                 field = field_dict[f_id]
-                f_tid = field_mapping[field[KEY_NAME]][INDEX_ID]
+                f_tid = field_mapping[field[KEY_NAME]][MAP_TAG_ID]
                 print(f'\t\t{f_id} ({f_tid}) {field[KEY_NAME]} {field[KEY_VALUE]} {field[KEY_ENCRYPTED]}')
 
     def database_report(self):
@@ -213,13 +214,13 @@ class Database:
             if tag_flag:
                 tag_list = self.sql.get_tag_list(item_id)
                 for _, tag_id, _ in tag_list:
-                    if compiled_pattern.search(tag_mapping[tag_id][INDEX_NAME]):
+                    if compiled_pattern.search(tag_mapping[tag_id][MAP_TAG_NAME]):
                         output_list.append(tup)
             if field_name_flag or field_value_flag:
                 field_list = self.sql.get_field_list(item_id)
                 for _, field_id, _, field_value, field_encrypted in field_list:
                     if field_name_flag:
-                        if compiled_pattern.search(field_mapping[field_id][INDEX_NAME]):
+                        if compiled_pattern.search(field_mapping[field_id][MAP_FIELD_NAME]):
                             output_list.append(tup)
                     elif not field_encrypted:
                         if compiled_pattern.search(field_value):
@@ -288,8 +289,6 @@ class Database:
         Write database to disk
         """
         # Make sure all the changes are saved to the database
-        # self.sql.update_counters()
-        # self.sql.connection.commit()
         self.update_counters()
 
         # Export the database to json and encrypt it if a password was defined

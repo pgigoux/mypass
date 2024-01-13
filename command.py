@@ -4,7 +4,8 @@ from os.path import exists
 from typing import Optional
 from db import Database, DEFAULT_DATABASE_NAME
 from sql import NAME_TAG_TABLE, NAME_FIELD_TABLE, NAME_TAGS, NAME_FIELDS, NAME_ITEMS
-from sql import INDEX_ID, INDEX_NAME, INDEX_COUNT
+from sql import MAP_TAG_ID, MAP_TAG_NAME, MAP_TAG_COUNT
+from sql import MAP_FIELD_ID, MAP_FIELD_NAME, MAP_FIELD_SENSITIVE, MAP_FIELD_COUNT
 from utils import get_password, get_timestamp, timestamp_to_string, print_line, sensitive_mark, error, confirm, trace
 
 
@@ -194,7 +195,7 @@ class CommandProcessor:
             self.db.sql.update_counters()
             tag_mapping = self.db.sql.get_tag_table_name_mapping()
             if name in tag_mapping:
-                if tag_mapping[name][INDEX_COUNT] == 0:
+                if tag_mapping[name][MAP_TAG_COUNT] == 0:
                     n = self.db.sql.delete_from_tag_table(name)
                     print(f'removed {n} tags')
                 else:
@@ -284,7 +285,7 @@ class CommandProcessor:
             assert isinstance(self.db, Database)
             field_mapping = self.db.sql.get_field_table_name_mapping()
             if name in field_mapping:
-                if field_mapping[name][INDEX_COUNT] == 0:
+                if field_mapping[name][MAP_TAG_COUNT] == 0:
                     n = self.db.sql.delete_from_field_table(name)
                     print(f'removed {n} fields')
                 else:
@@ -333,10 +334,10 @@ class CommandProcessor:
                     print(f'id:    {i_id}')
                     print(f'name:  {i_name}')
                     print(f'date:  {timestamp_to_string(i_timestamp)}')
-                    print(f'tags:  {[tag_mapping[t_id][INDEX_NAME] for _, t_id, _ in tag_list]}')
+                    print(f'tags:  {[tag_mapping[t_id][MAP_TAG_NAME] for _, t_id, _ in tag_list]}')
                     print('fields:')
                     for f_id, field_id, _, f_value, f_encrypted in field_list:
-                        f_name = field_mapping[field_id][INDEX_NAME]
+                        f_name = field_mapping[field_id][MAP_FIELD_NAME]
                         f_value = self.db.crypt_key.decrypt_str2str(
                             f_value) if f_encrypted and show_encrypted else f_value
                         print(f'  {f_id:4d} {sensitive_mark(f_encrypted)} {f_name} {f_value}')

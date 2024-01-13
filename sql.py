@@ -9,17 +9,39 @@ NAME_FIELDS = 'fields'
 NAME_ITEMS = 'items'
 TABLE_LIST = [NAME_TAG_TABLE, NAME_FIELD_TABLE, NAME_TAGS, NAME_FIELDS, NAME_ITEMS]
 
-# Indices used to access mapping elements
+# Indices used to access the elements in the tuples returned by the sql functions
+# all tables have the id (primary key) as the first element
 INDEX_ID = 0
-INDEX_NAME = 0
-INDEX_COUNT = 1
-INDEX_SENSITIVE = 2
+# tag table
+INDEX_TAG_TABLE_NAME = 1
+INDEX_TAG_TABLE_COUNT = 2
+# field table
+INDEX_FIELD_TABLE_NAME = 1
+INDEX_FIELD_TABLE_SENSITIVE = 2
+INDEX_FIELD_TABLE_COUNT = 3
+# tags
+INDEX_TAGS_TAG_ID = 1
+INDEX_TAGS_ITEM_ID = 2
+# fields
+INDEX_FIELDS_FIELD_ID = 1
+INDEX_FIELDS_ITEM_ID = 2
+INDEX_FIELDS_ITEM_VALUE = 3
+INDEX_FIELDS_ITEM_ENCRYPTED = 4
+# items
+INDEX_ITEMS_NAME = 1
+INDEX_ITEMS_DATE = 2
+INDEX_ITEM_NOTE = 3
 
-
-# INDEX_FIELD_ID = 0
-# INDEX_FIELD_NAME = 0
-# INDEX_FIELD_SENSITIVE = 1
-# INDEX_FIELD_COUNT = 2
+# Indices used to access the elements in the tuples returned by the mapping functions
+# tag mapping
+MAP_TAG_ID = 0
+MAP_TAG_NAME = 0
+MAP_TAG_COUNT = 1
+# field mapping
+MAP_FIELD_ID = 0
+MAP_FIELD_NAME = 0
+MAP_FIELD_SENSITIVE = 1
+MAP_FIELD_COUNT = 2
 
 
 class Sql:
@@ -229,7 +251,7 @@ class Sql:
         :return:
         """
         tmp_list = self.get_field_table_list()
-        return {f_id: (f_name, f_count, bool(f_sensitive)) for f_id, f_name, f_sensitive, f_count in tmp_list}
+        return {f_id: (f_name, bool(f_sensitive), f_count) for f_id, f_name, f_sensitive, f_count in tmp_list}
 
     def get_field_table_name_mapping(self) -> dict:
         """
@@ -238,7 +260,7 @@ class Sql:
         :return:
         """
         tmp_list = self.get_field_table_list()
-        return {f_name: (f_id, f_count, bool(f_sensitive)) for f_id, f_name, f_sensitive, f_count in tmp_list}
+        return {f_name: (f_id, bool(f_sensitive), f_count) for f_id, f_name, f_sensitive, f_count in tmp_list}
 
     def insert_into_field_table(self, field_id: int | None, field_name: str, field_sensitive: bool,
                                 field_count: Optional[int] = 0) -> int:
