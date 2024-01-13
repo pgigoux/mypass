@@ -9,7 +9,7 @@ from sql import MAP_FIELD_ID, MAP_FIELD_NAME, MAP_FIELD_SENSITIVE, MAP_FIELD_COU
 from utils import get_password, get_timestamp, timestamp_to_string, print_line, sensitive_mark, error, confirm, trace
 
 
-class ExportFormat(Enum):
+class FileFormat(Enum):
     FORMAT_JSON = auto()
     FORMAT_SQL = auto()
 
@@ -89,17 +89,26 @@ class CommandProcessor:
             except Exception as e:
                 error('cannot write database', e)
 
-    def database_export(self, file_name: str, output_format: ExportFormat):
+    def database_export(self, file_name: str, output_format: FileFormat):
         trace('database_export', file_name)
         if self.db_loaded():
             assert isinstance(self.db, Database)
             try:
-                if output_format == ExportFormat.FORMAT_JSON:
+                if output_format == FileFormat.FORMAT_JSON:
                     self.db.export_to_json(file_name)
                 else:
                     self.db.sql.export_to_sql(file_name)
             except Exception as e:
                 error('cannot export database', e)
+
+    def database_import(self, file_name: str, input_format: FileFormat):
+        """
+        TODO - low priority
+        :param file_name: input file name
+        :param input_format: file format
+        :return:
+        """
+        pass
 
     def database_dump(self):
         """
