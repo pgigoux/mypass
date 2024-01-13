@@ -1,5 +1,5 @@
 from db import DEFAULT_DATABASE_NAME
-from command import CommandProcessor, ExportFormat
+from command import CommandProcessor, FileFormat
 from lexer import Lexer, Token, Tid
 from lexer import LEX_ACTIONS, LEX_DATABASE, LEX_ITEM, LEX_TAG, LEX_FIELD, LEX_MISC, LEX_VALUES, LEX_STRINGS
 from utils import error, trace, trace_toggle
@@ -285,7 +285,7 @@ class Parser:
         trace('item_command', token)
         if token.tid == Tid.LIST:
             self.cp.item_list()
-        elif token.tid in [Tid.PRINT, Tid.DUMP, Tid.DELETE, Tid.COPY]:
+        elif token.tid in [Tid.PRINT, Tid.DELETE, Tid.COPY]:
             tok = self.get_token()
             trace('print, dump, delete, copy', tok)
             if tok.tid == Tid.VALUE:
@@ -371,7 +371,7 @@ class Parser:
             tok = self.get_token()
             trace('export', tok)
             if tok.tid in [Tid.FMT_JSON, Tid.FMT_SQL]:
-                output_format = ExportFormat.FORMAT_JSON if tok.tid == Tid.FMT_JSON else ExportFormat.FORMAT_SQL
+                output_format = FileFormat.FORMAT_JSON if tok.tid == Tid.FMT_JSON else FileFormat.FORMAT_SQL
                 tok = self.get_token()
                 trace('export', output_format, tok)
                 if tok.tid == Tid.FILE:
