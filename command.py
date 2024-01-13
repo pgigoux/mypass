@@ -567,40 +567,19 @@ class CommandProcessor:
         trace('item_copy', item_id)
         if self.db_loaded():
             assert isinstance(self.db, Database)
-            # TODO
-            # try:
-            #     item = self.db.item_collection.get(uid)
-            #     assert isinstance(item, Item)
-            #     fc = FieldCollection()
-            #     for field in item.field_collection.next():
-            #         assert isinstance(field, Field)
-            #         f_name, f_value, f_sensitive = field.get_name(), field.get_value(), field.get_sensitive()
-            #         fc.add(Field(f_name, f_value, f_sensitive))
-            #     new_item = Item('Copy of ' + item.get_name(), item.get_tags(), item.get_note(), fc,
-            #                     uid=ItemUid.get_uid())
-            #     trace('new item', new_item)
-            #     self.db.item_collection.add(new_item)
-            #     print(f'create item {new_item.get_id()} from {item.get_id()}')
-            # except Exception as e:
-            #     print('cannot make copy of item', e)
-
-    # def item_dump(self, uid: int):
-    #     """
-    #     Dump item contents
-    #     :param uid: item uid
-    #     """
-    #     trace('item_dump', uid)
-    #     if self.db_loaded():
-    #         assert isinstance(self.db, Database)
-    #         # TODO
-    #         # if uid in self.db.item_collection:
-    #         #     item = self.db.item_collection.get(uid)
-    #         #     assert isinstance(item, Item)
-    #         #     print_line()
-    #         #     item.dump()
-    #         #     print_line()
-    #         # else:
-    #         #     error(f'item {uid} not found')
+            item_list = self.db.sql.get_item_list(item_id=item_id)
+            tag_list = self.db.sql.get_tag_list(item_id=item_id)
+            field_list = self.db.sql.get_field_list(item_id=item_id)
+            if len(item_list) > 0:
+                for i_id, i_name, i_timestamp, i_note in item_list:
+                    new_item_id = self.db.sql.insert_into_items(None, 'Copy of ' + i_name, get_timestamp(), i_note)
+                    for _, t_id, _ in tag_list:
+                        self.db.sql.insert_into_tags(None, t_id, new_item_id)
+                    for _, f_id, _, f_value, f_encrypted in field_list:
+                        self.db.sql.insert_into_fields(None, f_id, new_item_id, f_value, f_encrypted)
+                    print(f'added item {new_item_id}')
+            else:
+                print(f'item {item_id} does not exist')
 
     # -----------------------------------------------------------------
     # Misc commands
