@@ -26,7 +26,6 @@ class Tid(Enum):
     EDIT = auto()
     COPY = auto()
     # data
-    UID = auto()
     NAME = auto()
     FILE = auto()
     VALUE = auto()
