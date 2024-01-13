@@ -115,6 +115,60 @@ class Parser:
     # Item
     # -------------------------------------------------------------
 
+    def item_options(self, tag_flag=False) -> tuple[str, list, str]:
+        """
+        Get item add/edit options
+        :return: tuple
+        """
+        item_name = ''
+        tag_list = []
+        note = ""
+        # multiline_note = False
+        while True:
+            token = self.get_token()
+            trace('-- token', token)
+            if token.tid == Tid.SW_NAME:
+                t1 = self.get_token()
+                trace('found name', t1)
+                if t1.tid in LEX_STRINGS:
+                    item_name = t1.value
+                else:
+                    raise ValueError(f'bad item name {t1}')
+
+            elif token.tid == Tid.SW_TAG:
+                if tag_flag:
+                    t1 = self.get_token()
+                    trace('found tag', t1)
+                    if t1.tid == Tid.NAME:
+                        tag_list.append(t1.value)
+                    else:
+                        raise ValueError(f'bad tag {t1}')
+                else:
+                    raise ValueError(f'option not allowed', token)
+
+            elif token.tid == Tid.SW_NOTE:
+                t1 = self.get_token()
+                trace('found note', t1)
+                if t1.tid in LEX_STRINGS:
+                    note = t1.value
+                elif t1.tid == Tid.VALUE:
+                    note = str(t1.value)
+                else:
+                    raise ValueError(f'bad note {t1}')
+
+            # elif token.tid == Tid.SW_MULTILINE_NOTE:
+            #     trace('found note text')
+            #     multiline_note = True
+
+            elif token.tid == Tid.EOS:
+                trace('eos')
+                break
+
+            else:
+                raise ValueError(f'unknown item option {token}')
+
+        return item_name, tag_list, note
+
     def item_search_command(self):
         """
         item_search_command: ITEM SEARCH NAME search_option_list
@@ -161,121 +215,68 @@ class Parser:
         else:
             self.cp.item_print(token.value, False)
 
-    def item_options(self, delete_flag=False) -> tuple[str, list, list, list, str, bool]:
+    def item_add(self):
         """
-        Get item create/add/edit options
-        :param delete_flag: accept SW_FIELD_DELETE?
-        :return: tuple
+        Add new item
         """
-        item_name = ''
-        tag_list = []
-        field_list = []
-        field_delete_list = []
-        note = ""
-        multiline_note = False
-        while True:
-            token = self.get_token()
-            trace('-- token', token)
-            if token.tid == Tid.SW_NAME:
-                t1 = self.get_token()
-                trace('found name', t1)
-                if t1.tid in LEX_STRINGS:
-                    item_name = t1.value
-                else:
-                    raise ValueError(f'bad item name {t1}')
-
-            elif token.tid == Tid.SW_TAG:
-                t1 = self.get_token()
-                trace('found tag', t1)
-                if t1.tid == Tid.NAME:
-                    tag_list.append(t1.value)
-                else:
-                    raise ValueError(f'bad tag {t1}')
-
-            elif token.tid == Tid.SW_FIELD:
-                t1, t2 = self.get_token(), self.get_token()
-                trace('found field', t1, t2)
-                if t1.tid == Tid.NAME and t2.tid in LEX_VALUES:
-                    field_list.append((t1.value, t2.value))
-                else:
-                    raise ValueError(f'bad field name/value {t1}')
-
-            elif token.tid == Tid.SW_FIELD_DELETE:
-                t1 = self.get_token()
-                if delete_flag:
-                    trace('found field delete', t1)
-                    if t1.tid == Tid.NAME:
-                        field_delete_list.append(t1.value)
-                    else:
-                        raise ValueError(f'bad field name {t1}')
-                else:
-                    raise ValueError(f'field delete not allowed {t1}')
-
-            elif token.tid == Tid.SW_NOTE:
-                t1 = self.get_token()
-                trace('found note', t1)
-                if t1.tid in LEX_STRINGS:
-                    note = t1.value
-                elif t1.tid == Tid.VALUE:
-                    note = str(t1.value)
-                else:
-                    raise ValueError(f'bad note {t1}')
-
-            elif token.tid == Tid.SW_MULTILINE_NOTE:
-                trace('found note text')
-                multiline_note = True
-
-            elif token.tid == Tid.EOS:
-                trace('eos')
-                break
-
-            else:
-                raise ValueError(f'unknown item option {token}')
-
-        # print(f'name="{item_name}", tags={tag_list}, fields={field_list}, field_delete={field_delete_list}'
-        #       f' note="{note}", multi={multiline_note}')multiline_note
-
-        return item_name, tag_list, field_list, field_delete_list, note, multiline_note
-
-    def item_create(self):
-        """
-        item_create_command: ITEM CREATE [options]
-        """
-        # trace('item_create', )
+        trace('item_add')
         try:
-            item_name, tag_list, field_list, _, note, multiline_flag = self.item_options()
-            trace('item_create', item_name, tag_list, field_list, note, multiline_flag)
-        except Exception as e:
-            print(f'--- e=[{e}')
-            error(str(e))
-            return
-        self.cp.item_create(item_name, tag_list, field_list, note, multiline_flag)
-
-    def item_add(self, token: Token):
-        """
-        :param token: item id token
-        """
-        trace('item_add', token)
-        try:
-            item_name, tag_list, field_list, _, note, multiline_note = self.item_options()
-            trace('item_add', item_name, tag_list, field_list, note, multiline_note)
-            self.cp.item_add(token.value, item_name, tag_list, field_list, note, multiline_note)
+            item_name, tag_list, note = self.item_options(tag_flag=True)
+            trace('item_add', item_name, tag_list, note)
+            self.cp.item_add(item_name, tag_list, note)
         except Exception as e:
             error(str(e))
 
-    def item_edit(self, token: Token):
+    def item_delete(self, token: Token):
         """
+        Delete existing item
         :param token: item id token
+        """
+        trace('item_delete', token)
+        try:
+            self.cp.item_delete(token.value)
+        except Exception as e:
+            error(str(e))
+
+    def item_copy(self, token: Token):
+        """
+        Duplicate item
+        :param token: item id token
+        """
+        trace('item_copy', token)
+        try:
+            self.cp.item_copy(token.value)
+        except Exception as e:
+            error(str(e))
+
+    def item_update(self, token: Token):
+        """
+        Edit existing item
+        :param token: item id token
+        """
+        trace('item_update', token)
+        try:
+            item_name, _, note = self.item_options()
+            trace('item_update', item_name, note)
+            self.cp.item_update(token.value, item_name, note)
+        except Exception as e:
+            error(str(e))
+
+    def item_tag_command(self, token: Token):
+        """
+        TODO
+        :param token:
         :return:
         """
-        trace('item_edit', token)
-        try:
-            item_name, tag_list, field_list, field_delete_list, note, multiline_note = \
-                self.item_options(delete_flag=True)
-            trace('item_edit', item_name, tag_list, field_list, field_delete_list, note, multiline_note)
-            self.cp.item_edit(token.value, item_name, tag_list, field_list, field_delete_list, note, multiline_note)
-        except Exception as e:
-            error(str(e))
+        trace('item_tag_command', token)
+
+    def item_field_command(self, token: Token):
+        """
+        TODO
+        :param token:
+        :return:
+        """
+        trace('item_field_command', token)
 
     def item_command(self, token: Token):
         """
@@ -285,36 +286,32 @@ class Parser:
         trace('item_command', token)
         if token.tid == Tid.LIST:
             self.cp.item_list()
-        elif token.tid in [Tid.PRINT, Tid.DELETE, Tid.COPY]:
+        elif token.tid in [Tid.PRINT, Tid.DELETE, Tid.COPY, Tid.UPDATE, Tid.TAG, Tid.FIELD]:
             tok = self.get_token()
-            trace('print, dump, delete, copy', tok)
+            trace('print, dump, delete, copy, tag, field', tok)
             if tok.tid == Tid.VALUE:
                 if token.tid == Tid.PRINT:
                     self.item_print(tok)
                 elif token.tid == Tid.DELETE:
-                    self.cp.item_delete(tok.value)
+                    self.item_delete(tok)
                 elif token.tid == Tid.COPY:
-                    self.cp.item_copy(tok.value)
+                    self.item_copy(tok)
+                elif token.tid == Tid.TAG:
+                    self.item_tag_command(tok)
+                elif token.tid == Tid.FIELD:
+                    self.item_field_command(tok)
+                elif token.tid == Tid.UPDATE:
+                    self.item_update(tok)
                 else:
                     error('Unknown item subcommand', tok)
             else:
-                error('item id expected')
+                error('item id expected', tok)
         elif token.tid == Tid.COUNT:
             self.cp.item_count()
         elif token.tid == Tid.SEARCH:
             self.item_search_command()
-        elif token.tid == Tid.CREATE:
-            self.item_create()
-        elif token.tid in [Tid.EDIT, Tid.ADD]:
-            tok = self.get_token()
-            trace('edit, add', tok)
-            if tok.tid == Tid.VALUE:
-                if token.tid == Tid.EDIT:
-                    self.item_edit(tok)
-                else:
-                    self.item_add(tok)
-            else:
-                error('item id expected')
+        elif token.tid == Tid.ADD:
+            self.item_add()
         else:
             error(ERROR_UNKNOWN_SUBCOMMAND, token)
 
