@@ -358,7 +358,7 @@ class Parser:
             if token.tid == Tid.READ:
                 trace('read', file_name)
                 self.cp.database_read(file_name)
-            elif token.tid == Tid.NEW:
+            elif token.tid == Tid.CREATE:
                 self.cp.database_create(file_name)
             else:
                 error(ERROR_UNKNOWN_COMMAND, token)  # should never get here
