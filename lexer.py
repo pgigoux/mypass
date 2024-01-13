@@ -14,6 +14,7 @@ class Tid(Enum):
     READ = auto()
     WRITE = auto()
     EXPORT = auto()
+    IMPORT = auto()
     DUMP = auto()
     LIST = auto()
     SEARCH = auto()
@@ -59,19 +60,11 @@ class LexState(Enum):
 
 # Token classes
 LEX_ACTIONS = [Tid.DATABASE, Tid.ITEM, Tid.FIELD, Tid.TAG]
-
 LEX_DATABASE = [Tid.CREATE, Tid.READ, Tid.WRITE, Tid.EXPORT, Tid.DUMP, Tid.REPORT]
 LEX_ITEM = [Tid.LIST, Tid.COUNT, Tid.PRINT, Tid.SEARCH, Tid.ADD, Tid.DELETE, Tid.COPY, Tid.EDIT]
 LEX_TAG = [Tid.LIST, Tid.COUNT, Tid.SEARCH, Tid.ADD, Tid.DELETE, Tid.RENAME]
 LEX_FIELD = [Tid.LIST, Tid.COUNT, Tid.SEARCH, Tid.ADD, Tid.DELETE, Tid.RENAME]
-
-LEX_SUBCOMMANDS = [Tid.LIST, Tid.COUNT, Tid.SEARCH,
-                   Tid.PRINT, Tid.DUMP,
-                   Tid.RENAME, Tid.DELETE,
-                   Tid.CREATE, Tid.COPY, Tid.ADD, Tid.EDIT]
-
 LEX_MISC = [Tid.TRACE]
-
 LEX_STRINGS = [Tid.NAME, Tid.STRING]
 LEX_VALUES = [Tid.VALUE, Tid.NAME, Tid.FILE, Tid.STRING]
 
