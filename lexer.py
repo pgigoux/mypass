@@ -10,7 +10,6 @@ class Tid(Enum):
     TAG = auto()
     FIELD = auto()
     # subcommands
-    # NEW = auto()
     CREATE = auto()
     READ = auto()
     WRITE = auto()
