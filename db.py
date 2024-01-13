@@ -2,7 +2,8 @@ import os
 import re
 import json
 from sql import Sql, TABLE_LIST
-from sql import MAP_TAG_ID, MAP_TAG_NAME, MAP_TAG_COUNT, MAP_FIELD_ID, MAP_FIELD_NAME, MAP_FIELD_SENSITIVE, MAP_FIELD_COUNT
+from sql import MAP_TAG_ID, MAP_TAG_NAME, MAP_TAG_COUNT
+from sql import MAP_FIELD_ID, MAP_FIELD_NAME, MAP_FIELD_SENSITIVE, MAP_FIELD_COUNT
 from crypt import Crypt
 from utils import filter_control_characters, timestamp_to_string, get_string_timestamp
 
@@ -197,7 +198,7 @@ class Database:
         :param item_name_flag: search in the item name? (default)
         :param tag_flag: search in the tags?
         :param field_name_flag: search in the field name?
-        :param field_value_flag: search in the (unencypted) field value?
+        :param field_value_flag: search in the (unencrypted) field value?
         :param note_flag: search in the note?
         :return: list of items matching the search criteria
         """
