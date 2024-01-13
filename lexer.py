@@ -23,7 +23,7 @@ class Tid(Enum):
     RENAME = auto()
     DELETE = auto()
     ADD = auto()
-    EDIT = auto()
+    UPDATE = auto()
     COPY = auto()
     # data
     NAME = auto()
@@ -60,7 +60,8 @@ class LexState(Enum):
 # Token classes
 LEX_ACTIONS = [Tid.DATABASE, Tid.ITEM, Tid.FIELD, Tid.TAG]
 LEX_DATABASE = [Tid.CREATE, Tid.READ, Tid.WRITE, Tid.EXPORT, Tid.DUMP, Tid.REPORT]
-LEX_ITEM = [Tid.LIST, Tid.COUNT, Tid.PRINT, Tid.SEARCH, Tid.ADD, Tid.DELETE, Tid.COPY, Tid.EDIT]
+LEX_ITEM = [Tid.LIST, Tid.COUNT, Tid.PRINT, Tid.SEARCH, Tid.ADD, Tid.DELETE, Tid.COPY, Tid.UPDATE]
+LEX_ITEM_TAG_FIELD = [Tid.ADD, Tid.DELETE, Tid.UPDATE]
 LEX_TAG = [Tid.LIST, Tid.COUNT, Tid.SEARCH, Tid.ADD, Tid.DELETE, Tid.RENAME]
 LEX_FIELD = [Tid.LIST, Tid.COUNT, Tid.SEARCH, Tid.ADD, Tid.DELETE, Tid.RENAME]
 LEX_MISC = [Tid.TRACE]
@@ -122,7 +123,7 @@ class Lexer:
             'read': Tid.READ, 'write': Tid.WRITE, 'export': Tid.EXPORT,
             'print': Tid.PRINT, 'dump': Tid.DUMP,
             'list': Tid.LIST, 'count': Tid.COUNT, 'search': Tid.SEARCH,
-            'create': Tid.CREATE, 'copy': Tid.COPY, 'add': Tid.ADD, 'edit': Tid.EDIT,
+            'create': Tid.CREATE, 'copy': Tid.COPY, 'add': Tid.ADD, 'update': Tid.UPDATE,
             'rename': Tid.RENAME, 'delete': Tid.DELETE,
             'report': Tid.REPORT, 'trace': Tid.TRACE
         }
