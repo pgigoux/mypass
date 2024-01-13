@@ -203,7 +203,7 @@ class Sql:
     def rename_tag_table_entry(self, old_name: str, new_name: str) -> int:
         """
         Rename a tag.
-        :param old_name: old tag nanme
+        :param old_name: old tag name
         :param new_name: new tag name
         :return: number of changes made (1 if ok, 0 if the tag didn't exist)
         """
@@ -288,7 +288,7 @@ class Sql:
     def rename_field_table_entry(self, old_name: str, new_name: str) -> int:
         """
         Rename a tag.
-        :param old_name: old field nanme
+        :param old_name: old field name
         :param new_name: new field name
         :return: number of changes made (1 if ok, 0 if the tag didn't exist)
         """
@@ -416,9 +416,27 @@ class Sql:
         """
         Remove an item associated with a given item id
         :param item_id: item id
-        :return: number of rows deleted (1 if sucessful, 0 otherwise)
+        :return: number of rows deleted (1 if successful, 0 otherwise)
         """
         self.cursor.execute('delete from items where id=?', (item_id,))
+        return self.cursor.rowcount
+
+    def update_item(self, item_id: int, item_name: str, item_timestamp: int, item_note: str) -> int:
+        """
+        Update an existing item
+        :param item_id: item id
+        :param item_name: item name
+        :param item_timestamp: time stamp
+        :param item_note: note
+        :return: number of rows deleted (1 if successful, 0 otherwise)
+        """
+        cmd = f'update items set date={item_timestamp}'
+        if item_name:
+            cmd += f', name="{item_name}"'
+        if item_note:
+            cmd += f', note="{item_note}"'
+        cmd += f' where id={item_id}'
+        self.cursor.execute(cmd)
         return self.cursor.rowcount
 
     # -- GENERAL
