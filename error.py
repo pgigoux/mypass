@@ -8,6 +8,7 @@ class Severity(Enum):
     ERROR = auto()
     EXCEPTION = auto()
 
+
 class Response:
 
     def __init__(self, severity: Severity, value: int | str | list | dict | None):
