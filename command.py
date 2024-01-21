@@ -2,7 +2,7 @@ from enum import Enum, auto
 from os.path import exists
 from typing import Callable
 from db import Database, DEFAULT_DATABASE_NAME
-from error import ErrorHandler, Response
+from error import ResponseGenerator, Response
 from sql import NAME_TAG_TABLE, NAME_FIELD_TABLE, NAME_TAGS, NAME_FIELDS, NAME_ITEMS
 from sql import MAP_TAG_ID, MAP_TAG_NAME, MAP_TAG_COUNT
 from sql import MAP_FIELD_ID, MAP_FIELD_NAME, MAP_FIELD_SENSITIVE, MAP_FIELD_COUNT
@@ -24,7 +24,7 @@ class CommandProcessor:
         """
         self.file_name = ''  # database file name
         self.db = None  # database object
-        self.err = ErrorHandler()
+        self.err = ResponseGenerator()
         self.confirm = confirm
 
     def _db_loaded(self, overwrite=False) -> bool:
@@ -151,9 +151,10 @@ class CommandProcessor:
     def _format_table_tag(tag_id: int, tag_name: str, tag_count: int) -> str:
         return f'{tag_id:2d} {tag_count:3d} {tag_name}'
 
-    def tag_list(self):
+    def tag_list(self) -> Response:
         """
         List all tags
+        :return: response
         """
         if self._db_loaded():
             assert isinstance(self.db, Database)
@@ -164,6 +165,7 @@ class CommandProcessor:
     def tag_count(self) -> Response:
         """
         Print tag count (or how many there are)
+        :return: response
         """
         if self._db_loaded():
             assert isinstance(self.db, Database)
@@ -175,6 +177,7 @@ class CommandProcessor:
         """
         Search for tags matching a pattern
         :param pattern: regexp pattern
+        :return: response
         """
         trace('tag_search', pattern)
         if self._db_loaded():
@@ -187,7 +190,7 @@ class CommandProcessor:
         """
         Add new tag
         :param name: tag name
-        :return:
+        :return: response
         """
         if self._db_loaded():
             assert isinstance(self.db, Database)
@@ -205,7 +208,7 @@ class CommandProcessor:
         Rename existing tag
         :param old_name: old tag name
         :param new_name: new tag name
-        :return:
+        :return: response
         """
         if self._db_loaded():
             assert isinstance(self.db, Database)
@@ -220,7 +223,7 @@ class CommandProcessor:
         """
         Delete tag
         :param name: tag name
-        :return:
+        :return: response
         """
         if self._db_loaded():
             assert isinstance(self.db, Database)
@@ -241,91 +244,99 @@ class CommandProcessor:
     # Field commands
     # -----------------------------------------------------------------
 
-    @staticmethod
-    def _format_table_field(field_id: int, field_name: str, field_sensitive: bool, field_count: int) -> str:
-        return f'{field_id:3d} {field_count:4d} {sensitive_mark(field_sensitive)} {field_name}'
-
-    def field_list(self):
+    def field_list(self) -> Response:
         """
         List all fields
+        :return: response
         """
         trace('field_list')
         if self._db_loaded():
             assert isinstance(self.db, Database)
-            for f_id, f_name, f_sensitive, f_count in self.db.sql.get_field_table_list():
-                print(self._format_table_field(f_id, f_name, f_sensitive, f_count))
+            return self.err.ok(self.db.sql.get_field_table_list())
+        else:
+            return self.err.warning(NO_DATABASE)
 
-    def field_count(self):
+    def field_count(self) -> Response:
         """
         Print field count (or how many there are)
+        :return: response
         """
         trace('field_count')
         if self._db_loaded():
             assert isinstance(self.db, Database)
-            print(self.db.sql.get_table_count(NAME_FIELD_TABLE))
+            return self.err.ok(self.db.sql.get_table_count(NAME_FIELD_TABLE))
+        else:
+            return self.err.warning(NO_DATABASE)
 
-    def field_search(self, pattern: str):
+    def field_search(self, pattern: str) -> Response:
         """
         Search for fields matching a pattern
         :param pattern: regexp pattern
+        :return: response
         """
         trace('field_search', pattern)
         if self._db_loaded():
             assert isinstance(self.db, Database)
-            trace('field_search', pattern)
-            if self._db_loaded():
-                assert isinstance(self.db, Database)
-                for f_id, f_name, f_sensitive, f_count in self.db.sql.search_field_table(pattern):
-                    print(self._format_table_field(f_id, f_name, f_sensitive, f_count))
+            return self.err.ok(self.db.sql.search_field_table(pattern))
+        else:
+            return self.err.warning(NO_DATABASE)
 
-    def field_add(self, name: str, sensitive_flag: bool):
+    def field_add(self, name: str, sensitive_flag: bool) -> Response:
         """
         Add new field
         :param name: field name
         :param sensitive_flag: sensitive?
-        :return:
+        :return: response
         """
         trace('field_add', name, sensitive_flag)
         if self._db_loaded():
             assert isinstance(self.db, Database)
             field_mapping = self.db.sql.get_field_table_name_mapping()
             if name in field_mapping:
-                error(f'field {name} already exists')
+                return self.err.error(f'field {name} already exists')
             else:
                 f_id = self.db.sql.insert_into_field_table(None, name, sensitive_flag)
-                print(f'Added field {name} with id {f_id}')
+                return self.err.ok(f'Added field {name} with id {f_id}')
+        else:
+            return self.err.warning(NO_DATABASE)
 
-    def field_rename(self, old_name: str, new_name: str):
+    def field_rename(self, old_name: str, new_name: str) -> Response:
         """
         Rename existing tag
         :param old_name: old field name
         :param new_name: new field name
-        :return:
+        :return: response
         """
         if self._db_loaded():
             assert isinstance(self.db, Database)
-            try:
-                self.db.sql.rename_field_table_entry(old_name, new_name)
-            except Exception as e:
-                error(f'cannot rename tag {old_name} to {new_name}', e)
+            if self.db.sql.rename_field_table_entry(old_name, new_name) == 0:
+                return self.err.error(f'cannot rename field {old_name}')
+            else:
+                return self.err.ok(f'field {old_name} -> {new_name}')
+        else:
+            return self.err.warning(NO_DATABASE)
 
-    def field_delete(self, name: str):
+    def field_delete(self, name: str) -> Response:
         """
         Delete field from field table
         :param name: field name
+        :return: response
         """
         trace('field_delete', name)
         if self._db_loaded():
             assert isinstance(self.db, Database)
+            self.db.sql.update_field_table_counters()
             field_mapping = self.db.sql.get_field_table_name_mapping()
             if name in field_mapping:
-                if field_mapping[name][MAP_TAG_COUNT] == 0:
+                if field_mapping[name][MAP_FIELD_COUNT] == 0:
                     n = self.db.sql.delete_from_field_table(name)
-                    print(f'removed {n} fields')
+                    return self.err.ok(f'removed {n} fields')
                 else:
-                    error(f'field {name} is being used')
+                    return self.err.error(f'field {name} is being used')
             else:
-                error(f'field {name} does not exist')
+                return self.err.error(f'field {name} does not exist')
+        else:
+            return self.err.warning(NO_DATABASE)
 
     # -----------------------------------------------------------------
     # Item commands

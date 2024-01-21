@@ -2,7 +2,7 @@ from db import DEFAULT_DATABASE_NAME
 from command import CommandProcessor, FileFormat
 from lexer import Lexer, Token, Tid
 from lexer import LEX_ACTIONS, LEX_DATABASE, LEX_ITEM, LEX_TAG, LEX_FIELD, LEX_MISC, LEX_VALUES, LEX_STRINGS
-from utils import error, trace, confirm, trace_toggle
+from utils import error, trace, confirm, trace_toggle, sensitive_mark
 
 # Error messages
 ERROR_UNKNOWN_COMMAND = 'unknown command'
@@ -29,48 +29,6 @@ class Parser:
         token = self.lexer.next_token()
         trace('get_token', token)
         return token
-
-    # -------------------------------------------------------------
-    # Fields
-    # -------------------------------------------------------------
-
-    def field_command(self, token: Token):
-        """
-        field_command : FIELD subcommand
-        :param token: subcommand token
-        """
-        trace('field_command', token)
-        if token.tid == Tid.LIST:
-            self.cp.field_list()
-        elif token.tid == Tid.COUNT:
-            self.cp.field_count()
-        elif token.tid in [Tid.SEARCH, Tid.DELETE]:
-            tok = self.get_token()
-            if tok.tid in LEX_STRINGS:
-                if token.tid == Tid.SEARCH:
-                    trace('field search', tok)
-                    self.cp.field_search(tok.value)
-                else:
-                    trace('field delete', tok)
-                    self.cp.field_delete(tok.value)
-            else:
-                error('bad/missing field name', tok)
-        elif token.tid == Tid.ADD:
-            tok = self.get_token()
-            trace('field add', tok)
-            if tok.tid in LEX_STRINGS:
-                s_tok = self.get_token()
-                sensitive = True if s_tok.tid == Tid.SW_SENSITIVE else False
-                self.cp.field_add(tok.value, sensitive)
-        elif token.tid == Tid.RENAME:
-            tok1 = self.get_token()
-            tok2 = self.get_token()
-            if tok1.tid in LEX_STRINGS and tok2.tid in LEX_STRINGS:
-                self.cp.field_rename(tok1.value, tok2.value)
-            else:
-                error('bad tag name', tok1, tok2)
-        else:
-            error(ERROR_UNKNOWN_SUBCOMMAND, token)
 
     # -------------------------------------------------------------
     # Tag
@@ -155,6 +113,90 @@ class Parser:
                 self.tag_rename(tok1, tok2)
             else:
                 error('bad tag name', tok1, tok2)
+        else:
+            error(ERROR_UNKNOWN_SUBCOMMAND, token)
+
+    # -------------------------------------------------------------
+    # Fields
+    # -------------------------------------------------------------
+
+    @staticmethod
+    def _format_table_field(field_id: int, field_name: str, field_sensitive: bool, field_count: int) -> str:
+        return f'{field_id:3d} {field_count:4d} {sensitive_mark(field_sensitive)} {field_name}'
+
+    def field_list(self, tok: Token):
+        trace('field_list', tok)
+        r = self.cp.field_list()
+        if r.is_ok and r.is_list:
+            for f_id, f_name, f_sensitive, f_count in r.value:
+                print(self._format_table_field(f_id, f_name, f_sensitive, f_count))
+        else:
+            print(r)
+
+    def field_count(self, tok: Token):
+        trace('field_count', tok)
+        r = self.cp.field_count()
+        if r.is_ok:
+            print(r.value)
+        else:
+            print(r)
+
+    def field_search(self, tok: Token):
+        trace('field_search', tok)
+        r = self.cp.field_search(tok.value)
+        if r.is_ok and r.is_list:
+            for f_id, f_name, f_sensitive, f_count in r.value:
+                print(self._format_table_field(f_id, f_name, f_sensitive, f_count))
+        else:
+            print(r)
+
+    def field_add(self, tok: Token, sensitive: bool):
+        trace('field_add', tok)
+        print(self.cp.field_add(tok.value, sensitive))
+
+    def field_rename(self, tok1: Token, tok2: Token):
+        trace('field_rename', tok1, tok2)
+        print(self.cp.field_rename(tok1.value, tok2.value))
+
+    def field_delete(self, tok: Token):
+        trace('field_delete', tok)
+        print(self.cp.field_delete(tok.value))
+
+    def field_command(self, token: Token):
+        """
+        field_command : FIELD subcommand
+        :param token: subcommand token
+        """
+        trace('field_command', token)
+        if token.tid == Tid.LIST:
+            self.field_list(token)
+        elif token.tid == Tid.COUNT:
+            self.field_count(token)
+        elif token.tid in [Tid.SEARCH, Tid.DELETE]:
+            tok = self.get_token()
+            if tok.tid in LEX_STRINGS:
+                if token.tid == Tid.SEARCH:
+                    trace('field search', tok)
+                    self.field_search(tok)
+                else:
+                    trace('field delete', tok)
+                    self.field_delete(tok)
+            else:
+                error('bad/missing field name', tok)
+        elif token.tid == Tid.ADD:
+            tok = self.get_token()
+            trace('field add', tok)
+            if tok.tid in LEX_STRINGS:
+                s_tok = self.get_token()
+                sensitive = True if s_tok.tid == Tid.SW_SENSITIVE else False
+                self.field_add(tok, sensitive)
+        elif token.tid == Tid.RENAME:
+            tok1 = self.get_token()
+            tok2 = self.get_token()
+            if tok1.tid in LEX_STRINGS and tok2.tid in LEX_STRINGS:
+                self.field_rename(tok1, tok2)
+            else:
+                error('bad field name', tok1, tok2)
         else:
             error(ERROR_UNKNOWN_SUBCOMMAND, token)
 
