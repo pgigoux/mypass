@@ -74,7 +74,7 @@ class Response:
         return 'None' if self._value is None else self._value
 
 
-class Error:
+class ErrorHandler:
 
     def __init__(self):
         pass
