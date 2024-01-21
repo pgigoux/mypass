@@ -3,12 +3,21 @@ from os.path import exists
 from typing import Callable
 from db import Database, DEFAULT_DATABASE_NAME
 from error import ResponseGenerator, Response
-from sql import NAME_TAG_TABLE, NAME_FIELD_TABLE, NAME_TAGS, NAME_FIELDS, NAME_ITEMS
+from sql import NAME_TAG_TABLE, NAME_FIELD_TABLE, NAME_ITEMS
 from sql import MAP_TAG_ID, MAP_TAG_NAME, MAP_TAG_COUNT
-from sql import MAP_FIELD_ID, MAP_FIELD_NAME, MAP_FIELD_SENSITIVE, MAP_FIELD_COUNT
-from utils import get_password, get_timestamp, timestamp_to_string, print_line, sensitive_mark, error, trace
+from sql import MAP_FIELD_NAME, MAP_FIELD_COUNT
+from sql import INDEX_ITEMS_NAME, INDEX_ITEMS_DATE, INDEX_ITEM_NOTE
+from utils import get_password, get_timestamp, timestamp_to_string, print_line, trace
 
 NO_DATABASE = 'no database'
+
+# Keys used to access the elements in the dictionary returned by item_print
+KEY_ID = 'id'
+KEY_NAME = 'name'
+KEY_TIMESTAMP = 'timestamp'
+KEY_NOTE = 'note'
+KEY_TAGS = 'tags'
+KEY_FIELDS = 'fields'
 
 
 class FileFormat(Enum):
@@ -27,7 +36,7 @@ class CommandProcessor:
         self.err = ResponseGenerator()
         self.confirm = confirm
 
-    def _db_loaded(self, overwrite=False) -> bool:
+    def db_loaded(self, overwrite=False) -> bool:
         """
         Check whether there's a database in memory
         Prompt the user whether to overwrite the database if there is one in memory already
@@ -43,6 +52,9 @@ class CommandProcessor:
         else:
             return True
 
+    def decrypt_value(self, value: str) -> str:
+        return self.db.crypt_key.decrypt_str2str(value)
+
     # -----------------------------------------------------------------
     # Database commands
     # -----------------------------------------------------------------
@@ -53,7 +65,7 @@ class CommandProcessor:
         :param file_name: database file name
         """
         trace('database_create', file_name)
-        if self._db_loaded(overwrite=True):
+        if self.db_loaded(overwrite=True):
             return self.err.warning('database not created')
 
         # Check whether the file exists already.
@@ -72,7 +84,7 @@ class CommandProcessor:
         :return:
         """
         trace('database_read', file_name)
-        if self._db_loaded(overwrite=True):
+        if self.db_loaded(overwrite=True):
             return self.err.warning(f'database {file_name} not read')
 
         trace(f'Reading from {file_name}')
@@ -88,7 +100,7 @@ class CommandProcessor:
 
     def database_write(self) -> Response:
         trace('database_write')
-        if self._db_loaded():
+        if self.db_loaded():
             assert isinstance(self.db, Database)
             trace(f'Writing to {self.file_name}')
             try:
@@ -101,7 +113,7 @@ class CommandProcessor:
 
     def database_export(self, file_name: str, output_format: FileFormat) -> Response:
         trace('database_export', file_name)
-        if self._db_loaded():
+        if self.db_loaded():
             assert isinstance(self.db, Database)
             try:
                 if output_format == FileFormat.FORMAT_JSON:
@@ -129,7 +141,7 @@ class CommandProcessor:
         :return:
         """
         trace('database_dump')
-        if self._db_loaded():
+        if self.db_loaded():
             assert isinstance(self.db, Database)
             print_line()
             self.db.dump()
@@ -139,7 +151,7 @@ class CommandProcessor:
         """
         Print a database report to the terminal (debugging)
         """
-        if self._db_loaded():
+        if self.db_loaded():
             assert isinstance(self.db, Database)
             self.db.database_report()
 
@@ -156,7 +168,7 @@ class CommandProcessor:
         List all tags
         :return: response
         """
-        if self._db_loaded():
+        if self.db_loaded():
             assert isinstance(self.db, Database)
             return self.err.ok(self.db.sql.get_tag_table_list())
         else:
@@ -167,7 +179,7 @@ class CommandProcessor:
         Print tag count (or how many there are)
         :return: response
         """
-        if self._db_loaded():
+        if self.db_loaded():
             assert isinstance(self.db, Database)
             return self.err.ok(self.db.sql.get_table_count(NAME_TAG_TABLE))
         else:
@@ -180,7 +192,7 @@ class CommandProcessor:
         :return: response
         """
         trace('tag_search', pattern)
-        if self._db_loaded():
+        if self.db_loaded():
             assert isinstance(self.db, Database)
             return self.err.ok(self.db.sql.search_tag_table(pattern))
         else:
@@ -192,7 +204,7 @@ class CommandProcessor:
         :param name: tag name
         :return: response
         """
-        if self._db_loaded():
+        if self.db_loaded():
             assert isinstance(self.db, Database)
             tag_mapping = self.db.sql.get_tag_table_name_mapping()
             if name in tag_mapping:
@@ -210,7 +222,7 @@ class CommandProcessor:
         :param new_name: new tag name
         :return: response
         """
-        if self._db_loaded():
+        if self.db_loaded():
             assert isinstance(self.db, Database)
             if self.db.sql.rename_tag_table_entry(old_name, new_name) == 0:
                 return self.err.error(f'cannot rename tag {old_name}')
@@ -225,7 +237,7 @@ class CommandProcessor:
         :param name: tag name
         :return: response
         """
-        if self._db_loaded():
+        if self.db_loaded():
             assert isinstance(self.db, Database)
             self.db.sql.update_tag_table_counters()
             tag_mapping = self.db.sql.get_tag_table_name_mapping()
@@ -250,7 +262,7 @@ class CommandProcessor:
         :return: response
         """
         trace('field_list')
-        if self._db_loaded():
+        if self.db_loaded():
             assert isinstance(self.db, Database)
             return self.err.ok(self.db.sql.get_field_table_list())
         else:
@@ -262,7 +274,7 @@ class CommandProcessor:
         :return: response
         """
         trace('field_count')
-        if self._db_loaded():
+        if self.db_loaded():
             assert isinstance(self.db, Database)
             return self.err.ok(self.db.sql.get_table_count(NAME_FIELD_TABLE))
         else:
@@ -275,7 +287,7 @@ class CommandProcessor:
         :return: response
         """
         trace('field_search', pattern)
-        if self._db_loaded():
+        if self.db_loaded():
             assert isinstance(self.db, Database)
             return self.err.ok(self.db.sql.search_field_table(pattern))
         else:
@@ -289,7 +301,7 @@ class CommandProcessor:
         :return: response
         """
         trace('field_add', name, sensitive_flag)
-        if self._db_loaded():
+        if self.db_loaded():
             assert isinstance(self.db, Database)
             field_mapping = self.db.sql.get_field_table_name_mapping()
             if name in field_mapping:
@@ -307,7 +319,7 @@ class CommandProcessor:
         :param new_name: new field name
         :return: response
         """
-        if self._db_loaded():
+        if self.db_loaded():
             assert isinstance(self.db, Database)
             if self.db.sql.rename_field_table_entry(old_name, new_name) == 0:
                 return self.err.error(f'cannot rename field {old_name}')
@@ -323,7 +335,7 @@ class CommandProcessor:
         :return: response
         """
         trace('field_delete', name)
-        if self._db_loaded():
+        if self.db_loaded():
             assert isinstance(self.db, Database)
             self.db.sql.update_field_table_counters()
             field_mapping = self.db.sql.get_field_table_name_mapping()
@@ -345,63 +357,28 @@ class CommandProcessor:
     def _format_item(item_id: int, item_name: str, item_timestamp: int) -> str:
         return f'{item_id:5d}  {timestamp_to_string(item_timestamp, date_only=True)}  {item_name}'
 
-    def item_list(self):
+    def item_list(self) -> Response:
         """
         List all items
         """
         trace('item_list')
-        if self._db_loaded():
+        if self.db_loaded():
             assert isinstance(self.db, Database)
-            for item_id, item_name, item_timestamp, _ in self.db.sql.get_item_list():
-                print(self._format_item(item_id, item_name, item_timestamp))
+            return self.err.ok(self.db.sql.get_item_list())
+        else:
+            return self.err.warning(NO_DATABASE)
 
-    def item_print(self, item_id: int, show_encrypted: bool):
-        """
-        Print item
-        :param item_id: item id
-        :param show_encrypted: print sensitive fields unencrypted
-        """
-        trace('print_item', item_id)
-        if self._db_loaded():
-            print_line()
-            assert isinstance(self.db, Database)
-
-            # Get item and field information
-            tag_mapping = self.db.sql.get_tag_table_id_mapping()
-            field_mapping = self.db.sql.get_field_table_id_mapping()
-            tag_list = self.db.sql.get_tag_list(item_id=item_id)
-            field_list = self.db.sql.get_field_list(item_id=item_id)
-            item_list = self.db.sql.get_item_list(item_id=item_id)
-
-            # Iterate over the list of items (it should be just one)
-            if len(item_list) > 0:
-                for i_id, i_name, i_timestamp, i_note in item_list:
-                    print(f'id:    {i_id}')
-                    print(f'name:  {i_name}')
-                    print(f'date:  {timestamp_to_string(i_timestamp)}')
-                    print(f'tags:  {[tag_mapping[t_id][MAP_TAG_NAME] for _, t_id, _ in tag_list]}')
-                    print('fields:')
-                    for f_id, field_id, _, f_value, f_encrypted in field_list:
-                        f_name = field_mapping[field_id][MAP_FIELD_NAME]
-                        f_value = self.db.crypt_key.decrypt_str2str(
-                            f_value) if f_encrypted and show_encrypted else f_value
-                        print(f'  {f_id:4d} {sensitive_mark(f_encrypted)} {f_name} {f_value}')
-                        del f_value
-                    print('note:')
-                    if len(i_note) > 0:
-                        print(f'{i_note}')
-            else:
-                error(f'item {item_id} does not exist')
-
-    def item_count(self):
+    def item_count(self) -> Response:
         """
         Print the number of items
         :return:
         """
         trace('item_count')
-        if self._db_loaded():
+        if self.db_loaded():
             assert isinstance(self.db, Database)
-            print(self.db.sql.get_table_count(NAME_ITEMS))
+            return self.err.ok(self.db.sql.get_table_count(NAME_ITEMS))
+        else:
+            return self.err.warning(NO_DATABASE)
 
     def item_search(self, pattern: str, name_flag: bool, tag_flag: bool,
                     field_name_flag: bool, field_value_flag: bool, note_flag: bool):
@@ -415,37 +392,93 @@ class CommandProcessor:
         :param note_flag: search in note?
         """
         trace('item_search', pattern, name_flag, tag_flag, field_name_flag, field_value_flag, note_flag)
-        if self._db_loaded():
+        if self.db_loaded():
             assert isinstance(self.db, Database)
             item_list = self.db.search(pattern, item_name_flag=name_flag, tag_flag=tag_flag,
                                        field_name_flag=field_name_flag, field_value_flag=field_value_flag,
                                        note_flag=note_flag)
-            for item_id, item_name, item_timestamp in item_list:
-                print(self._format_item(item_id, item_name, item_timestamp))
+            return self.err.ok(item_list)
+        else:
+            return self.err.warning(NO_DATABASE)
 
-    def item_delete(self, item_id: int):
+    def item_get(self, item_id: int) -> Response:
+        """
+        Print item
+        :param item_id: item id
+        """
+        trace('print_item', item_id)
+        if self.db_loaded():
+            print_line()
+            assert isinstance(self.db, Database)
+
+            # Get item and field information
+            tag_mapping = self.db.sql.get_tag_table_id_mapping()
+            field_mapping = self.db.sql.get_field_table_id_mapping()
+            tag_list = self.db.sql.get_tag_list(item_id=item_id)
+            field_list = self.db.sql.get_field_list(item_id=item_id)
+            item_list = self.db.sql.get_item_list(item_id=item_id)
+            if len(item_list) > 0:
+                item = item_list[0]
+                d = {KEY_ID: item_id,
+                     KEY_NAME: item[INDEX_ITEMS_NAME],
+                     KEY_TIMESTAMP: item[INDEX_ITEMS_DATE],
+                     KEY_NOTE: item[INDEX_ITEM_NOTE],
+                     KEY_TAGS: [tag_mapping[t_id][MAP_TAG_NAME] for _, t_id, _ in tag_list],
+                     KEY_FIELDS: [(f_id, field_mapping[field_id][MAP_FIELD_NAME], f_value, f_encrypted)
+                                  for f_id, field_id, _, f_value, f_encrypted in field_list],
+                     }
+                return self.err.ok(d)
+            else:
+                return self.err.error(f'item {item_id} does not exist')
+        else:
+            return self.err.warning(NO_DATABASE)
+
+    def item_add(self, item_name: str, tag_list: list, note: str) -> Response:
+        """
+        Add/create new item
+        :param item_name: item name
+        :param tag_list: tag name list
+        :param note: note
+        """
+        trace('item_add', item_name, tag_list, note)
+        if self.db_loaded():
+            item_id = self.db.sql.insert_into_items(None, item_name, get_timestamp(), note)
+            trace('item_id', item_id)
+            if tag_list:
+                tag_mapping = self.db.sql.get_tag_table_name_mapping()
+                for tag in tag_list:
+                    trace('adding tag', tag)
+                    self.db.sql.insert_into_tags(None, tag_mapping[tag][MAP_TAG_ID], item_id)
+            return self.err.ok(f'added {item_id}')
+        else:
+            return self.err.warning(NO_DATABASE)
+
+    def item_delete(self, item_id: int) -> Response:
         """
         Delete item
         :param item_id: item id
         """
         trace(f'item_delete {item_id}')
-        if self._db_loaded():
+        if self.db_loaded():
             assert isinstance(self.db, Database)
             n_tags = self.db.sql.delete_from_tags(item_id)
             n_fields = self.db.sql.delete_from_fields(item_id)
             if self.db.sql.delete_from_items(item_id) > 0:
-                print(f'removed item {item_id}: {n_tags} tags and {n_fields} fields')
+                # self.db.sql.update_counters()
+                return self.err.ok(f'removed item {item_id}: {n_tags} tags and {n_fields} fields')
             else:
-                error(f'Item {item_id} does not exist: tags={n_tags}, fields={n_fields}')
+                return self.err.error(f'Item {item_id} does not exist: {n_tags} tags, {n_fields} fields')
+        else:
+            return self.err.warning(NO_DATABASE)
 
-    def item_copy(self, item_id: int):
+    def item_copy(self, item_id: int) -> Response:
         """
         Create a copy of an item with a different id
         The field collection is recreated and the timestamp updated.
         :param item_id: item id
         """
         trace('item_copy', item_id)
-        if self._db_loaded():
+        if self.db_loaded():
             assert isinstance(self.db, Database)
             item_list = self.db.sql.get_item_list(item_id=item_id)
             tag_list = self.db.sql.get_tag_list(item_id=item_id)
@@ -457,41 +490,30 @@ class CommandProcessor:
                         self.db.sql.insert_into_tags(None, t_id, new_item_id)
                     for _, f_id, _, f_value, f_encrypted in field_list:
                         self.db.sql.insert_into_fields(None, f_id, new_item_id, f_value, f_encrypted)
-                    print(f'added item {new_item_id}')
+                    return self.err.ok(f'added item {new_item_id}, {len(tag_list)} tags, {len(field_list)} fields')
             else:
-                print(f'item {item_id} does not exist')
+                return self.err.error(f'item {item_id} does not exist')
+        else:
+            return self.err.warning(NO_DATABASE)
 
-    def item_add(self, item_name: str, tag_list: list, note: str):
-        """
-        Add/create new item
-        :param item_name: item name
-        :param tag_list: tag name list
-        :param note: note
-        """
-        trace('item_add', item_name, tag_list, note)
-        if self._db_loaded():
-            item_id = self.db.sql.insert_into_items(None, item_name, get_timestamp(), note)
-            trace('item_id', item_id)
-            if tag_list:
-                tag_mapping = self.db.sql.get_tag_table_name_mapping()
-                for tag in tag_list:
-                    trace('adding tag', tag)
-                    self.db.sql.insert_into_tags(None, tag_mapping[tag][MAP_TAG_ID], item_id)
-            print(f'added {item_id}')
-
-    def item_update(self, item_id: int, item_name: str, note: str):
+    def item_update(self, item_id: int, item_name: str, note: str) -> Response:
         """
         Update item contents
         :param item_id: item id
         :param item_name: item name
         :param note: item note
         """
-        if self._db_loaded():
+        if self.db_loaded():
             if item_name or note:
                 n = self.db.sql.update_item(item_id, item_name, get_timestamp(), note)
-                print(f'updated {n} items')
+                if n > 0:
+                    return self.err.ok(f'updated {n} items')
+                else:
+                    self.err.warning('no items updated')
             else:
-                print('nothing to update')
+                self.err.warning('nothing to update')
+        else:
+            return self.err.warning(NO_DATABASE)
 
     # -----------------------------------------------------------------
     # Misc commands
