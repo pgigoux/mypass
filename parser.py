@@ -2,7 +2,7 @@ from db import DEFAULT_DATABASE_NAME
 from command import CommandProcessor, FileFormat
 from lexer import Lexer, Token, Tid
 from lexer import LEX_ACTIONS, LEX_DATABASE, LEX_ITEM, LEX_TAG, LEX_FIELD, LEX_MISC, LEX_VALUES, LEX_STRINGS
-from utils import error, trace, trace_toggle
+from utils import error, trace, confirm, trace_toggle
 
 # Error messages
 ERROR_UNKNOWN_COMMAND = 'unknown command'
@@ -19,7 +19,7 @@ class Parser:
     def __init__(self):
         self.lexer = Lexer()
         self.cmd = ''
-        self.cp = CommandProcessor()
+        self.cp = CommandProcessor(confirm=confirm)
 
     def get_token(self) -> Token:
         """
@@ -76,6 +76,49 @@ class Parser:
     # Tag
     # -------------------------------------------------------------
 
+    @staticmethod
+    def _format_table_tag(tag_id: int, tag_name: str, tag_count: int) -> str:
+        return f'{tag_id:2d} {tag_count:3d} {tag_name}'
+
+    def tag_list(self, tok: Token):
+        trace('tag_list', tok)
+        r = self.cp.tag_list()
+        if r.is_ok and r.is_list:
+            for t_id, t_name, t_count in r.value:
+                # print(f'{t_id:2d} {t_count:3d} {t_name}')
+                print(self._format_table_tag(t_id, t_name, t_count))
+        else:
+            print(r)
+
+    def tag_count(self, tok: Token):
+        trace('tag_count', tok)
+        r = self.cp.tag_count()
+        if r.is_ok:
+            print(r.value)
+        else:
+            print(r)
+
+    def tag_search(self, tok: Token):
+        trace('tag_search', tok)
+        r = self.cp.tag_search(tok.value)
+        if r.is_ok and r.is_list:
+            for t_id, t_name, t_count in r.value:
+                print(self._format_table_tag(t_id, t_name, t_count))
+        else:
+            print(r)
+
+    def tag_add(self, tok: Token):
+        trace('tag_add', tok)
+        print(self.cp.tag_add(tok.value))
+
+    def tag_rename(self, tok1: Token, tok2: Token):
+        trace('tag_rename', tok1, tok2)
+        print(self.cp.tag_rename(tok1.value, tok2.value))
+
+    def tag_delete(self, tok: Token):
+        trace('tag_delete', tok)
+        print(self.cp.tag_delete(tok.value))
+
     def tag_command(self, token: Token):
         """
         tag_command : TAG subcommand
@@ -83,29 +126,33 @@ class Parser:
         """
         trace('tag_command', token)
         if token.tid == Tid.LIST:
-            self.cp.tag_list()
+            # self.cp.tag_list()
+            self.tag_list(token)
         elif token.tid == Tid.COUNT:
-            self.cp.tag_count()
+            # self.cp.tag_count()
+            self.tag_count(token)
         elif token.tid in [Tid.SEARCH, Tid.DELETE]:
             tok = self.get_token()
             if tok.tid in LEX_STRINGS:
                 if token.tid == Tid.SEARCH:
                     trace('tag search', tok)
-                    self.cp.tag_search(tok.value)
+                    self.tag_search(tok)
                 else:
                     trace('tag delete', tok)
-                    self.cp.tag_delete(tok.value)
+                    self.tag_delete(tok)
             else:
                 error('bad/missing tag name', tok)
         elif token.tid == Tid.ADD:
             tok = self.get_token()
             if tok.tid in LEX_STRINGS:
-                self.cp.tag_add(tok.value)
+                # self.cp.tag_add(tok.value)
+                self.tag_add(tok)
         elif token.tid == Tid.RENAME:
             tok1 = self.get_token()
             tok2 = self.get_token()
             if tok1.tid in LEX_STRINGS and tok2.tid in LEX_STRINGS:
-                self.cp.tag_rename(tok1.value, tok2.value)
+                # self.cp.tag_rename(tok1.value, tok2.value)
+                self.tag_rename(tok1, tok2)
             else:
                 error('bad tag name', tok1, tok2)
         else:
@@ -354,15 +401,15 @@ class Parser:
             # Run command
             if token.tid == Tid.READ:
                 trace('read', file_name)
-                self.cp.database_read(file_name)
+                print(self.cp.database_read(file_name))
             elif token.tid == Tid.CREATE:
-                self.cp.database_create(file_name)
+                print(self.cp.database_create(file_name))
             else:
                 error(ERROR_UNKNOWN_COMMAND, token)  # should never get here
 
         elif token.tid == Tid.WRITE:
             trace('write', token.value)
-            self.cp.database_write()
+            print(self.cp.database_write())
 
         elif token.tid == Tid.EXPORT:
             tok = self.get_token()
@@ -372,7 +419,7 @@ class Parser:
                 tok = self.get_token()
                 trace('export', output_format, tok)
                 if tok.tid == Tid.FILE:
-                    self.cp.database_export(tok.value, output_format)
+                    print(self.cp.database_export(tok.value, output_format))
                 else:
                     error(ERROR_BAD_FILENAME, tok)
             else:

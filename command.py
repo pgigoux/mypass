@@ -1,10 +1,14 @@
 from enum import Enum, auto
 from os.path import exists
+from typing import Callable
 from db import Database, DEFAULT_DATABASE_NAME
+from error import Error, Response
 from sql import NAME_TAG_TABLE, NAME_FIELD_TABLE, NAME_TAGS, NAME_FIELDS, NAME_ITEMS
 from sql import MAP_TAG_ID, MAP_TAG_NAME, MAP_TAG_COUNT
 from sql import MAP_FIELD_ID, MAP_FIELD_NAME, MAP_FIELD_SENSITIVE, MAP_FIELD_COUNT
-from utils import get_password, get_timestamp, timestamp_to_string, print_line, sensitive_mark, error, confirm, trace
+from utils import get_password, get_timestamp, timestamp_to_string, print_line, sensitive_mark, error, trace
+
+NO_DATABASE = 'no database'
 
 
 class FileFormat(Enum):
@@ -14,23 +18,25 @@ class FileFormat(Enum):
 
 class CommandProcessor:
 
-    def __init__(self):
+    def __init__(self, confirm: Callable):
         """
         The command processor handles the commands that interact with the database
         """
         self.file_name = ''  # database file name
         self.db = None  # database object
+        self.error = Error
+        self.confirm = confirm
 
-    def db_loaded(self, overwrite=False) -> bool:
+    def _db_loaded(self, overwrite=False) -> bool:
         """
         Check whether there's a database in memory
-        Prompt the user whether to overwrite the database if there is one already
+        Prompt the user whether to overwrite the database if there is one in memory already
         :return: True if there's a database and the database can be overwritten, False otherwise
         """
         if self.db is None:
             return False
         elif overwrite:
-            if confirm("There's a database already in memory that will be overwritten"):
+            if self.confirm("There's a database already in memory"):
                 return True
             else:
                 return False
@@ -41,63 +47,80 @@ class CommandProcessor:
     # Database commands
     # -----------------------------------------------------------------
 
-    def database_create(self, file_name=DEFAULT_DATABASE_NAME):
+    def database_create(self, file_name=DEFAULT_DATABASE_NAME) -> Response:
         """
         Create an empty database
         :param file_name: database file name
         """
         trace('database_create', file_name)
-        if self.db_loaded(overwrite=True):
-            return
+        if self._db_loaded(overwrite=True):
+            return self.error.warning('database not created')
 
         # Check whether the file exists already.
         # Create an empty database if that's not the case.
         if exists(file_name):
-            error(f'database {file_name} already exists')
+            r = self.error.error(f'database {file_name} already exists')
         else:
             self.file_name = file_name
             self.db = Database(file_name, get_password())
+            r = self.error.ok(f'created database {file_name}')
 
-    def database_read(self, file_name: str):
+        return r
+
+    def database_read(self, file_name: str) -> Response:
         """
         Read database into memory
         :param file_name: database file name
         :return:
         """
         trace('database_read', file_name)
-        if self.db_loaded(overwrite=True):
-            return
-        print(f'Reading from {file_name}')
+        if self._db_loaded(overwrite=True):
+            return self.error.warning(f'database {file_name} not read')
+
+        trace(f'Reading from {file_name}')
         try:
             self.db = Database(file_name, get_password())
             self.db.read()
             self.file_name = file_name
+            r = self.error.ok(f'read database {file_name}')
         except Exception as e:
-            error(f'failed to read database {file_name}', e)
             self.db = None
             self.file_name = DEFAULT_DATABASE_NAME
+            r = self.error.exception(f'failed to read database {file_name}', e)
 
-    def database_write(self):
+        return r
+
+    def database_write(self) -> Response:
         trace('database_write')
-        if self.db_loaded():
+        if self._db_loaded():
             assert isinstance(self.db, Database)
-            print(f'Writing to {self.file_name}')
+            trace(f'Writing to {self.file_name}')
             try:
                 self.db.write()
+                r = f'database written to {self.file_name}'
             except Exception as e:
-                error('cannot write database', e)
+                r = self.error.exception(f'cannot write database to {self.file_name}', e)
+        else:
+            r = self.error.warning(NO_DATABASE)
 
-    def database_export(self, file_name: str, output_format: FileFormat):
+        return r
+
+    def database_export(self, file_name: str, output_format: FileFormat) -> Response:
         trace('database_export', file_name)
-        if self.db_loaded():
+        if self._db_loaded():
             assert isinstance(self.db, Database)
             try:
                 if output_format == FileFormat.FORMAT_JSON:
                     self.db.export_to_json(file_name)
                 else:
                     self.db.sql.export_to_sql(file_name)
+                r = self.error.ok(f'database exported to {file_name}')
             except Exception as e:
-                error('cannot export database', e)
+                r = self.error.exception(f'cannot export database', e)
+        else:
+            r = self.error.warning(NO_DATABASE)
+
+        return r
 
     def database_import(self, file_name: str, input_format: FileFormat):
         """
@@ -110,11 +133,11 @@ class CommandProcessor:
 
     def database_dump(self):
         """
-        Dump database contents to the terminal
+        Dump database contents to the terminal (debugging)
         :return:
         """
         trace('database_dump')
-        if self.db_loaded():
+        if self._db_loaded():
             assert isinstance(self.db, Database)
             print_line()
             self.db.dump()
@@ -122,9 +145,9 @@ class CommandProcessor:
 
     def database_report(self):
         """
-        Print a database report
+        Print a database report (debugging)
         """
-        if self.db_loaded():
+        if self._db_loaded():
             assert isinstance(self.db, Database)
             self.db.database_report()
 
@@ -140,75 +163,91 @@ class CommandProcessor:
         """
         List all tags
         """
-        if self.db_loaded():
+        if self._db_loaded():
             assert isinstance(self.db, Database)
-            for t_id, t_name, t_count in self.db.sql.get_tag_table_list():
-                print(self._format_table_tag(t_id, t_name, t_count))
+            # for t_id, t_name, t_count in self.db.sql.get_tag_table_list():
+            #     print(self._format_table_tag(t_id, t_name, t_count))
+            return self.error.ok(self.db.sql.get_tag_table_list())
+        else:
+            return self.error.warning(NO_DATABASE)
 
-    def tag_count(self):
+    def tag_count(self) -> Response:
         """
         Print tag count (or how many there are)
         """
-        if self.db_loaded():
+        if self._db_loaded():
             assert isinstance(self.db, Database)
-            print(self.db.sql.get_table_count(NAME_TAG_TABLE))
+            return self.error.ok(self.db.sql.get_table_count(NAME_TAG_TABLE))
+        else:
+            return self.error.warning(NO_DATABASE)
 
-    def tag_search(self, pattern: str):
+    def tag_search(self, pattern: str) -> Response:
         """
         Search for tags matching a pattern
         :param pattern: regexp pattern
         """
         trace('tag_search', pattern)
-        if self.db_loaded():
+        if self._db_loaded():
             assert isinstance(self.db, Database)
-            for t_id, t_name, t_count in self.db.sql.search_tag_table(pattern):
-                print(self._format_table_tag(t_id, t_name, t_count))
+            return self.error.ok(self.db.sql.search_tag_table(pattern))
+            # for t_id, t_name, t_count in self.db.sql.search_tag_table(pattern):
+            #     print(self._format_table_tag(t_id, t_name, t_count))
+        else:
+            return self.error.warning(NO_DATABASE)
 
-    def tag_add(self, name: str):
+    def tag_add(self, name: str) -> Response:
         """
         Add new tag
-        :param name:
+        :param name: tag name
         :return:
         """
-        if self.db_loaded():
+        if self._db_loaded():
             assert isinstance(self.db, Database)
             tag_mapping = self.db.sql.get_tag_table_name_mapping()
             if name in tag_mapping:
-                error(f'tag {name} already exists')
+                return self.error.error(f'tag {name} already exists')
             else:
                 t_id = self.db.sql.insert_into_tag_table(None, name)
-                print(f'Added tag {name} with id {t_id}')
+                return self.error.ok(f'Added tag {name} with id {t_id}')
+        else:
+            return self.error.warning(NO_DATABASE)
 
-    def tag_rename(self, old_name: str, new_name: str):
+    def tag_rename(self, old_name: str, new_name: str) -> Response:
         """
         Rename existing tag
         :param old_name: old tag name
         :param new_name: new tag name
         :return:
         """
-        if self.db_loaded():
+        if self._db_loaded():
             assert isinstance(self.db, Database)
             if self.db.sql.rename_tag_table_entry(old_name, new_name) == 0:
-                error(f'cannot rename tag {old_name}')
+                return self.error.error(f'cannot rename tag {old_name}')
+            else:
+                return self.error.ok(f'tag {old_name} -> {new_name}')
+        else:
+            return self.error.warning(NO_DATABASE)
 
-    def tag_delete(self, name: str):
+    def tag_delete(self, name: str) -> Response:
         """
         Delete tag
         :param name: tag name
         :return:
         """
-        if self.db_loaded():
+        if self._db_loaded():
             assert isinstance(self.db, Database)
-            self.db.sql.update_counters()
+            self.db.sql.update_tag_table_counters()
             tag_mapping = self.db.sql.get_tag_table_name_mapping()
             if name in tag_mapping:
                 if tag_mapping[name][MAP_TAG_COUNT] == 0:
                     n = self.db.sql.delete_from_tag_table(name)
-                    print(f'removed {n} tags')
+                    return self.error.ok(f'removed {n} tags')
                 else:
-                    error(f'tag {name} is being used')
+                    return self.error.error(f'tag {name} is being used')
             else:
-                error(f'tag {name} does not exist')
+                return self.error.error(f'tag {name} does not exist')
+        else:
+            return self.error.warning(NO_DATABASE)
 
     # -----------------------------------------------------------------
     # Field commands
@@ -223,7 +262,7 @@ class CommandProcessor:
         List all fields
         """
         trace('field_list')
-        if self.db_loaded():
+        if self._db_loaded():
             assert isinstance(self.db, Database)
             for f_id, f_name, f_sensitive, f_count in self.db.sql.get_field_table_list():
                 print(self._format_table_field(f_id, f_name, f_sensitive, f_count))
@@ -233,7 +272,7 @@ class CommandProcessor:
         Print field count (or how many there are)
         """
         trace('field_count')
-        if self.db_loaded():
+        if self._db_loaded():
             assert isinstance(self.db, Database)
             print(self.db.sql.get_table_count(NAME_FIELD_TABLE))
 
@@ -243,10 +282,10 @@ class CommandProcessor:
         :param pattern: regexp pattern
         """
         trace('field_search', pattern)
-        if self.db_loaded():
+        if self._db_loaded():
             assert isinstance(self.db, Database)
             trace('field_search', pattern)
-            if self.db_loaded():
+            if self._db_loaded():
                 assert isinstance(self.db, Database)
                 for f_id, f_name, f_sensitive, f_count in self.db.sql.search_field_table(pattern):
                     print(self._format_table_field(f_id, f_name, f_sensitive, f_count))
@@ -259,7 +298,7 @@ class CommandProcessor:
         :return:
         """
         trace('field_add', name, sensitive_flag)
-        if self.db_loaded():
+        if self._db_loaded():
             assert isinstance(self.db, Database)
             field_mapping = self.db.sql.get_field_table_name_mapping()
             if name in field_mapping:
@@ -275,7 +314,7 @@ class CommandProcessor:
         :param new_name: new field name
         :return:
         """
-        if self.db_loaded():
+        if self._db_loaded():
             assert isinstance(self.db, Database)
             try:
                 self.db.sql.rename_field_table_entry(old_name, new_name)
@@ -288,7 +327,7 @@ class CommandProcessor:
         :param name: field name
         """
         trace('field_delete', name)
-        if self.db_loaded():
+        if self._db_loaded():
             assert isinstance(self.db, Database)
             field_mapping = self.db.sql.get_field_table_name_mapping()
             if name in field_mapping:
@@ -312,7 +351,7 @@ class CommandProcessor:
         List all items
         """
         trace('item_list')
-        if self.db_loaded():
+        if self._db_loaded():
             assert isinstance(self.db, Database)
             for item_id, item_name, item_timestamp, _ in self.db.sql.get_item_list():
                 print(self._format_item(item_id, item_name, item_timestamp))
@@ -324,7 +363,7 @@ class CommandProcessor:
         :param show_encrypted: print sensitive fields unencrypted
         """
         trace('print_item', item_id)
-        if self.db_loaded():
+        if self._db_loaded():
             print_line()
             assert isinstance(self.db, Database)
 
@@ -361,7 +400,7 @@ class CommandProcessor:
         :return:
         """
         trace('item_count')
-        if self.db_loaded():
+        if self._db_loaded():
             assert isinstance(self.db, Database)
             print(self.db.sql.get_table_count(NAME_ITEMS))
 
@@ -377,7 +416,7 @@ class CommandProcessor:
         :param note_flag: search in note?
         """
         trace('item_search', pattern, name_flag, tag_flag, field_name_flag, field_value_flag, note_flag)
-        if self.db_loaded():
+        if self._db_loaded():
             assert isinstance(self.db, Database)
             item_list = self.db.search(pattern, item_name_flag=name_flag, tag_flag=tag_flag,
                                        field_name_flag=field_name_flag, field_value_flag=field_value_flag,
@@ -391,7 +430,7 @@ class CommandProcessor:
         :param item_id: item id
         """
         trace(f'item_delete {item_id}')
-        if self.db_loaded():
+        if self._db_loaded():
             assert isinstance(self.db, Database)
             n_tags = self.db.sql.delete_from_tags(item_id)
             n_fields = self.db.sql.delete_from_fields(item_id)
@@ -407,7 +446,7 @@ class CommandProcessor:
         :param item_id: item id
         """
         trace('item_copy', item_id)
-        if self.db_loaded():
+        if self._db_loaded():
             assert isinstance(self.db, Database)
             item_list = self.db.sql.get_item_list(item_id=item_id)
             tag_list = self.db.sql.get_tag_list(item_id=item_id)
@@ -431,7 +470,7 @@ class CommandProcessor:
         :param note: note
         """
         trace('item_add', item_name, tag_list, note)
-        if self.db_loaded():
+        if self._db_loaded():
             item_id = self.db.sql.insert_into_items(None, item_name, get_timestamp(), note)
             trace('item_id', item_id)
             if tag_list:
@@ -448,7 +487,7 @@ class CommandProcessor:
         :param item_name: item name
         :param note: item note
         """
-        if self.db_loaded():
+        if self._db_loaded():
             if item_name or note:
                 n = self.db.sql.update_item(item_id, item_name, get_timestamp(), note)
                 print(f'updated {n} items')
