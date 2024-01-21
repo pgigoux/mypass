@@ -2,7 +2,7 @@ from enum import Enum, auto
 from os.path import exists
 from typing import Callable
 from db import Database, DEFAULT_DATABASE_NAME
-from error import Error, Response
+from error import ErrorHandler, Response
 from sql import NAME_TAG_TABLE, NAME_FIELD_TABLE, NAME_TAGS, NAME_FIELDS, NAME_ITEMS
 from sql import MAP_TAG_ID, MAP_TAG_NAME, MAP_TAG_COUNT
 from sql import MAP_FIELD_ID, MAP_FIELD_NAME, MAP_FIELD_SENSITIVE, MAP_FIELD_COUNT
@@ -24,7 +24,7 @@ class CommandProcessor:
         """
         self.file_name = ''  # database file name
         self.db = None  # database object
-        self.error = Error
+        self.err = ErrorHandler()
         self.confirm = confirm
 
     def _db_loaded(self, overwrite=False) -> bool:
@@ -54,18 +54,16 @@ class CommandProcessor:
         """
         trace('database_create', file_name)
         if self._db_loaded(overwrite=True):
-            return self.error.warning('database not created')
+            return self.err.warning('database not created')
 
         # Check whether the file exists already.
         # Create an empty database if that's not the case.
         if exists(file_name):
-            r = self.error.error(f'database {file_name} already exists')
+            return self.err.error(f'database {file_name} already exists')
         else:
             self.file_name = file_name
             self.db = Database(file_name, get_password())
-            r = self.error.ok(f'created database {file_name}')
-
-        return r
+            return self.err.ok(f'created database {file_name}')
 
     def database_read(self, file_name: str) -> Response:
         """
@@ -75,20 +73,18 @@ class CommandProcessor:
         """
         trace('database_read', file_name)
         if self._db_loaded(overwrite=True):
-            return self.error.warning(f'database {file_name} not read')
+            return self.err.warning(f'database {file_name} not read')
 
         trace(f'Reading from {file_name}')
         try:
             self.db = Database(file_name, get_password())
             self.db.read()
             self.file_name = file_name
-            r = self.error.ok(f'read database {file_name}')
+            return self.err.ok(f'read database {file_name}')
         except Exception as e:
             self.db = None
             self.file_name = DEFAULT_DATABASE_NAME
-            r = self.error.exception(f'failed to read database {file_name}', e)
-
-        return r
+            return self.err.exception(f'failed to read database {file_name}', e)
 
     def database_write(self) -> Response:
         trace('database_write')
@@ -97,13 +93,11 @@ class CommandProcessor:
             trace(f'Writing to {self.file_name}')
             try:
                 self.db.write()
-                r = f'database written to {self.file_name}'
+                return self.err.ok(f'database written to {self.file_name}')
             except Exception as e:
-                r = self.error.exception(f'cannot write database to {self.file_name}', e)
+                return self.err.exception(f'cannot write database to {self.file_name}', e)
         else:
-            r = self.error.warning(NO_DATABASE)
-
-        return r
+            return self.err.warning(NO_DATABASE)
 
     def database_export(self, file_name: str, output_format: FileFormat) -> Response:
         trace('database_export', file_name)
@@ -114,13 +108,11 @@ class CommandProcessor:
                     self.db.export_to_json(file_name)
                 else:
                     self.db.sql.export_to_sql(file_name)
-                r = self.error.ok(f'database exported to {file_name}')
+                return self.err.ok(f'database exported to {file_name}')
             except Exception as e:
-                r = self.error.exception(f'cannot export database', e)
+                return self.err.exception(f'cannot export database', e)
         else:
-            r = self.error.warning(NO_DATABASE)
-
-        return r
+            return self.err.warning(NO_DATABASE)
 
     def database_import(self, file_name: str, input_format: FileFormat):
         """
@@ -145,7 +137,7 @@ class CommandProcessor:
 
     def database_report(self):
         """
-        Print a database report (debugging)
+        Print a database report to the terminal (debugging)
         """
         if self._db_loaded():
             assert isinstance(self.db, Database)
@@ -165,11 +157,9 @@ class CommandProcessor:
         """
         if self._db_loaded():
             assert isinstance(self.db, Database)
-            # for t_id, t_name, t_count in self.db.sql.get_tag_table_list():
-            #     print(self._format_table_tag(t_id, t_name, t_count))
-            return self.error.ok(self.db.sql.get_tag_table_list())
+            return self.err.ok(self.db.sql.get_tag_table_list())
         else:
-            return self.error.warning(NO_DATABASE)
+            return self.err.warning(NO_DATABASE)
 
     def tag_count(self) -> Response:
         """
@@ -177,9 +167,9 @@ class CommandProcessor:
         """
         if self._db_loaded():
             assert isinstance(self.db, Database)
-            return self.error.ok(self.db.sql.get_table_count(NAME_TAG_TABLE))
+            return self.err.ok(self.db.sql.get_table_count(NAME_TAG_TABLE))
         else:
-            return self.error.warning(NO_DATABASE)
+            return self.err.warning(NO_DATABASE)
 
     def tag_search(self, pattern: str) -> Response:
         """
@@ -189,11 +179,9 @@ class CommandProcessor:
         trace('tag_search', pattern)
         if self._db_loaded():
             assert isinstance(self.db, Database)
-            return self.error.ok(self.db.sql.search_tag_table(pattern))
-            # for t_id, t_name, t_count in self.db.sql.search_tag_table(pattern):
-            #     print(self._format_table_tag(t_id, t_name, t_count))
+            return self.err.ok(self.db.sql.search_tag_table(pattern))
         else:
-            return self.error.warning(NO_DATABASE)
+            return self.err.warning(NO_DATABASE)
 
     def tag_add(self, name: str) -> Response:
         """
@@ -205,12 +193,12 @@ class CommandProcessor:
             assert isinstance(self.db, Database)
             tag_mapping = self.db.sql.get_tag_table_name_mapping()
             if name in tag_mapping:
-                return self.error.error(f'tag {name} already exists')
+                return self.err.error(f'tag {name} already exists')
             else:
                 t_id = self.db.sql.insert_into_tag_table(None, name)
-                return self.error.ok(f'Added tag {name} with id {t_id}')
+                return self.err.ok(f'Added tag {name} with id {t_id}')
         else:
-            return self.error.warning(NO_DATABASE)
+            return self.err.warning(NO_DATABASE)
 
     def tag_rename(self, old_name: str, new_name: str) -> Response:
         """
@@ -222,11 +210,11 @@ class CommandProcessor:
         if self._db_loaded():
             assert isinstance(self.db, Database)
             if self.db.sql.rename_tag_table_entry(old_name, new_name) == 0:
-                return self.error.error(f'cannot rename tag {old_name}')
+                return self.err.error(f'cannot rename tag {old_name}')
             else:
-                return self.error.ok(f'tag {old_name} -> {new_name}')
+                return self.err.ok(f'tag {old_name} -> {new_name}')
         else:
-            return self.error.warning(NO_DATABASE)
+            return self.err.warning(NO_DATABASE)
 
     def tag_delete(self, name: str) -> Response:
         """
@@ -241,13 +229,13 @@ class CommandProcessor:
             if name in tag_mapping:
                 if tag_mapping[name][MAP_TAG_COUNT] == 0:
                     n = self.db.sql.delete_from_tag_table(name)
-                    return self.error.ok(f'removed {n} tags')
+                    return self.err.ok(f'removed {n} tags')
                 else:
-                    return self.error.error(f'tag {name} is being used')
+                    return self.err.error(f'tag {name} is being used')
             else:
-                return self.error.error(f'tag {name} does not exist')
+                return self.err.error(f'tag {name} does not exist')
         else:
-            return self.error.warning(NO_DATABASE)
+            return self.err.warning(NO_DATABASE)
 
     # -----------------------------------------------------------------
     # Field commands
