@@ -228,14 +228,6 @@ class Database:
                             output_list.append(tup)
         return output_list
 
-    def update_counters(self):
-        """
-        Update the tag and field table counters
-        :return:
-        """
-        self.sql.update_tag_table_counters()
-        self.sql.update_field_table_counters()
-
     def read(self):
         """
         Read database from disk. The file name was specified when the database was created.
@@ -290,7 +282,7 @@ class Database:
         Write database to disk
         """
         # Make sure all the changes are saved to the database
-        self.update_counters()
+        self.sql.update_counters()
 
         # Export the database to json and encrypt it if a password was defined
         json_data = self.convert_to_json()
@@ -314,11 +306,4 @@ class Database:
 
 
 if __name__ == '__main__':
-    # db = Database('pw.db', password='')
-    # db.read()
-    # db.sql.update_counters()
-    # # db.write()
-    # # db.export_to_json('pw.json')
-    # db.dump()
-    # db.close()
     pass

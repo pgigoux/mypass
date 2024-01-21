@@ -441,22 +441,13 @@ class Sql:
 
     # -- GENERAL
 
-    # def update_counters(self):
-    #     """
-    #     Update the tag and field table counters from the item data
-    #     """
-    #     tag_counters = {t: 0 for t, _, _ in self.get_tag_table_list()}
-    #     field_counters = {f: 0 for f, _, _, _ in self.get_field_table_list()}
-    #     for item_id, _, _, _ in self.get_item_list():
-    #         for _, t_id, _ in self.get_tag_list(item_id=item_id):
-    #             tag_counters[t_id] += 1
-    #         for _, f_id, _, _, f_count in self.get_field_list(item_id=item_id):
-    #             field_counters[f_id] += 1
-    #     for t_id, _, _ in self.get_tag_table_list():
-    #         self.cursor.execute('update tag_table set count = ? where id = ?', (tag_counters[t_id], t_id))
-    #     for f_id, _, _, _ in self.get_field_table_list():
-    #         self.cursor.execute('update field_table set count = ? where id = ?', (field_counters[f_id], f_id))
-    #     self.connection.commit()
+    def update_counters(self):
+        """
+        Update the tag and field table counters
+        :return:
+        """
+        self.update_tag_table_counters()
+        self.update_field_table_counters()
 
     def import_from_sql(self, file_name: str):
         """
