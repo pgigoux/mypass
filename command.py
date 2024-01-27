@@ -7,7 +7,7 @@ from sql import NAME_TAG_TABLE, NAME_FIELD_TABLE, NAME_ITEMS
 from sql import MAP_TAG_ID, MAP_TAG_NAME, MAP_TAG_COUNT
 from sql import MAP_FIELD_NAME, MAP_FIELD_COUNT
 from sql import INDEX_ITEMS_NAME, INDEX_ITEMS_DATE, INDEX_ITEM_NOTE
-from utils import get_password, get_timestamp, timestamp_to_string, print_line, trace
+from utils import get_password, get_timestamp, print_line, trace
 
 NO_DATABASE = 'no database'
 
@@ -156,14 +156,10 @@ class CommandProcessor:
             self.db.database_report()
 
     # -----------------------------------------------------------------
-    # Tag commands
+    # Tag table commands
     # -----------------------------------------------------------------
 
-    @staticmethod
-    def _format_table_tag(tag_id: int, tag_name: str, tag_count: int) -> str:
-        return f'{tag_id:2d} {tag_count:3d} {tag_name}'
-
-    def tag_list(self) -> Response:
+    def tag_table_list(self) -> Response:
         """
         List all tags
         :return: response
@@ -174,7 +170,7 @@ class CommandProcessor:
         else:
             return self.resp.warning(NO_DATABASE)
 
-    def tag_count(self) -> Response:
+    def tag_table_count(self) -> Response:
         """
         Print tag count (or how many there are)
         :return: response
@@ -185,7 +181,7 @@ class CommandProcessor:
         else:
             return self.resp.warning(NO_DATABASE)
 
-    def tag_search(self, pattern: str) -> Response:
+    def tag_table_search(self, pattern: str) -> Response:
         """
         Search for tags matching a pattern
         :param pattern: regexp pattern
@@ -198,7 +194,7 @@ class CommandProcessor:
         else:
             return self.resp.warning(NO_DATABASE)
 
-    def tag_add(self, name: str) -> Response:
+    def tag_table_add(self, name: str) -> Response:
         """
         Add new tag
         :param name: tag name
@@ -215,7 +211,7 @@ class CommandProcessor:
         else:
             return self.resp.warning(NO_DATABASE)
 
-    def tag_rename(self, old_name: str, new_name: str) -> Response:
+    def tag_table_rename(self, old_name: str, new_name: str) -> Response:
         """
         Rename existing tag
         :param old_name: old tag name
@@ -231,7 +227,7 @@ class CommandProcessor:
         else:
             return self.resp.warning(NO_DATABASE)
 
-    def tag_delete(self, name: str) -> Response:
+    def tag_table_delete(self, name: str) -> Response:
         """
         Delete tag
         :param name: tag name
@@ -253,10 +249,10 @@ class CommandProcessor:
             return self.resp.warning(NO_DATABASE)
 
     # -----------------------------------------------------------------
-    # Field commands
+    # Field table commands
     # -----------------------------------------------------------------
 
-    def field_list(self) -> Response:
+    def field_table_list(self) -> Response:
         """
         List all fields
         :return: response
@@ -268,7 +264,7 @@ class CommandProcessor:
         else:
             return self.resp.warning(NO_DATABASE)
 
-    def field_count(self) -> Response:
+    def field_table_count(self) -> Response:
         """
         Print field count (or how many there are)
         :return: response
@@ -280,7 +276,7 @@ class CommandProcessor:
         else:
             return self.resp.warning(NO_DATABASE)
 
-    def field_search(self, pattern: str) -> Response:
+    def field_table_search(self, pattern: str) -> Response:
         """
         Search for fields matching a pattern
         :param pattern: regexp pattern
@@ -293,7 +289,7 @@ class CommandProcessor:
         else:
             return self.resp.warning(NO_DATABASE)
 
-    def field_add(self, name: str, sensitive_flag: bool) -> Response:
+    def field_table_add(self, name: str, sensitive_flag: bool) -> Response:
         """
         Add new field
         :param name: field name
@@ -312,7 +308,7 @@ class CommandProcessor:
         else:
             return self.resp.warning(NO_DATABASE)
 
-    def field_rename(self, old_name: str, new_name: str) -> Response:
+    def field_table_rename(self, old_name: str, new_name: str) -> Response:
         """
         Rename existing tag
         :param old_name: old field name
@@ -328,7 +324,7 @@ class CommandProcessor:
         else:
             return self.resp.warning(NO_DATABASE)
 
-    def field_delete(self, name: str) -> Response:
+    def field_table_delete(self, name: str) -> Response:
         """
         Delete field from field table
         :param name: field name
@@ -351,12 +347,13 @@ class CommandProcessor:
             return self.resp.warning(NO_DATABASE)
 
     # -----------------------------------------------------------------
+    # Tags commands
+    # -----------------------------------------------------------------
+
+    # -----------------------------------------------------------------
     # Item commands
     # -----------------------------------------------------------------
-    @staticmethod
-    def _format_item(item_id: int, item_name: str, item_timestamp: int) -> str:
-        return f'{item_id:5d}  {timestamp_to_string(item_timestamp, date_only=True)}  {item_name}'
-
+ 
     def item_list(self) -> Response:
         """
         List all items
@@ -403,7 +400,7 @@ class CommandProcessor:
 
     def item_get(self, item_id: int) -> Response:
         """
-        Print item
+        Get item as a dictionary
         :param item_id: item id
         """
         trace('print_item', item_id)
