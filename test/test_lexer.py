@@ -21,8 +21,7 @@ def test_keywords():
     assert lx.token('delete') == Token(Tid.DELETE, 'delete')
     assert lx.token('create') == Token(Tid.CREATE, 'create')
     assert lx.token('add') == Token(Tid.ADD, 'add')
-    assert lx.token('edit') == Token(Tid.EDIT, 'edit')
-
+    assert lx.token('update') == Token(Tid.UPDATE, 'update')
     assert lx.token('dump') == Token(Tid.DUMP, 'dump')
     assert lx.token('report') == Token(Tid.REPORT, 'report')
     assert lx.token('trace') == Token(Tid.TRACE, 'trace')
