@@ -6,7 +6,7 @@ from response import ResponseGenerator, Response
 from sql import NAME_TAG_TABLE, NAME_FIELD_TABLE, NAME_ITEMS
 from sql import MAP_TAG_ID, MAP_TAG_NAME, MAP_TAG_COUNT
 from sql import MAP_FIELD_NAME, MAP_FIELD_COUNT
-from sql import INDEX_ITEMS_NAME, INDEX_ITEMS_DATE, INDEX_ITEM_NOTE
+from sql import INDEX_ID, INDEX_ITEMS_NAME, INDEX_ITEMS_DATE, INDEX_ITEMS_NOTE
 from utils import get_password, get_timestamp, print_line, trace
 
 NO_DATABASE = 'no database'
@@ -350,10 +350,34 @@ class CommandProcessor:
     # Tags commands
     # -----------------------------------------------------------------
 
+    def tag_add(self, item_id: int, tag_name: str) -> Response:
+        trace('tag_add', item_id, tag_name)
+        tag_mapping = self.db.sql.get_tag_table_name_mapping()
+        if tag_name in tag_mapping:
+            tag_id = tag_mapping[tag_name][INDEX_ID]
+            if self.db.sql.tag_exists(tag_id, item_id):
+                return self.resp.error(f'tag {tag_name} already exists in item')
+            n = self.db.sql.insert_into_tags(None, tag_id, item_id)
+            return self.resp.ok(f'added {tag_name} to item {item_id} with id={n}')
+        else:
+            return self.resp.error(f'tag {tag_name} does not exist')
+
+    def tag_delete(self, item_id: int, tag_name: str) -> Response:
+        trace('tag_delete', item_id, tag_name)
+        tag_mapping = self.db.sql.get_tag_table_name_mapping()
+        if tag_name in tag_mapping:
+            if self.db.sql.tag_exists(tag_mapping[tag_name][INDEX_ID], item_id):
+                n = self.db.sql.delete_from_tags(item_id)
+                return self.resp.ok(f'deleted {tag_name} from item {item_id}, {n} tags deleted')
+            else:
+                return self.resp.error(f'tag {tag_name} does not exist in item')
+        else:
+            return self.resp.error(f'tag {tag_name} does not exist')
+
     # -----------------------------------------------------------------
     # Item commands
     # -----------------------------------------------------------------
- 
+
     def item_list(self) -> Response:
         """
         List all items
@@ -419,7 +443,7 @@ class CommandProcessor:
                 d = {KEY_ID: item_id,
                      KEY_NAME: item[INDEX_ITEMS_NAME],
                      KEY_TIMESTAMP: item[INDEX_ITEMS_DATE],
-                     KEY_NOTE: item[INDEX_ITEM_NOTE],
+                     KEY_NOTE: item[INDEX_ITEMS_NOTE],
                      KEY_TAGS: [tag_mapping[t_id][MAP_TAG_NAME] for _, t_id, _ in tag_list],
                      KEY_FIELDS: [(f_id, field_mapping[field_id][MAP_FIELD_NAME], f_value, f_encrypted)
                                   for f_id, field_id, _, f_value, f_encrypted in field_list],
