@@ -417,7 +417,28 @@ def test_tags():
 
 
 def test_fields():
-    pass
+    sql = Sql()
+
+    # Create tag & field tables and items
+    create_tag_table(sql)
+    create_field_table(sql)
+    create_items(sql)
+    assert len(sql.get_tag_table_list()) == 3
+    assert len(sql.get_field_table_list()) == 4
+    assert len(sql.get_item_list()) == 5
+
+    # Insert (field id, item id, value, encrypted)
+    # TODO - complete
+    assert sql.insert_into_fields(None, 1, 1, 'v_one', False) == 1
+    assert sql.insert_into_fields(None, 1, 2, 'v_two', False) == 2
+    assert sql.insert_into_fields(None, 1, 3, 'v_three', True) == 3
+    assert sql.insert_into_fields(None, 1, 4, 'v_four', True) == 4
+
+    assert sql.insert_into_fields(None, 2, 2, 'v_four', True) == 5
+    assert sql.insert_into_fields(None, 2, 4, 'v_four', False) == 6
+
+    assert sql.insert_into_fields(None, 3, 1, 'v_four', True) == 7
+    assert sql.insert_into_fields(None, 3, 5, 'v_four', False) == 8
 
 
 if __name__ == '__main__':
@@ -425,3 +446,4 @@ if __name__ == '__main__':
     test_field_table()
     test_items()
     test_tags()
+    test_fields()
