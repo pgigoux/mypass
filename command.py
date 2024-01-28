@@ -366,8 +366,9 @@ class CommandProcessor:
         trace('tag_delete', item_id, tag_name)
         tag_mapping = self.db.sql.get_tag_table_name_mapping()
         if tag_name in tag_mapping:
+            tag_id = tag_mapping[tag_name][MAP_TAG_ID]
             if self.db.sql.tag_exists(tag_mapping[tag_name][INDEX_ID], item_id):
-                n = self.db.sql.delete_from_tags(item_id)
+                n = self.db.sql.delete_from_tags(tag_id, item_id)
                 return self.resp.ok(f'deleted {tag_name} from item {item_id}, {n} tags deleted')
             else:
                 return self.resp.error(f'tag {tag_name} does not exist in item')
@@ -482,7 +483,7 @@ class CommandProcessor:
         trace(f'item_delete {item_id}')
         if self.db_loaded():
             assert isinstance(self.db, Database)
-            n_tags = self.db.sql.delete_from_tags(item_id)
+            n_tags = self.db.sql.delete_from_tags(None, item_id)
             n_fields = self.db.sql.delete_from_fields(item_id)
             if self.db.sql.delete_from_items(item_id) > 0:
                 # self.db.sql.update_counters()
@@ -505,13 +506,13 @@ class CommandProcessor:
             tag_list = self.db.sql.get_tag_list(item_id=item_id)
             field_list = self.db.sql.get_field_list(item_id=item_id)
             if len(item_list) > 0:
-                for i_id, i_name, i_timestamp, i_note in item_list:
-                    new_item_id = self.db.sql.insert_into_items(None, 'Copy of ' + i_name, get_timestamp(), i_note)
-                    for _, t_id, _ in tag_list:
-                        self.db.sql.insert_into_tags(None, t_id, new_item_id)
-                    for _, f_id, _, f_value, f_encrypted in field_list:
-                        self.db.sql.insert_into_fields(None, f_id, new_item_id, f_value, f_encrypted)
-                    return self.resp.ok(f'added item {new_item_id}, {len(tag_list)} tags, {len(field_list)} fields')
+                i_id, i_name, i_timestamp, i_note = item_list[0]
+                new_item_id = self.db.sql.insert_into_items(None, 'Copy of ' + i_name, get_timestamp(), i_note)
+                for _, t_id, _ in tag_list:
+                    self.db.sql.insert_into_tags(None, t_id, new_item_id)
+                for _, f_id, _, f_value, f_encrypted in field_list:
+                    self.db.sql.insert_into_fields(None, f_id, new_item_id, f_value, f_encrypted)
+                return self.resp.ok(f'added item {new_item_id}, {len(tag_list)} tags, {len(field_list)} fields')
             else:
                 return self.resp.error(f'item {item_id} does not exist')
         else:
