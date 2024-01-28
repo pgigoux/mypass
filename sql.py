@@ -356,13 +356,15 @@ class Sql:
         self.cursor.execute('insert into tags values(?,?,?)', (tag_id, tag_table_id, item_id))
         return self.cursor.lastrowid if tag_id is None else tag_id
 
-    def delete_from_tags(self, item_id: int) -> int:
+    def delete_from_tags(self, tag_table_id: int | None, item_id: int) -> int:
         """
         Remove tags associated with a given item id
         :param item_id: item id
         :return: number of rows deleted
         """
-        self.cursor.execute('delete from tags where item_id=?', (item_id,))
+        cmd = f'delete from tags where item_id={item_id}' if tag_table_id is None \
+            else f'delete from tags where tag_id={tag_table_id} and item_id={item_id}'
+        self.cursor.execute(cmd)
         return self.cursor.rowcount
 
     # -------------------------------------------------------------
