@@ -370,6 +370,51 @@ def test_tags():
     assert len(tag_list) == 1
     assert tag_list == [(8, 3, 5)]
 
+    # Delete non existent tags
+    assert (sql.delete_from_tags(2, 1)) == 0
+    assert (sql.delete_from_tags(4, 1)) == 0
+    assert (sql.delete_from_tags(4, 1)) == 0
+
+    assert (sql.delete_from_tags(3, 2)) == 0
+    assert (sql.delete_from_tags(4, 2)) == 0
+    assert (sql.delete_from_tags(5, 2)) == 0
+
+    assert (sql.delete_from_tags(2, 3)) == 0
+    assert (sql.delete_from_tags(3, 3)) == 0
+    assert (sql.delete_from_tags(4, 3)) == 0
+    assert (sql.delete_from_tags(5, 3)) == 0
+
+    assert (sql.delete_from_tags(3, 4)) == 0
+    assert (sql.delete_from_tags(4, 4)) == 0
+    assert (sql.delete_from_tags(5, 4)) == 0
+
+    assert (sql.delete_from_tags(1, 5)) == 0
+    assert (sql.delete_from_tags(2, 5)) == 0
+    assert (sql.delete_from_tags(4, 5)) == 0
+    assert (sql.delete_from_tags(5, 5)) == 0
+
+    # Delete all tags of an item
+    assert (sql.delete_from_tags(None, 1)) == 2
+    assert sql.tag_exists(1, 1) is False
+    assert sql.tag_exists(2, 1) is False
+    assert sql.tag_exists(3, 1) is False
+    assert sql.tag_exists(4, 1) is False
+    assert sql.tag_exists(5, 1) is False
+    tag_list = sql.get_tag_list()
+    assert len(tag_list) == 6
+    assert tag_list == [(2, 1, 2), (3, 1, 3), (4, 1, 4), (5, 2, 2), (6, 2, 4), (8, 3, 5)]
+
+    # Delete single tag of an item
+    assert (sql.delete_from_tags(2, 2)) == 1
+    assert sql.tag_exists(1, 2) is True
+    assert sql.tag_exists(2, 2) is False
+    assert sql.tag_exists(3, 2) is False
+    assert sql.tag_exists(4, 2) is False
+    assert sql.tag_exists(5, 2) is False
+    tag_list = sql.get_tag_list()
+    assert len(tag_list) == 5
+    assert tag_list == [(2, 1, 2), (3, 1, 3), (4, 1, 4), (6, 2, 4), (8, 3, 5)]
+
 
 def test_fields():
     pass
