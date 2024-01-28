@@ -9,17 +9,37 @@ from sql import MAP_TAG_ID, MAP_TAG_NAME, MAP_TAG_COUNT
 from sql import MAP_FIELD_ID, MAP_FIELD_NAME, MAP_FIELD_SENSITIVE, MAP_FIELD_COUNT
 
 
-def _create_tag_table(sql: Sql):
-    sql.insert_into_tag_table(None, 't_one')
-    sql.insert_into_tag_table(None, 't_two')
-    sql.insert_into_tag_table(None, 't_three')
+def create_tag_table(sql: Sql):
+    """
+    Create three arbitrary entries in the tag table
+    :param sql: sql object
+    """
+    sql.insert_into_tag_table(1, 't_one')
+    sql.insert_into_tag_table(2, 't_two')
+    sql.insert_into_tag_table(3, 't_three')
 
 
-def _create_field_table(sql: Sql):
-    sql.insert_into_field_table(None, 'f_one', False)
-    sql.insert_into_field_table(None, 'f_two', True)
-    sql.insert_into_field_table(None, 'f_three', False)
-    sql.insert_into_field_table(None, 'f_four', True)
+def create_field_table(sql: Sql):
+    """
+    Create four arbitrary entries in the field table
+    :param sql: sql object
+    """
+    sql.insert_into_field_table(1, 'f_one', False)
+    sql.insert_into_field_table(2, 'f_two', True)
+    sql.insert_into_field_table(3, 'f_three', False)
+    sql.insert_into_field_table(4, 'f_four', True)
+
+
+def create_items(sql: Sql):
+    """
+    Create five arbitrary entries in the items table
+    :param sql: sql object
+    """
+    sql.insert_into_items(1, 'i_one', 1000, 'note 1')
+    sql.insert_into_items(2, 'i_two', 2000, 'note 2')
+    sql.insert_into_items(3, 'i_three', 3000, 'note 3')
+    sql.insert_into_items(4, 'i_four', 4000, 'note 4')
+    sql.insert_into_items(5, 'i_five', 5000, 'note 5')
 
 
 def test_tag_table():
@@ -193,10 +213,10 @@ def test_items():
     sql = Sql()
 
     # Create tag and field tables
-    _create_tag_table(sql)
-    _create_field_table(sql)
-    assert len(sql.get_tag_table_list()) > 0
-    assert len(sql.get_field_table_list()) > 0
+    create_tag_table(sql)
+    create_field_table(sql)
+    assert len(sql.get_tag_table_list()) == 3
+    assert len(sql.get_field_table_list()) == 4
 
     # Insert
     assert sql.insert_into_items(None, 'i_one', 1000, 'note 1') == 1
@@ -273,8 +293,82 @@ def test_items():
 
 
 def test_tags():
-    # sql = Sql()
-    pass
+    sql = Sql()
+
+    # Create tag & field tables and items
+    create_tag_table(sql)
+    create_field_table(sql)
+    create_items(sql)
+    assert len(sql.get_tag_table_list()) == 3
+    assert len(sql.get_field_table_list()) == 4
+    assert len(sql.get_item_list()) == 5
+
+    # Insert (tag id, item id)
+    assert sql.insert_into_tags(None, 1, 1) == 1
+    assert sql.insert_into_tags(None, 1, 2) == 2
+    assert sql.insert_into_tags(None, 1, 3) == 3
+    assert sql.insert_into_tags(None, 1, 4) == 4
+
+    assert sql.insert_into_tags(None, 2, 2) == 5
+    assert sql.insert_into_tags(None, 2, 4) == 6
+
+    assert sql.insert_into_tags(None, 3, 1) == 7
+    assert sql.insert_into_tags(None, 3, 5) == 8
+
+    # Exists (tag_id, item_id)
+    assert sql.tag_exists(1, 1) is True
+    assert sql.tag_exists(1, 2) is True
+    assert sql.tag_exists(1, 3) is True
+    assert sql.tag_exists(1, 4) is True
+    assert sql.tag_exists(1, 5) is False
+
+    assert sql.tag_exists(2, 1) is False
+    assert sql.tag_exists(2, 2) is True
+    assert sql.tag_exists(2, 3) is False
+    assert sql.tag_exists(2, 4) is True
+    assert sql.tag_exists(2, 5) is False
+
+    assert sql.tag_exists(3, 1) is True
+    assert sql.tag_exists(3, 2) is False
+    assert sql.tag_exists(3, 3) is False
+    assert sql.tag_exists(3, 4) is False
+    assert sql.tag_exists(3, 5) is True
+
+    # Get (item_id)
+    tag_list = sql.get_tag_list()  # all items
+    assert isinstance(tag_list, list)
+    assert len(tag_list) == 8
+    assert tag_list == [(1, 1, 1), (2, 1, 2), (3, 1, 3), (4, 1, 4), (5, 2, 2), (6, 2, 4), (7, 3, 1), (8, 3, 5)]
+
+    tag_list = sql.get_tag_list(1)  # item 1
+    assert isinstance(tag_list, list)
+    assert len(tag_list) == 2
+    assert tag_list == [(1, 1, 1), (7, 3, 1)]
+
+    tag_list = sql.get_tag_list(2)  # item 2
+    assert isinstance(tag_list, list)
+    assert len(tag_list) == 2
+    assert tag_list == [(2, 1, 2), (5, 2, 2)]
+
+    tag_list = sql.get_tag_list(3)  # item 2
+    assert isinstance(tag_list, list)
+    assert len(tag_list) == 1
+    assert tag_list == [(3, 1, 3)]
+
+    tag_list = sql.get_tag_list(3)  # item 3
+    assert isinstance(tag_list, list)
+    assert len(tag_list) == 1
+    assert tag_list == [(3, 1, 3)]
+
+    tag_list = sql.get_tag_list(4)  # item 4
+    assert isinstance(tag_list, list)
+    assert len(tag_list) == 2
+    assert tag_list == [(4, 1, 4), (6, 2, 4)]
+
+    tag_list = sql.get_tag_list(5)  # item 5
+    assert isinstance(tag_list, list)
+    assert len(tag_list) == 1
+    assert tag_list == [(8, 3, 5)]
 
 
 def test_fields():
@@ -285,3 +379,4 @@ if __name__ == '__main__':
     test_tag_table()
     test_field_table()
     test_items()
+    test_tags()
