@@ -119,49 +119,6 @@ class Database:
              KEY_ITEM_SECTION: self.items_to_dict(decrypt_flag=decrypt_flag)}
         return json.dumps(d)
 
-    def dump(self):
-        """
-        Dump database contents to the terminal (debugging)
-        """
-        tag_mapping = self.sql.get_tag_table_name_mapping()
-        field_mapping = self.sql.get_field_table_name_mapping()
-
-        print('Tags')
-        for t_id, t_name, t_count in self.sql.get_tag_table_list():
-            print(f'\t{t_id:2} {t_name} {t_count}')
-        print('Fields')
-        for f_id, f_name, f_sensitive, f_count in self.sql.get_field_table_list():
-            print(f'\t{f_id:2} {f_name} {bool(f_sensitive)} {f_count}')
-        print('Items')
-        item_dict = self.items_to_dict()
-        for i_id in item_dict:
-            print(f'\t{i_id}')
-            item = item_dict[i_id]
-            tag_list = [(tag_mapping[_][MAP_TAG_ID], _) for _ in item[KEY_TAGS]]
-            field_dict = item[KEY_FIELDS]
-            print(f'\t\tname={item[KEY_NAME]}')
-            print(f'\t\tdate={item[KEY_TIMESTAMP]} ({timestamp_to_string(item[KEY_TIMESTAMP])})')
-            print(f'\t\tnote={filter_control_characters(item[KEY_NOTE])}')
-            print(f'\t\ttags={tag_list}')
-            for f_id in field_dict:
-                field = field_dict[f_id]
-                f_tid = field_mapping[field[KEY_NAME]][MAP_TAG_ID]
-                print(f'\t\t{f_id} ({f_tid}) {field[KEY_NAME]} {field[KEY_VALUE]} {field[KEY_ENCRYPTED]}')
-
-    def database_report(self):
-        """
-        Print a database report
-        """
-        print('Table lengths')
-        for table in TABLE_LIST:
-            n_rows = self.sql.get_table_count(table)
-            print(f'\t{table} {n_rows}')
-        print('Table information')
-        for table in TABLE_LIST:
-            print(f'\t{table}')
-            for _, c_name, c_type, _, _, _ in self.sql.get_table_info(table):
-                print(f'\t\t{c_name} {c_type}')
-
     def read_mode(self) -> str:
         """
         Return the file write mode depending on whether encryption is enabled
@@ -303,6 +260,49 @@ class Database:
         Close the database
         """
         self.sql.connection.close()
+
+    def dump(self):
+        """
+        Dump database contents to the terminal (debugging)
+        """
+        tag_mapping = self.sql.get_tag_table_name_mapping()
+        field_mapping = self.sql.get_field_table_name_mapping()
+
+        print('Tags')
+        for t_id, t_name, t_count in self.sql.get_tag_table_list():
+            print(f'\t{t_id:2} {t_name} {t_count}')
+        print('Fields')
+        for f_id, f_name, f_sensitive, f_count in self.sql.get_field_table_list():
+            print(f'\t{f_id:2} {f_name} {bool(f_sensitive)} {f_count}')
+        print('Items')
+        item_dict = self.items_to_dict()
+        for i_id in item_dict:
+            print(f'\t{i_id}')
+            item = item_dict[i_id]
+            tag_list = [(tag_mapping[_][MAP_TAG_ID], _) for _ in item[KEY_TAGS]]
+            field_dict = item[KEY_FIELDS]
+            print(f'\t\tname={item[KEY_NAME]}')
+            print(f'\t\tdate={item[KEY_TIMESTAMP]} ({timestamp_to_string(item[KEY_TIMESTAMP])})')
+            print(f'\t\tnote={filter_control_characters(item[KEY_NOTE])}')
+            print(f'\t\ttags={tag_list}')
+            for f_id in field_dict:
+                field = field_dict[f_id]
+                f_tid = field_mapping[field[KEY_NAME]][MAP_TAG_ID]
+                print(f'\t\t{f_id} ({f_tid}) {field[KEY_NAME]} {field[KEY_VALUE]} {field[KEY_ENCRYPTED]}')
+
+    def database_report(self):
+        """
+        Print a database report (debugging)
+        """
+        print('Table lengths')
+        for table in TABLE_LIST:
+            n_rows = self.sql.get_table_count(table)
+            print(f'\t{table} {n_rows}')
+        print('Table information')
+        for table in TABLE_LIST:
+            print(f'\t{table}')
+            for _, c_name, c_type, _, _, _ in self.sql.get_table_info(table):
+                print(f'\t\t{c_name} {c_type}')
 
 
 if __name__ == '__main__':
