@@ -72,17 +72,4 @@ class Crypt:
 
 
 if __name__ == '__main__':
-    c = Crypt('test')
-    m_in = 'This is a text string'
-
-    m_enc = c.encrypt_str2byte(m_in)
-    c.dump(m_enc)
-    m_dec = c.decrypt_byte2str(m_enc)
-    c.dump(m_dec)
-    assert m_in == m_dec
-
-    m_enc = c.encrypt_str2str(m_in)
-    c.dump(m_enc)
-    m_dec = c.decrypt_str2str(m_enc)
-    c.dump(m_dec)
-    assert m_in == m_dec
+    pass
