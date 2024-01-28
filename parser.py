@@ -41,7 +41,7 @@ class Parser:
 
     def tag_list(self):
         trace('tag_list')
-        r = self.cp.tag_list()
+        r = self.cp.tag_table_list()
         if r.is_ok and r.is_list:
             for t_id, t_name, t_count in r.value:
                 # print(f'{t_id:2d} {t_count:3d} {t_name}')
@@ -51,7 +51,7 @@ class Parser:
 
     def tag_count(self):
         trace('tag_count')
-        r = self.cp.tag_count()
+        r = self.cp.tag_table_count()
         if r.is_ok:
             print(r.value)
         else:
@@ -59,7 +59,7 @@ class Parser:
 
     def tag_search(self, tok: Token):
         trace('tag_search', tok)
-        r = self.cp.tag_search(tok.value)
+        r = self.cp.tag_table_search(tok.value)
         if r.is_ok and r.is_list:
             for t_id, t_name, t_count in r.value:
                 print(self._format_table_tag(t_id, t_name, t_count))
@@ -68,15 +68,15 @@ class Parser:
 
     def tag_add(self, tok: Token):
         trace('tag_add', tok)
-        print(self.cp.tag_add(tok.value))
+        print(self.cp.tag_table_add(tok.value))
 
     def tag_rename(self, tok1: Token, tok2: Token):
         trace('tag_rename', tok1, tok2)
-        print(self.cp.tag_rename(tok1.value, tok2.value))
+        print(self.cp.tag_table_rename(tok1.value, tok2.value))
 
     def tag_delete(self, tok: Token):
         trace('tag_delete', tok)
-        print(self.cp.tag_delete(tok.value))
+        print(self.cp.tag_table_delete(tok.value))
 
     def tag_command(self, token: Token):
         """
@@ -127,7 +127,7 @@ class Parser:
 
     def field_list(self):
         trace('field_list')
-        r = self.cp.field_list()
+        r = self.cp.field_table_list()
         if r.is_ok and r.is_list:
             for f_id, f_name, f_sensitive, f_count in r.value:
                 print(self._format_table_field(f_id, f_name, f_sensitive, f_count))
@@ -136,7 +136,7 @@ class Parser:
 
     def field_count(self):
         trace('field_count')
-        r = self.cp.field_count()
+        r = self.cp.field_table_count()
         if r.is_ok:
             print(r.value)
         else:
@@ -144,7 +144,7 @@ class Parser:
 
     def field_search(self, tok: Token):
         trace('field_search', tok)
-        r = self.cp.field_search(tok.value)
+        r = self.cp.field_table_search(tok.value)
         if r.is_ok and r.is_list:
             for f_id, f_name, f_sensitive, f_count in r.value:
                 print(self._format_table_field(f_id, f_name, f_sensitive, f_count))
@@ -153,15 +153,15 @@ class Parser:
 
     def field_add(self, tok: Token, sensitive: bool):
         trace('field_add', tok)
-        print(self.cp.field_add(tok.value, sensitive))
+        print(self.cp.field_table_add(tok.value, sensitive))
 
     def field_rename(self, tok1: Token, tok2: Token):
         trace('field_rename', tok1, tok2)
-        print(self.cp.field_rename(tok1.value, tok2.value))
+        print(self.cp.field_table_rename(tok1.value, tok2.value))
 
     def field_delete(self, tok: Token):
         trace('field_delete', tok)
-        print(self.cp.field_delete(tok.value))
+        print(self.cp.field_table_delete(tok.value))
 
     def field_command(self, token: Token):
         """
@@ -354,11 +354,26 @@ class Parser:
 
     def item_tag_command(self, token: Token):
         """
-        TODO
-        :param token:
-        :return:
+        Add tag to item
+        :param token: subcommand token
         """
         trace('item_tag_command', token)
+        tok1 = self.get_token()
+        if tok1.tid == Tid.VALUE:
+            tok2 = self.get_token()
+            if tok2.tid == Tid.NAME:
+                if token.tid == Tid.ADD:
+                    trace('tag add', tok1, tok2)
+                    print(self.cp.tag_add(tok1.value, tok2.value))
+                elif token.tid == Tid.DELETE:
+                    trace('tag delete', tok1, tok2)
+                    print(self.cp.tag_delete(tok1.value, tok2.value))
+                else:
+                    error('Invalid tag subcommand', token)
+            else:
+                error('tag name expected', tok2)
+        else:
+            error('item id expected', tok1)
 
     def item_field_command(self, token: Token):
         """
@@ -402,9 +417,9 @@ class Parser:
         trace('item_command', token)
         if token.tid == Tid.LIST:
             self.item_list()
-        elif token.tid in [Tid.PRINT, Tid.DELETE, Tid.COPY, Tid.UPDATE, Tid.TAG, Tid.FIELD]:
+        elif token.tid in [Tid.PRINT, Tid.DELETE, Tid.COPY, Tid.UPDATE]:
             tok = self.get_token()
-            trace('print, dump, delete, copy, tag, field', tok)
+            trace('item print, dump, delete, copy, tag, field', tok)
             if tok.tid == Tid.VALUE:
                 if token.tid == Tid.PRINT:
                     self.item_print(tok)
@@ -412,25 +427,38 @@ class Parser:
                     self.item_delete(tok)
                 elif token.tid == Tid.COPY:
                     self.item_copy(tok)
-                elif token.tid == Tid.TAG:
-                    self.item_tag_command(tok)
-                elif token.tid == Tid.FIELD:
-                    self.item_field_command(tok)
                 elif token.tid == Tid.UPDATE:
                     self.item_update(tok)
                 else:
                     error('Unknown item subcommand', tok)
             else:
                 error('item id expected', tok)
+        elif token.tid == Tid.TAG:
+            tok = self.get_token()
+            trace('item tag', tok)
+            if tok.tid in [Tid.ADD, Tid.DELETE, Tid.RENAME]:
+                self.item_tag_command(tok)
+            else:
+                error('Invalid item tag subcommand', tok)
+        elif token.tid == Tid.FIELD:
+            tok = self.get_token()
+            trace('item field', tok)
+            if tok.tid in [Tid.ADD, Tid.DELETE, Tid.RENAME, Tid.UPDATE]:
+                self.item_field_command(tok)
+            else:
+                error('Invalid item tag subcommand', tok)
         elif token.tid == Tid.COUNT:
+            trace('item count', token)
             self.item_count()
         elif token.tid == Tid.SEARCH:
             tok = self.get_token()
+            trace('item search', tok)
             if tok.tid in LEX_STRINGS:
                 self.item_search(tok)
             else:
                 error('pattern expected')
         elif token.tid == Tid.ADD:
+            trace('item add', token)
             self.item_add()
         else:
             error(ERROR_UNKNOWN_SUBCOMMAND, token)
