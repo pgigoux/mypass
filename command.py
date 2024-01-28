@@ -484,7 +484,7 @@ class CommandProcessor:
         if self.db_loaded():
             assert isinstance(self.db, Database)
             n_tags = self.db.sql.delete_from_tags(None, item_id)
-            n_fields = self.db.sql.delete_from_fields(item_id)
+            n_fields = self.db.sql.delete_from_fields(None, item_id)
             if self.db.sql.delete_from_items(item_id) > 0:
                 # self.db.sql.update_counters()
                 return self.resp.ok(f'removed item {item_id}: {n_tags} tags and {n_fields} fields')

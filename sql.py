@@ -359,6 +359,7 @@ class Sql:
     def delete_from_tags(self, tag_table_id: int | None, item_id: int) -> int:
         """
         Remove tags associated with a given item id
+        :param tag_table_id: tag id from tag table
         :param item_id: item id
         :return: number of rows deleted
         """
@@ -407,13 +408,17 @@ class Sql:
                             (field_id, field_table_id, item_id, field_value, encrypted_value))
         return self.cursor.lastrowid if field_id is None else field_id
 
-    def delete_from_fields(self, item_id: int) -> int:
+    def delete_from_fields(self, field_table_id: int | None, item_id: int) -> int:
         """
         Remove fields associated with a given item id
+        :param field_table_id: field id from field table
         :param item_id: item id
         :return: number of rows deleted
         """
-        self.cursor.execute('delete from fields where item_id=?', (item_id,))
+        # self.cursor.execute('delete from fields where item_id=?', (item_id,))
+        cmd = f'delete from fields where item_id={item_id}' if field_table_id is None \
+            else f'delete from fields where field_id={field_table_id} and item_id={item_id}'
+        self.cursor.execute(cmd)
         return self.cursor.rowcount
 
     # -------------------------------------------------------------
