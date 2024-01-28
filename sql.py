@@ -30,7 +30,7 @@ INDEX_FIELDS_ITEM_ENCRYPTED = 4
 # items
 INDEX_ITEMS_NAME = 1
 INDEX_ITEMS_DATE = 2
-INDEX_ITEM_NOTE = 3
+INDEX_ITEMS_NOTE = 3
 
 # Indices used to access the elements in the tuples returned by the mapping functions
 # tag mapping
@@ -151,7 +151,9 @@ class Sql:
         print('fields', self.get_field_list())
         print('items', self.get_item_list())
 
-    # -- TAG TABLE
+    # -------------------------------------------------------------
+    # Tag table
+    # -------------------------------------------------------------
 
     def get_tag_table_list(self) -> list:
         """
@@ -232,7 +234,9 @@ class Sql:
             self.cursor.execute('update tag_table set count = ? where id = ?', (tag_counters[t_id], t_id))
         self.connection.commit()
 
-    # -- FIELD TABLE
+    # -------------------------------------------------------------
+    # Field table
+    # -------------------------------------------------------------
 
     def get_field_table_list(self) -> list:
         """
@@ -316,7 +320,19 @@ class Sql:
             self.cursor.execute('update field_table set count = ? where id = ?', (field_counters[f_id], f_id))
         self.connection.commit()
 
-    # -- TAGS
+    # -------------------------------------------------------------
+    # Tags
+    # -------------------------------------------------------------
+
+    def tag_exists(self, tag_id: int, item_id: int) -> bool:
+        """
+        Check whether an item has a tag
+        :param tag_id: tag id
+        :param item_id: item id
+        :return: True it it exists, False otherwise
+        """
+        self.cursor.execute(f'select * from tags where item_id=? and tag_id=?', (item_id, tag_id))
+        return len(self.cursor.fetchall()) > 0
 
     def get_tag_list(self, item_id: Optional[int] = None) -> list:
         """
@@ -349,7 +365,19 @@ class Sql:
         self.cursor.execute('delete from tags where item_id=?', (item_id,))
         return self.cursor.rowcount
 
-    # -- FIELDS
+    # -------------------------------------------------------------
+    # Fields
+    # -------------------------------------------------------------
+
+    def field_exists(self, field_id: int, item_id: int) -> bool:
+        """
+        Check whether an item has a tag
+        :param field_id: field id
+        :param item_id: item id
+        :return: True it it exists, False otherwise
+        """
+        self.cursor.execute(f'select * from fields where item_id={item_id} and field_id={field_id}')
+        return len(self.cursor.fetchall()) > 0
 
     def get_field_list(self, item_id: Optional[int] = None) -> list:
         """
@@ -386,7 +414,9 @@ class Sql:
         self.cursor.execute('delete from fields where item_id=?', (item_id,))
         return self.cursor.rowcount
 
-    # -- ITEMS
+    # -------------------------------------------------------------
+    # Items
+    # -------------------------------------------------------------
 
     def get_item_list(self, item_id: Optional[int] = None) -> list:
         """
@@ -439,7 +469,9 @@ class Sql:
         self.cursor.execute(cmd)
         return self.cursor.rowcount
 
-    # -- GENERAL
+    # -------------------------------------------------------------
+    # General
+    # -------------------------------------------------------------
 
     def update_counters(self):
         """
@@ -541,6 +573,14 @@ if __name__ == '__main__':
     print(sql.get_field_list(item_id=4))
     print(sql.get_field_list(item_id=5))
     print(sql.get_field_list(item_id=6))
+
+    print(sql.tag_exists(1, 1))
+    print(sql.tag_exists(2, 1))
+    print(sql.tag_exists(3, 1))
+
+    print(sql.field_exists(1, 1))
+    print(sql.field_exists(2, 1))
+    print(sql.field_exists(3, 1))
 
     # sql.export_to_sql('junk.db')
 
