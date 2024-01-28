@@ -420,7 +420,7 @@ class Sql:
 
     def get_item_list(self, item_id: Optional[int] = None) -> list:
         """
-        Select all items for a given item id (one), or all items if item id is None.
+        Select all items for a given item id, or all items if item id is None.
         Return a list of tuples containing the item id, item name, timestamp and  note.
         :param item_id: item id
         :return: list of tuples with item data
