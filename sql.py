@@ -327,7 +327,7 @@ class Sql:
     def tag_exists(self, tag_id: int, item_id: int) -> bool:
         """
         Check whether an item has a tag
-        :param tag_id: tag id
+        :param tag_id: tag id from tag table
         :param item_id: item id
         :return: True it it exists, False otherwise
         """
@@ -375,11 +375,11 @@ class Sql:
     def field_exists(self, field_id: int, item_id: int) -> bool:
         """
         Check whether an item has a tag
-        :param field_id: field id
+        :param field_id: field id from field table
         :param item_id: item id
         :return: True it it exists, False otherwise
         """
-        self.cursor.execute(f'select * from fields where item_id={item_id} and field_id={field_id}')
+        self.cursor.execute(f'select * from fields where item_id=? and field_id=?', (item_id, field_id))
         return len(self.cursor.fetchall()) > 0
 
     def get_field_list(self, item_id: Optional[int] = None) -> list:
