@@ -558,6 +558,16 @@ def test_fields():
                           (9, 3, 4, 'v_seven', 0),
                           (10, 1, 5, 'v_eight', 0), (11, 4, 5, 'v_nine', 0)]
 
+    # Update
+    assert sql.update_field(4, 2, 'new_five', False) == 1
+    assert sql.get_field_list(2) == [(4, 1, 2, 'new_five', 0), (5, 4, 2, 'v_six', 1)]
+
+    assert sql.update_field(10, 5, 'new_eight', True) == 1
+    assert sql.get_field_list(5) == [(10, 1, 5, 'new_eight', 1), (11, 4, 5, 'v_nine', 0)]
+
+    assert sql.update_field(1, 1, 'something', True) == 0
+    assert sql.update_field(2, 5, 'anything', False) == 0
+
 
 if __name__ == '__main__':
     test_tag_table()

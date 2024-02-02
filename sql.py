@@ -421,6 +421,18 @@ class Sql:
         self.cursor.execute(cmd)
         return self.cursor.rowcount
 
+    def update_field(self, field_id: int, item_id: int, field_value: str, encrypted_value: bool) -> int:
+        """
+        :param field_id: field id
+        :param item_id: item id the field belongs to
+        :param field_value: field value
+        :param encrypted_value: is value encrypted?
+        :return number of rows updated (1 if successful, 0 otherwise)
+        """
+        self.cursor.execute('update fields set value=?, encrypted=? where id=? and item_id=?',
+                            (field_value, encrypted_value, field_id, item_id))
+        return self.cursor.rowcount
+
     # -------------------------------------------------------------
     # Items
     # -------------------------------------------------------------
@@ -465,7 +477,7 @@ class Sql:
         :param item_name: item name
         :param item_timestamp: time stamp
         :param item_note: note
-        :return: number of rows deleted (1 if successful, 0 otherwise)
+        :return: number of rows updated (1 if successful, 0 otherwise)
         """
         cmd = f'update items set date={item_timestamp}'
         if item_name:
