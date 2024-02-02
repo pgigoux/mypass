@@ -305,95 +305,98 @@ def test_tags():
 
     # Insert (tag id, item id)
     assert sql.insert_into_tags(None, 1, 1) == 1
-    assert sql.insert_into_tags(None, 1, 2) == 2
-    assert sql.insert_into_tags(None, 1, 3) == 3
-    assert sql.insert_into_tags(None, 1, 4) == 4
+    assert sql.insert_into_tags(None, 3, 1) == 2
 
-    assert sql.insert_into_tags(None, 2, 2) == 5
-    assert sql.insert_into_tags(None, 2, 4) == 6
+    assert sql.insert_into_tags(None, 1, 2) == 3
+    assert sql.insert_into_tags(None, 2, 2) == 4
 
-    assert sql.insert_into_tags(None, 3, 1) == 7
+    assert sql.insert_into_tags(None, 1, 3) == 5
+
+    assert sql.insert_into_tags(None, 1, 4) == 6
+    assert sql.insert_into_tags(None, 2, 4) == 7
+
     assert sql.insert_into_tags(None, 3, 5) == 8
+
+    with pytest.raises(IntegrityError):
+        sql.insert_into_tags(None, 5, 4)
+        sql.insert_into_tags(None, 1, 10)
 
     # Exists (tag_id, item_id)
     assert sql.tag_exists(1, 1) is True
-    assert sql.tag_exists(1, 2) is True
-    assert sql.tag_exists(1, 3) is True
-    assert sql.tag_exists(1, 4) is True
-    assert sql.tag_exists(1, 5) is False
-
     assert sql.tag_exists(2, 1) is False
-    assert sql.tag_exists(2, 2) is True
-    assert sql.tag_exists(2, 3) is False
-    assert sql.tag_exists(2, 4) is True
-    assert sql.tag_exists(2, 5) is False
-
     assert sql.tag_exists(3, 1) is True
+
+    assert sql.tag_exists(1, 2) is True
+    assert sql.tag_exists(2, 2) is True
     assert sql.tag_exists(3, 2) is False
+
+    assert sql.tag_exists(1, 3) is True
+    assert sql.tag_exists(2, 3) is False
     assert sql.tag_exists(3, 3) is False
+
+    assert sql.tag_exists(1, 4) is True
+    assert sql.tag_exists(2, 4) is True
     assert sql.tag_exists(3, 4) is False
+
+    assert sql.tag_exists(1, 5) is False
+    assert sql.tag_exists(2, 5) is False
     assert sql.tag_exists(3, 5) is True
 
     # Get (item_id)
     tag_list = sql.get_tag_list()  # all items
     assert isinstance(tag_list, list)
     assert len(tag_list) == 8
-    assert tag_list == [(1, 1, 1), (2, 1, 2), (3, 1, 3), (4, 1, 4), (5, 2, 2), (6, 2, 4), (7, 3, 1), (8, 3, 5)]
+    assert tag_list == [(1, 1, 1), (2, 3, 1), (3, 1, 2), (4, 2, 2), (5, 1, 3), (6, 1, 4), (7, 2, 4), (8, 3, 5)]
 
     tag_list = sql.get_tag_list(1)  # item 1
     assert isinstance(tag_list, list)
     assert len(tag_list) == 2
-    assert tag_list == [(1, 1, 1), (7, 3, 1)]
+    assert tag_list == [(1, 1, 1), (2, 3, 1)]
 
     tag_list = sql.get_tag_list(2)  # item 2
     assert isinstance(tag_list, list)
     assert len(tag_list) == 2
-    assert tag_list == [(2, 1, 2), (5, 2, 2)]
+    assert tag_list == [(3, 1, 2), (4, 2, 2)]
 
     tag_list = sql.get_tag_list(3)  # item 2
     assert isinstance(tag_list, list)
     assert len(tag_list) == 1
-    assert tag_list == [(3, 1, 3)]
+    assert tag_list == [(5, 1, 3)]
 
     tag_list = sql.get_tag_list(3)  # item 3
     assert isinstance(tag_list, list)
     assert len(tag_list) == 1
-    assert tag_list == [(3, 1, 3)]
+    assert tag_list == [(5, 1, 3)]
 
     tag_list = sql.get_tag_list(4)  # item 4
     assert isinstance(tag_list, list)
     assert len(tag_list) == 2
-    assert tag_list == [(4, 1, 4), (6, 2, 4)]
+    assert tag_list == [(6, 1, 4), (7, 2, 4)]
 
     tag_list = sql.get_tag_list(5)  # item 5
     assert isinstance(tag_list, list)
     assert len(tag_list) == 1
     assert tag_list == [(8, 3, 5)]
 
-    # Delete non existent tags
+    # Delete non existent tags (tag_id, item_id)
     assert (sql.delete_from_tags(2, 1)) == 0
-    assert (sql.delete_from_tags(4, 1)) == 0
-    assert (sql.delete_from_tags(4, 1)) == 0
+    assert (sql.delete_from_tags(4, 1)) == 0  # bad tag id
 
     assert (sql.delete_from_tags(3, 2)) == 0
-    assert (sql.delete_from_tags(4, 2)) == 0
-    assert (sql.delete_from_tags(5, 2)) == 0
+    assert (sql.delete_from_tags(4, 2)) == 0  # bad tag id
 
     assert (sql.delete_from_tags(2, 3)) == 0
     assert (sql.delete_from_tags(3, 3)) == 0
-    assert (sql.delete_from_tags(4, 3)) == 0
-    assert (sql.delete_from_tags(5, 3)) == 0
+    assert (sql.delete_from_tags(4, 3)) == 0  # bad tag id
 
     assert (sql.delete_from_tags(3, 4)) == 0
-    assert (sql.delete_from_tags(4, 4)) == 0
-    assert (sql.delete_from_tags(5, 4)) == 0
+    assert (sql.delete_from_tags(4, 4)) == 0  # bad tag id
 
     assert (sql.delete_from_tags(1, 5)) == 0
     assert (sql.delete_from_tags(2, 5)) == 0
-    assert (sql.delete_from_tags(4, 5)) == 0
-    assert (sql.delete_from_tags(5, 5)) == 0
+    assert (sql.delete_from_tags(4, 5)) == 0  # bad tag id
 
-    # Delete all tags of an item
+    # Delete all tags of an item (None, item_id)
     assert (sql.delete_from_tags(None, 1)) == 2
     assert sql.tag_exists(1, 1) is False
     assert sql.tag_exists(2, 1) is False
@@ -402,9 +405,9 @@ def test_tags():
     assert sql.tag_exists(5, 1) is False
     tag_list = sql.get_tag_list()
     assert len(tag_list) == 6
-    assert tag_list == [(2, 1, 2), (3, 1, 3), (4, 1, 4), (5, 2, 2), (6, 2, 4), (8, 3, 5)]
+    assert tag_list == [(3, 1, 2), (4, 2, 2), (5, 1, 3), (6, 1, 4), (7, 2, 4), (8, 3, 5)]
 
-    # Delete single tag of an item
+    # Delete single tag of an item (tag_id, item_id)
     assert (sql.delete_from_tags(2, 2)) == 1
     assert sql.tag_exists(1, 2) is True
     assert sql.tag_exists(2, 2) is False
@@ -413,7 +416,7 @@ def test_tags():
     assert sql.tag_exists(5, 2) is False
     tag_list = sql.get_tag_list()
     assert len(tag_list) == 5
-    assert tag_list == [(2, 1, 2), (3, 1, 3), (4, 1, 4), (6, 2, 4), (8, 3, 5)]
+    assert tag_list == [(3, 1, 2), (5, 1, 3), (6, 1, 4), (7, 2, 4), (8, 3, 5)]
 
 
 def test_fields():
@@ -428,17 +431,132 @@ def test_fields():
     assert len(sql.get_item_list()) == 5
 
     # Insert (field id, item id, value, encrypted)
-    # TODO - complete
     assert sql.insert_into_fields(None, 1, 1, 'v_one', False) == 1
-    assert sql.insert_into_fields(None, 1, 2, 'v_two', False) == 2
-    assert sql.insert_into_fields(None, 1, 3, 'v_three', True) == 3
-    assert sql.insert_into_fields(None, 1, 4, 'v_four', True) == 4
+    assert sql.insert_into_fields(None, 2, 1, 'v_two', False) == 2
+    assert sql.insert_into_fields(None, 3, 1, 'v_three', True) == 3
 
-    assert sql.insert_into_fields(None, 2, 2, 'v_four', True) == 5
-    assert sql.insert_into_fields(None, 2, 4, 'v_four', False) == 6
+    assert sql.insert_into_fields(None, 1, 2, 'v_five', True) == 4
+    assert sql.insert_into_fields(None, 4, 2, 'v_six', True) == 5
 
-    assert sql.insert_into_fields(None, 3, 1, 'v_four', True) == 7
-    assert sql.insert_into_fields(None, 3, 5, 'v_four', False) == 8
+    assert sql.insert_into_fields(None, 1, 3, 'v_seven', False) == 6
+    assert sql.insert_into_fields(None, 2, 3, 'v_eight', True) == 7
+    assert sql.insert_into_fields(None, 4, 3, 'v_nine', False) == 8
+
+    assert sql.insert_into_fields(None, 3, 4, 'v_seven', False) == 9
+
+    assert sql.insert_into_fields(None, 1, 5, 'v_eight', False) == 10
+    assert sql.insert_into_fields(None, 4, 5, 'v_nine', False) == 11
+
+    with pytest.raises(IntegrityError):
+        assert sql.insert_into_fields(None, 6, 4, 'v_bad', False) == 10
+        assert sql.insert_into_fields(None, 1, 10, 'v_bad', False) == 11
+
+    # Exists (tag_id, item_id)
+    assert sql.field_exists(1, 1) is True
+    assert sql.field_exists(2, 1) is True
+    assert sql.field_exists(3, 1) is True
+    assert sql.field_exists(4, 1) is False
+
+    assert sql.field_exists(1, 2) is True
+    assert sql.field_exists(2, 2) is False
+    assert sql.field_exists(3, 2) is False
+    assert sql.field_exists(4, 2) is True
+
+    assert sql.field_exists(1, 3) is True
+    assert sql.field_exists(2, 3) is True
+    assert sql.field_exists(3, 3) is False
+    assert sql.field_exists(4, 3) is True
+
+    assert sql.field_exists(1, 4) is False
+    assert sql.field_exists(2, 4) is False
+    assert sql.field_exists(3, 4) is True
+    assert sql.field_exists(4, 4) is False
+
+    # Get (item_id)
+    field_list = sql.get_field_list()  # all items
+    assert isinstance(field_list, list)
+    assert len(field_list) == 11
+    assert field_list == [(1, 1, 1, 'v_one', 0), (2, 2, 1, 'v_two', 0), (3, 3, 1, 'v_three', 1),
+                          (4, 1, 2, 'v_five', 1), (5, 4, 2, 'v_six', 1),
+                          (6, 1, 3, 'v_seven', 0), (7, 2, 3, 'v_eight', 1), (8, 4, 3, 'v_nine', 0),
+                          (9, 3, 4, 'v_seven', 0),
+                          (10, 1, 5, 'v_eight', 0), (11, 4, 5, 'v_nine', 0)]
+
+    field_list = sql.get_field_list(1)  # item 1
+    assert isinstance(field_list, list)
+    assert len(field_list) == 3
+    assert field_list == [(1, 1, 1, 'v_one', 0), (2, 2, 1, 'v_two', 0), (3, 3, 1, 'v_three', 1)]
+
+    field_list = sql.get_field_list(2)  # item 2
+    assert isinstance(field_list, list)
+    assert len(field_list) == 2
+    assert field_list == [(4, 1, 2, 'v_five', 1), (5, 4, 2, 'v_six', 1)]
+
+    field_list = sql.get_field_list(3)  # item 3
+    assert isinstance(field_list, list)
+    assert len(field_list) == 3
+    assert field_list == [(6, 1, 3, 'v_seven', 0), (7, 2, 3, 'v_eight', 1), (8, 4, 3, 'v_nine', 0)]
+
+    field_list = sql.get_field_list(4)  # item 4
+    assert isinstance(field_list, list)
+    assert len(field_list) == 1
+    assert field_list == [(9, 3, 4, 'v_seven', 0)]
+
+    field_list = sql.get_field_list(5)  # item 5
+    assert isinstance(field_list, list)
+    assert len(field_list) == 2
+    assert field_list == [(10, 1, 5, 'v_eight', 0), (11, 4, 5, 'v_nine', 0)]
+
+    assert len(sql.get_field_list(0)) == 0  # non existent items
+    assert len(sql.get_field_list(6)) == 0
+
+    # Delete non existent fields (field_id, item_id)
+    assert (sql.delete_from_fields(4, 1)) == 0
+    assert (sql.delete_from_fields(5, 1)) == 0  # bad field id
+
+    assert (sql.delete_from_fields(2, 2)) == 0
+    assert (sql.delete_from_fields(3, 2)) == 0
+    assert (sql.delete_from_fields(5, 2)) == 0  # bad field id
+
+    assert (sql.delete_from_fields(3, 3)) == 0
+    assert (sql.delete_from_fields(5, 3)) == 0  # bad field id
+
+    assert (sql.delete_from_fields(1, 4)) == 0
+    assert (sql.delete_from_fields(2, 4)) == 0
+    assert (sql.delete_from_fields(4, 4)) == 0
+    assert (sql.delete_from_fields(5, 4)) == 0  # bad field id
+
+    assert (sql.delete_from_fields(2, 5)) == 0
+    assert (sql.delete_from_fields(3, 5)) == 0
+    assert (sql.delete_from_fields(5, 5)) == 0  # bad field id
+
+    # Delete all fields of an item (None, item_id)
+    assert (sql.delete_from_fields(None, 1)) == 3
+    assert sql.field_exists(1, 1) is False
+    assert sql.field_exists(2, 1) is False
+    assert sql.field_exists(3, 1) is False
+    assert sql.field_exists(4, 1) is False
+    assert sql.field_exists(5, 1) is False
+    field_list = sql.get_field_list()
+    assert len(field_list) == 8
+    assert field_list == [(4, 1, 2, 'v_five', 1), (5, 4, 2, 'v_six', 1),
+                          (6, 1, 3, 'v_seven', 0), (7, 2, 3, 'v_eight', 1), (8, 4, 3, 'v_nine', 0),
+                          (9, 3, 4, 'v_seven', 0),
+                          (10, 1, 5, 'v_eight', 0), (11, 4, 5, 'v_nine', 0)]
+
+    # Delete single field of an item (tag_id, item_id)
+    assert (sql.delete_from_fields(2, 3)) == 1
+    assert sql.field_exists(1, 3) is True
+    assert sql.field_exists(2, 3) is False
+    assert sql.field_exists(3, 3) is False
+    assert sql.field_exists(4, 3) is True
+    assert sql.field_exists(5, 3) is False
+    field_list = sql.get_field_list()
+    assert len(field_list) == 7
+    assert field_list == [(4, 1, 2, 'v_five', 1), (5, 4, 2, 'v_six', 1),
+                          (6, 1, 3, 'v_seven', 0), (8, 4, 3, 'v_nine', 0),
+                          (9, 3, 4, 'v_seven', 0),
+                          (10, 1, 5, 'v_eight', 0), (11, 4, 5, 'v_nine', 0)]
 
 
 if __name__ == '__main__':
