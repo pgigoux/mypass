@@ -55,6 +55,9 @@ class Sql:
         self.cursor.execute('pragma foreign_keys = on;')
         self._create_tables()
 
+    def __str__(self):
+        return f'conn={str(self.connection)}, cur={str(self.cursor)}'
+
     def _create_tables(self):
         """
         Create the database tables. The uses four tables to store the data: tag_table,
@@ -372,11 +375,11 @@ class Sql:
     # Fields
     # -------------------------------------------------------------
 
-    def field_exists(self, field_id: int, item_id: int) -> bool:
+    def field_exists(self, item_id, field_id: int) -> bool:
         """
-        Check whether an item has a tag
-        :param field_id: field id from field table
+        Check whether an item has a given field
         :param item_id: item id
+        :param field_id: field id from field table
         :return: True it it exists, False otherwise
         """
         self.cursor.execute(f'select * from fields where item_id=? and field_id=?', (item_id, field_id))
@@ -393,13 +396,13 @@ class Sql:
         self.cursor.execute(cmd)
         return self.cursor.fetchall()
 
-    def insert_into_fields(self, field_id: int | None, field_table_id: int, item_id: int,
+    def insert_into_fields(self, field_id: int | None, item_id: int, field_table_id: int,
                            field_value: str, encrypted_value=False) -> int:
         """
         Insert a new field
         :param field_id: field id (or None if autoincrement)
-        :param field_table_id: field id from the field_table
         :param item_id: item id the field belongs to
+        :param field_table_id: field id from the field_table
         :param field_value: field value
         :param encrypted_value: is value encrypted?
         :return field id
