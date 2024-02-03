@@ -46,6 +46,9 @@ class Database:
         # The database will be encrypted if a password is supplied
         self.crypt_key = Crypt(password) if password else None
 
+    def __str__(self) -> str:
+        return f'fn={self.file_name}, pw={self.password} sql={str(self.sql)} crypt={str(self.crypt_key)}'
+
     def tag_table_to_list(self) -> list:
         """
         Return the tag_table as a list of where each element is a dictionary
@@ -226,10 +229,10 @@ class Database:
                 item = json_data[KEY_ITEM_SECTION][item_id]
                 self.sql.insert_into_items(None, item[KEY_NAME], int(item[KEY_TIMESTAMP]), item[KEY_NOTE])
                 for tag in item[KEY_TAGS]:
-                    self.sql.insert_into_tags(None, tag_mapping[tag][0], int(item_id))
+                    self.sql.insert_into_tags(None, int(item_id), tag_mapping[tag][MAP_TAG_ID])
                 for field_id in item[KEY_FIELDS]:
                     field = item[KEY_FIELDS][field_id]
-                    self.sql.insert_into_fields(None, int(field_mapping[field[KEY_NAME]][0]), int(item_id),
+                    self.sql.insert_into_fields(None, int(item_id), int(field_mapping[field[KEY_NAME]][MAP_FIELD_ID]),
                                                 field[KEY_VALUE], field[KEY_ENCRYPTED])
         except Exception as e:
             raise ValueError(f'failed to read items: {repr(e)}')
