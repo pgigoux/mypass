@@ -306,42 +306,42 @@ def test_tags():
 
     # Insert (tag id, item id)
     assert sql.insert_into_tags(None, 1, 1) == 1  # item 1
-    assert sql.insert_into_tags(None, 3, 1) == 2
+    assert sql.insert_into_tags(None, 1, 3) == 2
 
-    assert sql.insert_into_tags(None, 1, 2) == 3  # item 2
+    assert sql.insert_into_tags(None, 2, 1) == 3  # item 2
     assert sql.insert_into_tags(None, 2, 2) == 4
 
-    assert sql.insert_into_tags(None, 1, 3) == 5  # item 3
+    assert sql.insert_into_tags(None, 3, 1) == 5  # item 3
 
-    assert sql.insert_into_tags(None, 1, 4) == 6  # item 4
-    assert sql.insert_into_tags(None, 2, 4) == 7
+    assert sql.insert_into_tags(None, 4, 1) == 6  # item 4
+    assert sql.insert_into_tags(None, 4, 2) == 7
 
-    assert sql.insert_into_tags(None, 3, 5) == 8  # item 5
+    assert sql.insert_into_tags(None, 5, 3) == 8  # item 5
 
     with pytest.raises(IntegrityError):
-        sql.insert_into_tags(None, 5, 4)
-        sql.insert_into_tags(None, 1, 10)
+        sql.insert_into_tags(None, 4, 5)
+        sql.insert_into_tags(None, 10, 1)
 
     # Exists (tag_id, item_id)
-    assert sql.tag_exists(1, 1) is True
-    assert sql.tag_exists(2, 1) is False
-    assert sql.tag_exists(3, 1) is True
-
-    assert sql.tag_exists(1, 2) is True
-    assert sql.tag_exists(2, 2) is True
-    assert sql.tag_exists(3, 2) is False
-
+    assert sql.tag_exists(1, 1) is True # item 1
+    assert sql.tag_exists(1, 2) is False
     assert sql.tag_exists(1, 3) is True
+
+    assert sql.tag_exists(2, 1) is True # item 2
+    assert sql.tag_exists(2, 2) is True
     assert sql.tag_exists(2, 3) is False
+
+    assert sql.tag_exists(3, 1) is True # item 3
+    assert sql.tag_exists(3, 2) is False
     assert sql.tag_exists(3, 3) is False
 
-    assert sql.tag_exists(1, 4) is True
-    assert sql.tag_exists(2, 4) is True
-    assert sql.tag_exists(3, 4) is False
+    assert sql.tag_exists(4, 1) is True # item 4
+    assert sql.tag_exists(4, 2) is True
+    assert sql.tag_exists(4, 3) is False
 
-    assert sql.tag_exists(1, 5) is False
-    assert sql.tag_exists(2, 5) is False
-    assert sql.tag_exists(3, 5) is True
+    assert sql.tag_exists(5, 1) is False    # item 5
+    assert sql.tag_exists(5, 2) is False
+    assert sql.tag_exists(5, 3) is True
 
     # Get (item_id)
     tag_list = sql.get_tag_list()  # all items
@@ -400,21 +400,21 @@ def test_tags():
     # Delete all tags of item 1
     assert (sql.delete_from_tags(1)) == 2
     assert sql.tag_exists(1, 1) is False
-    assert sql.tag_exists(2, 1) is False
-    assert sql.tag_exists(3, 1) is False
-    assert sql.tag_exists(4, 1) is False
-    assert sql.tag_exists(5, 1) is False
+    assert sql.tag_exists(1, 2) is False
+    assert sql.tag_exists(1, 3) is False
+    assert sql.tag_exists(1, 4) is False
+    assert sql.tag_exists(1, 5) is False
     tag_list = sql.get_tag_list()
     assert len(tag_list) == 6
     assert tag_list == [(3, 1, 2), (4, 2, 2), (5, 1, 3), (6, 1, 4), (7, 2, 4), (8, 3, 5)]
 
     # Delete single tag of an item (tag_id, item_id)
     assert (sql.delete_from_tags(2, 2)) == 1
-    assert sql.tag_exists(1, 2) is True
+    assert sql.tag_exists(2, 1) is True
     assert sql.tag_exists(2, 2) is False
-    assert sql.tag_exists(3, 2) is False
-    assert sql.tag_exists(4, 2) is False
-    assert sql.tag_exists(5, 2) is False
+    assert sql.tag_exists(2, 3) is False
+    assert sql.tag_exists(2, 4) is False
+    assert sql.tag_exists(2, 5) is False
     tag_list = sql.get_tag_list()
     assert len(tag_list) == 5
     assert tag_list == [(3, 1, 2), (5, 1, 3), (6, 1, 4), (7, 2, 4), (8, 3, 5)]

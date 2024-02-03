@@ -324,11 +324,11 @@ class Sql:
     # Tags
     # -------------------------------------------------------------
 
-    def tag_exists(self, tag_id: int, item_id: int) -> bool:
+    def tag_exists(self, item_id: int, tag_id: int) -> bool:
         """
         Check whether an item has a tag
-        :param tag_id: tag id from tag table
         :param item_id: item id
+        :param tag_id: tag id from tag table
         :return: True it it exists, False otherwise
         """
         self.cursor.execute(f'select * from tags where item_id=? and tag_id=?', (item_id, tag_id))
@@ -345,12 +345,12 @@ class Sql:
         self.cursor.execute(cmd)
         return self.cursor.fetchall()
 
-    def insert_into_tags(self, tag_id: int | None, tag_table_id: int, item_id: int) -> int:
+    def insert_into_tags(self, tag_id: int | None, item_id: int, tag_table_id: int) -> int:
         """
         Insert a new tag
         :param tag_id: tag id (or None if autoincrement)
-        :param tag_table_id: tag id from the tag_table
         :param item_id: item id the tag is associated with
+        :param tag_table_id: tag id from the tag_table
         :return tag id
         """
         self.cursor.execute('insert into tags values(?,?,?)', (tag_id, tag_table_id, item_id))
