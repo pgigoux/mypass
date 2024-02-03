@@ -16,6 +16,9 @@ class Crypt:
         """
         self.key = self.generate_crypt_key(password)
 
+    def __str__(self):
+        return f'{str(self.key)}'
+
     @staticmethod
     def generate_crypt_key(password: str) -> Fernet:
         """
