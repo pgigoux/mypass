@@ -3,6 +3,7 @@ import time
 import re
 import getpass
 from datetime import datetime
+from typing import Optional
 
 # Flag to control the trace output
 _trace_disable = True
@@ -107,13 +108,14 @@ def horizontal_line(width=40) -> str:
     return u'\u2015' * width
 
 
-def trace_toggle():
+def trace_toggle(disable_value: Optional[bool] = None):
     """
     Toggle the trace disable flag (used for debugging)
+    :param disable_value: value to force trace flag
     :return:
     """
     global _trace_disable
-    _trace_disable = not _trace_disable
+    _trace_disable = not _trace_disable if disable_value is None else disable_value
 
 
 def trace(label: str, *args):
