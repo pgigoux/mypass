@@ -76,7 +76,7 @@ import json
 import argparse
 from crypt import Crypt
 from db import Database, DEFAULT_DATABASE_NAME
-from utils import get_password, trimmed_string
+from utils import get_password, trimmed_string, trace, trace_toggle
 
 # Files used to save tables into separate files
 FIELD_FILE_NAME = 'fields.csv'
@@ -97,6 +97,7 @@ def process_field(field: dict) -> tuple:
     :return: field name, value and sensitive flag
     :raise: ValueError if the field contents is empty or of no interest
     """
+    trace('process fields', len(field))
     # Extract the field name, value and sensitive flag
     f_name = trimmed_string(field['label'])
     f_sensitive = True if field['sensitive'] == 1 else False
@@ -156,6 +157,7 @@ def process_tag(name: str, uid: str) -> tuple[str, str]:
     :param uid: tag uid
     :return: tuple with tag name and uid
     """
+    trace('process_tag', name, uid)
     if name == 'Bank and Cards':
         name = 'Finance'
     elif name == 'Education and blogs':
@@ -170,6 +172,7 @@ def save_tables(db: Database):
     Save the field and tag tables to csv files
     :param db: database
     """
+    trace('save_tables', db)
     # Field table
     with open(FIELD_FILE_NAME, 'w') as f:
         for f_name, f_uid, f_sensitive, f_count in db.sql.get_field_table_list():
@@ -189,15 +192,17 @@ def import_tags(db: Database, folder_list: list) -> dict:
     :param folder_list: list of folders/tags
     :return:
     """
+    trace('import_tags', db, len(folder_list))
+
     # Create default tag for items that have no folder
-    tag_dict = {TAG_DEFAULT_UID: db.sql.insert_into_tag_table(None, TAG_DEFAULT_NAME, 0)}
+    tag_dict = {TAG_DEFAULT_UID: db.sql.insert_into_tag_table(None, TAG_DEFAULT_NAME)}
 
     # Iterate over all the folder definitions and create the dictionary with a
     # mapping between the uid from the input database and the id that will be
     # used in the new database.
     for folder in folder_list:
         t_name, t_uid = process_tag(folder['title'], folder['uuid'])
-        tag_dict[t_uid] = db.sql.insert_into_tag_table(None, t_name, 0)
+        tag_dict[t_uid] = db.sql.insert_into_tag_table(None, t_name)
 
     return tag_dict
 
@@ -208,6 +213,8 @@ def import_fields(db: Database, item_list: list):
     :param db: database
     :param item_list: list of items
     """
+    trace('import_fields', db, len(item_list))
+
     # Compile the list of all field names used in the database items
     # into a set to eliminate duplicates.
     # The fields that are not relevant are ignored at this point.
@@ -222,10 +229,12 @@ def import_fields(db: Database, item_list: list):
 
     # Insert fields in the field table
     for f_name, f_sensitive in field_set:
-        db.sql.insert_into_field_table(None, f_name, f_sensitive, 0)
+        db.sql.insert_into_field_table(None, f_name, f_sensitive)
 
 
 def import_items(db: Database, item_list: list, tag_mapping: dict):
+    trace('import_items', db, len(tag_mapping))
+
     field_mapping = db.sql.get_field_table_name_mapping()
 
     for item in item_list:
@@ -273,10 +282,10 @@ def import_items(db: Database, item_list: list, tag_mapping: dict):
         # Insert the item into the database
         item_id = db.sql.insert_into_items(None, item_name, int(time_stamp), note)
         for t_id in tag_list:
-            db.sql.insert_into_tags(None, t_id, item_id)
+            db.sql.insert_into_tags(None, item_id, t_id)
         for f_name, f_value, f_encrypted in field_list:
             f_id = field_mapping[f_name][0]
-            db.sql.insert_into_fields(None, f_id, item_id, f_value, f_encrypted)
+            db.sql.insert_into_fields(None, item_id, f_id, f_value, f_encrypted)
 
 
 def import_database(input_file_name: str, output_file_name: str, password: str, dump_database=False):
@@ -287,6 +296,8 @@ def import_database(input_file_name: str, output_file_name: str, password: str, 
     :param password: password to encrypt the output database
     :param dump_database: print the database to the terminal?
     """
+    trace('import_database', input_file_name, output_file_name, password, dump_database)
+
     # Read the data from the json file
     with open(input_file_name, 'r') as f:
         json_data = json.load(f)
@@ -333,12 +344,22 @@ if __name__ == '__main__':
     parser.add_argument('-d',
                         dest='dump',
                         action='store_true',
-                        help='Print output database to stdout')
+                        default=False,
+                        help='Print output database to stdout?')
+
+    parser.add_argument('-t',
+                        dest='trace',
+                        action='store_true',
+                        default=False,
+                        help='trace program execution?')
 
     args = parser.parse_args()
 
     # Get the password to encrypt the output database
     input_password = get_password()
+
+    if args.trace:
+        trace_toggle(False)
 
     # Import the data
     try:
