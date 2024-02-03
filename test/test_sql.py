@@ -277,13 +277,13 @@ def test_items():
                          (200, 'i_five', 5000, 'note 5')]
 
     # Update
-    assert sql.update_item(1, '', 6000, '') == 1
+    assert sql.update_item(1, None, 6000, None) == 1
     assert sql.get_item_list(item_id=1) == [(1, 'i_one', 6000, 'note 1')]
 
-    assert sql.update_item(1, 'new_one', 7000, '') == 1
+    assert sql.update_item(1, 'new_one', 7000, None) == 1
     assert sql.get_item_list(item_id=1) == [(1, 'new_one', 7000, 'note 1')]
 
-    assert sql.update_item(1, '', 8000, 'new note 1') == 1
+    assert sql.update_item(1, None, 8000, 'new note 1') == 1
     assert sql.get_item_list(item_id=1) == [(1, 'new_one', 8000, 'new note 1')]
 
     assert sql.update_item(2, 'two', 8000, 'two two') == 0
@@ -530,7 +530,7 @@ def test_fields():
     assert (sql.delete_from_fields(3, 5)) == 0
     assert (sql.delete_from_fields(5, 5)) == 0  # bad field id
 
-    # Delete all fields of an item (None, item_id)
+    # Delete all fields for item 1 (None, item_id)
     assert (sql.delete_from_fields(None, 1)) == 3
     assert sql.field_exists(1, 1) is False
     assert sql.field_exists(2, 1) is False
@@ -544,7 +544,7 @@ def test_fields():
                           (9, 3, 4, 'v_seven', 0),
                           (10, 1, 5, 'v_eight', 0), (11, 4, 5, 'v_nine', 0)]
 
-    # Delete single field of an item (tag_id, item_id)
+    # Delete single field of item 3 (field_id, item_id)
     assert (sql.delete_from_fields(2, 3)) == 1
     assert sql.field_exists(1, 3) is True
     assert sql.field_exists(2, 3) is False
@@ -558,15 +558,33 @@ def test_fields():
                           (9, 3, 4, 'v_seven', 0),
                           (10, 1, 5, 'v_eight', 0), (11, 4, 5, 'v_nine', 0)]
 
-    # Update
-    assert sql.update_field(4, 2, 'new_five', False) == 1
-    assert sql.get_field_list(2) == [(4, 1, 2, 'new_five', 0), (5, 4, 2, 'v_six', 1)]
+    # [(4, 1, 2, 'v_five', 1), (5, 4, 2, 'v_six', 1),
+    # (6, 1, 3, 'v_seven', 0), (8, 4, 3, 'v_nine', 0),
+    # (9, 3, 4, 'v_seven', 0),
+    # (10, 1, 5, 'v_eight', 0), (11, 4, 5, 'v_nine', 0)]
+    print(field_list)
 
-    assert sql.update_field(10, 5, 'new_eight', True) == 1
-    assert sql.get_field_list(5) == [(10, 1, 5, 'new_eight', 1), (11, 4, 5, 'v_nine', 0)]
+    # Update field id for field 6, item 3
+    assert sql.update_field(6, 3, field_table_id=2) == 1
+    assert sql.get_field_list(3) == [(6, 2, 3, 'v_seven', 0), (8, 4, 3, 'v_nine', 0)]
 
-    assert sql.update_field(1, 1, 'something', True) == 0
-    assert sql.update_field(2, 5, 'anything', False) == 0
+    # Update value for field 6, item 2
+    assert sql.update_field(4, 2, field_value='new_five') == 1
+    assert sql.get_field_list(2) == [(4, 1, 2, 'new_five', 1), (5, 4, 2, 'v_six', 1)]
+
+    # Update encrypted flag for field 11, item 5
+    # print(sql.get_field_list(5))
+    assert sql.update_field(11, 5, encrypted_value=True) == 1
+    # print(sql.get_field_list(5))
+    assert sql.get_field_list(5) == [(10, 1, 5, 'v_eight', 0), (11, 4, 5, 'v_nine', 1)]
+
+    # Update everything for field x item 4
+    assert sql.update_field(9, 4, field_table_id=1, field_value='new_seven', encrypted_value=True) == 1
+    assert sql.get_field_list(4) == [(9, 1, 4, 'new_seven', 1)]
+
+    # Update non-existent fields
+    assert sql.update_field(1, 4, field_table_id=1, field_value='something', encrypted_value=True) == 0
+    assert sql.update_field(2, 4, field_table_id=2, field_value='anything', encrypted_value=False) == 0
 
 
 if __name__ == '__main__':

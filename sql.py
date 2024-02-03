@@ -421,16 +421,33 @@ class Sql:
         self.cursor.execute(cmd)
         return self.cursor.rowcount
 
-    def update_field(self, field_id: int, item_id: int, field_value: str, encrypted_value: bool) -> int:
+    def update_field(self, field_id: int, item_id: int, field_table_id: Optional[int] = None,
+                     field_value: Optional[str] = None, encrypted_value: Optional[bool] = None) -> int:
         """
+        Update field value, encrypted flag and field table id.
+        The item id is redundant, but it's used to double check the correct field is being updated.
         :param field_id: field id
-        :param item_id: item id the field belongs to
+        :param item_id: item id
+        :param field_table_id: field id from field table
         :param field_value: field value
         :param encrypted_value: is value encrypted?
         :return number of rows updated (1 if successful, 0 otherwise)
         """
-        self.cursor.execute('update fields set value=?, encrypted=? where id=? and item_id=?',
-                            (field_value, encrypted_value, field_id, item_id))
+        if field_table_id is None and field_value is None and encrypted_value is None:
+            return 0
+        comma = ''
+        cmd = 'update fields set '
+        if field_table_id is not None:
+            cmd += f'{comma}field_id={field_table_id}'
+            comma = ', '
+        if field_value is not None:
+            cmd += f'{comma}value="{field_value}"'
+            comma = ', '
+        if encrypted_value is not None:
+            cmd += f'{comma}encrypted={encrypted_value}'
+        cmd += f' where id={field_id} and item_id={item_id}'
+        print(f'[cmd={cmd}]')
+        self.cursor.execute(cmd)
         return self.cursor.rowcount
 
     # -------------------------------------------------------------
@@ -470,7 +487,7 @@ class Sql:
         self.cursor.execute('delete from items where id=?', (item_id,))
         return self.cursor.rowcount
 
-    def update_item(self, item_id: int, item_name: str, item_timestamp: int, item_note: str) -> int:
+    def update_item(self, item_id: int, item_name: str | None, item_timestamp: int, item_note: str | None) -> int:
         """
         Update an existing item
         :param item_id: item id
@@ -480,9 +497,9 @@ class Sql:
         :return: number of rows updated (1 if successful, 0 otherwise)
         """
         cmd = f'update items set date={item_timestamp}'
-        if item_name:
+        if item_name is not None:
             cmd += f', name="{item_name}"'
-        if item_note:
+        if item_note is not None:
             cmd += f', note="{item_note}"'
         cmd += f' where id={item_id}'
         self.cursor.execute(cmd)
@@ -543,65 +560,68 @@ class Sql:
 if __name__ == '__main__':
     sql = Sql()
 
-    print('-- insert tag table --')
-    print(sql.insert_into_tag_table(None, 't_one'))
-    print(sql.insert_into_tag_table(None, 't_two'))
-    print(sql.insert_into_tag_table(None, 't_three'))
+    # def update_field(field_id, field_table_id, field_value, encrypted_value) -> int:
+    # print(sql.update_field(10, None, "two", True))
 
-    print('-- insert field table --')
-    print(sql.insert_into_field_table(None, 'f_one', False))
-    print(sql.insert_into_field_table(None, 'f_two', True))
-    print(sql.insert_into_field_table(None, 'f_three', False))
-    print(sql.insert_into_field_table(None, 'f_four', True))
-
-    print('-- insert items --')
-    print(sql.insert_into_items(None, 'i_one', 1000, 'note 1'))
-    print(sql.insert_into_items(None, 'i_two', 2000, 'note 2'))
-    print(sql.insert_into_items(None, 'i_three', 3000, 'note 3'))
-    print(sql.insert_into_items(None, 'i_four', 4000, 'note 4'))
-    print(sql.insert_into_items(None, 'i_five', 5000, 'note 5'))
-
-    print('-- insert tags --')
-    print(sql.insert_into_tags(None, 1, 1))
-    print(sql.insert_into_tags(None, 1, 2))
-    print(sql.insert_into_tags(None, 2, 3))
-    print(sql.insert_into_tags(None, 1, 4))
-    print(sql.insert_into_tags(None, 2, 1))
-    print(sql.insert_into_tags(None, 2, 5))
-
-    print('-- insert fields --')
-    print(sql.insert_into_fields(None, 1, 1, 'f_one', False))
-    print(sql.insert_into_fields(None, 2, 1, 'f_two', False))
-    print(sql.insert_into_fields(None, 3, 2, 'f_three', False))
-    print(sql.insert_into_fields(None, 4, 3, 'f_four', False))
-    print(sql.insert_into_fields(None, 1, 4, 'f_five', False))
-    print(sql.insert_into_fields(None, 2, 5, 'f_six', False))
-
-    print('-- get tags --')
-    print(sql.get_tag_list(item_id=1))
-    print(sql.get_tag_list(item_id=2))
-    print(sql.get_tag_list(item_id=3))
-    print(sql.get_tag_list(item_id=4))
-    print(sql.get_tag_list(item_id=5))
-    print(sql.get_tag_list(item_id=6))
-
-    print('-- get fields --')
-    print(sql.get_field_list(item_id=1))
-    print(sql.get_field_list(item_id=2))
-    print(sql.get_field_list(item_id=3))
-    print(sql.get_field_list(item_id=4))
-    print(sql.get_field_list(item_id=5))
-    print(sql.get_field_list(item_id=6))
-
-    print(sql.tag_exists(1, 1))
-    print(sql.tag_exists(2, 1))
-    print(sql.tag_exists(3, 1))
-
-    print(sql.field_exists(1, 1))
-    print(sql.field_exists(2, 1))
-    print(sql.field_exists(3, 1))
-
-    # sql.export_to_sql('junk.db')
+    # print('-- insert tag table --')
+    # print(sql.insert_into_tag_table(None, 't_one'))
+    # print(sql.insert_into_tag_table(None, 't_two'))
+    # print(sql.insert_into_tag_table(None, 't_three'))
+    #
+    # print('-- insert field table --')
+    # print(sql.insert_into_field_table(None, 'f_one', False))
+    # print(sql.insert_into_field_table(None, 'f_two', True))
+    # print(sql.insert_into_field_table(None, 'f_three', False))
+    # print(sql.insert_into_field_table(None, 'f_four', True))
+    #
+    # print('-- insert items --')
+    # print(sql.insert_into_items(None, 'i_one', 1000, 'note 1'))
+    # print(sql.insert_into_items(None, 'i_two', 2000, 'note 2'))
+    # print(sql.insert_into_items(None, 'i_three', 3000, 'note 3'))
+    # print(sql.insert_into_items(None, 'i_four', 4000, 'note 4'))
+    # print(sql.insert_into_items(None, 'i_five', 5000, 'note 5'))
+    #
+    # print('-- insert tags --')
+    # print(sql.insert_into_tags(None, 1, 1))
+    # print(sql.insert_into_tags(None, 1, 2))
+    # print(sql.insert_into_tags(None, 2, 3))
+    # print(sql.insert_into_tags(None, 1, 4))
+    # print(sql.insert_into_tags(None, 2, 1))
+    # print(sql.insert_into_tags(None, 2, 5))
+    #
+    # print('-- insert fields --')
+    # print(sql.insert_into_fields(None, 1, 1, 'f_one', False))
+    # print(sql.insert_into_fields(None, 2, 1, 'f_two', False))
+    # print(sql.insert_into_fields(None, 3, 2, 'f_three', False))
+    # print(sql.insert_into_fields(None, 4, 3, 'f_four', False))
+    # print(sql.insert_into_fields(None, 1, 4, 'f_five', False))
+    # print(sql.insert_into_fields(None, 2, 5, 'f_six', False))
+    #
+    # print('-- get tags --')
+    # print(sql.get_tag_list(item_id=1))
+    # print(sql.get_tag_list(item_id=2))
+    # print(sql.get_tag_list(item_id=3))
+    # print(sql.get_tag_list(item_id=4))
+    # print(sql.get_tag_list(item_id=5))
+    # print(sql.get_tag_list(item_id=6))
+    #
+    # print('-- get fields --')
+    # print(sql.get_field_list(item_id=1))
+    # print(sql.get_field_list(item_id=2))
+    # print(sql.get_field_list(item_id=3))
+    # print(sql.get_field_list(item_id=4))
+    # print(sql.get_field_list(item_id=5))
+    # print(sql.get_field_list(item_id=6))
+    #
+    # print(sql.tag_exists(1, 1))
+    # print(sql.tag_exists(2, 1))
+    # print(sql.tag_exists(3, 1))
+    #
+    # print(sql.field_exists(1, 1))
+    # print(sql.field_exists(2, 1))
+    # print(sql.field_exists(3, 1))
+    #
+    # # sql.export_to_sql('junk.db')
 
     # print('-' * 20)
     # sql.dump()
