@@ -428,9 +428,8 @@ class CommandProcessor:
         Get item as a dictionary
         :param item_id: item id
         """
-        trace('print_item', item_id)
+        trace('item_get', item_id)
         if self.db_loaded():
-            print_line()
             assert isinstance(self.db, Database)
 
             # Get item and field information
