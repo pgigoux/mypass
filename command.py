@@ -33,6 +33,7 @@ class CommandProcessor:
         """
         self.file_name = ''  # database file name
         self.db = None  # database object
+        self.loaded = False
         self.resp = ResponseGenerator()
         self.confirm = confirm
 
@@ -352,28 +353,34 @@ class CommandProcessor:
 
     def tag_add(self, item_id: int, tag_name: str) -> Response:
         trace('tag_add', item_id, tag_name)
-        tag_mapping = self.db.sql.get_tag_table_name_mapping()
-        if tag_name in tag_mapping:
-            tag_id = tag_mapping[tag_name][INDEX_ID]
-            if self.db.sql.tag_exists(tag_id, item_id):
-                return self.resp.error(f'tag {tag_name} already exists in item')
-            n = self.db.sql.insert_into_tags(None, tag_id, item_id)
-            return self.resp.ok(f'added {tag_name} to item {item_id} with id={n}')
+        if self.db_loaded():
+            tag_mapping = self.db.sql.get_tag_table_name_mapping()
+            if tag_name in tag_mapping:
+                tag_id = tag_mapping[tag_name][INDEX_ID]
+                if self.db.sql.tag_exists(item_id, tag_id):
+                    return self.resp.error(f'tag {tag_name} already exists in item')
+                n = self.db.sql.insert_into_tags(None, tag_id, item_id)
+                return self.resp.ok(f'added {tag_name} to item {item_id} with id={n}')
+            else:
+                return self.resp.error(f'tag {tag_name} does not exist')
         else:
-            return self.resp.error(f'tag {tag_name} does not exist')
+            return self.resp.warning(NO_DATABASE)
 
     def tag_delete(self, item_id: int, tag_name: str) -> Response:
         trace('tag_delete', item_id, tag_name)
-        tag_mapping = self.db.sql.get_tag_table_name_mapping()
-        if tag_name in tag_mapping:
-            tag_id = tag_mapping[tag_name][MAP_TAG_ID]
-            if self.db.sql.tag_exists(tag_mapping[tag_name][INDEX_ID], item_id):
-                n = self.db.sql.delete_from_tags(tag_id, item_id)
-                return self.resp.ok(f'deleted {tag_name} from item {item_id}, {n} tags deleted')
+        if self.db_loaded():
+            tag_mapping = self.db.sql.get_tag_table_name_mapping()
+            if tag_name in tag_mapping:
+                tag_id = tag_mapping[tag_name][MAP_TAG_ID]
+                if self.db.sql.tag_exists(item_id, tag_id):
+                    n = self.db.sql.delete_from_tags(item_id, tag_table_id=tag_id)
+                    return self.resp.ok(f'deleted {tag_name} from item {item_id}, {n} tags deleted')
+                else:
+                    return self.resp.error(f'tag {tag_name} does not exist in item')
             else:
-                return self.resp.error(f'tag {tag_name} does not exist in item')
+                return self.resp.error(f'tag {tag_name} does not exist')
         else:
-            return self.resp.error(f'tag {tag_name} does not exist')
+            return self.resp.warning(NO_DATABASE)
 
     # -----------------------------------------------------------------
     # Item commands
@@ -526,13 +533,13 @@ class CommandProcessor:
         """
         if self.db_loaded():
             if item_name or note:
-                n = self.db.sql.update_item(item_id, item_name, get_timestamp(), note)
+                n = self.db.sql.update_item(item_id, get_timestamp(), item_name=item_name, item_note=note)
                 if n > 0:
                     return self.resp.ok(f'updated {n} items')
                 else:
-                    self.resp.warning('no items updated')
+                    return self.resp.warning('no items updated')
             else:
-                self.resp.warning('nothing to update')
+                return self.resp.warning('nothing to update')
         else:
             return self.resp.warning(NO_DATABASE)
 
