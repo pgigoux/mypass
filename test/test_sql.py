@@ -277,19 +277,20 @@ def test_items():
                          (200, 'i_five', 5000, 'note 5')]
 
     # Update
-    assert sql.update_item(1, None, 6000, None) == 1
+    assert sql.update_item(1, 6000) == 1
     assert sql.get_item_list(item_id=1) == [(1, 'i_one', 6000, 'note 1')]
 
-    assert sql.update_item(1, 'new_one', 7000, None) == 1
+    assert sql.update_item(1, 7000, item_name='new_one') == 1
     assert sql.get_item_list(item_id=1) == [(1, 'new_one', 7000, 'note 1')]
 
-    assert sql.update_item(1, None, 8000, 'new note 1') == 1
+    assert sql.update_item(1, 8000, item_note='new note 1') == 1
     assert sql.get_item_list(item_id=1) == [(1, 'new_one', 8000, 'new note 1')]
 
-    assert sql.update_item(2, 'two', 8000, 'two two') == 0
-
-    assert sql.update_item(3, 'new_three', 9000, 'new note 3') == 1
+    assert sql.update_item(3, 9000, item_name='new_three', item_note='new note 3') == 1
     assert sql.get_item_list(item_id=3) == [(3, 'new_three', 9000, 'new note 3')]
+
+    # Update non existent item
+    assert sql.update_item(2, 10000, item_name='two', item_note='two two') == 0
 
 
 def test_tags():
@@ -562,7 +563,7 @@ def test_fields():
     # (6, 1, 3, 'v_seven', 0), (8, 4, 3, 'v_nine', 0),
     # (9, 3, 4, 'v_seven', 0),
     # (10, 1, 5, 'v_eight', 0), (11, 4, 5, 'v_nine', 0)]
-    print(field_list)
+    # print(field_list)
 
     # Update field id for field 6, item 3
     assert sql.update_field(6, 3, field_table_id=2) == 1

@@ -446,7 +446,6 @@ class Sql:
         if encrypted_value is not None:
             cmd += f'{comma}encrypted={encrypted_value}'
         cmd += f' where id={field_id} and item_id={item_id}'
-        print(f'[cmd={cmd}]')
         self.cursor.execute(cmd)
         return self.cursor.rowcount
 
@@ -487,12 +486,13 @@ class Sql:
         self.cursor.execute('delete from items where id=?', (item_id,))
         return self.cursor.rowcount
 
-    def update_item(self, item_id: int, item_name: str | None, item_timestamp: int, item_note: str | None) -> int:
+    def update_item(self, item_id: int, item_timestamp: int,
+                    item_name: Optional[str] = None, item_note: Optional[str] = None) -> int:
         """
         Update an existing item
         :param item_id: item id
-        :param item_name: item name
         :param item_timestamp: time stamp
+        :param item_name: item name
         :param item_note: note
         :return: number of rows updated (1 if successful, 0 otherwise)
         """
