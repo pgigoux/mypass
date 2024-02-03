@@ -356,11 +356,11 @@ class Sql:
         self.cursor.execute('insert into tags values(?,?,?)', (tag_id, tag_table_id, item_id))
         return self.cursor.lastrowid if tag_id is None else tag_id
 
-    def delete_from_tags(self, tag_table_id: int | None, item_id: int) -> int:
+    def delete_from_tags(self, item_id: int, tag_table_id: Optional[int] = None) -> int:
         """
         Remove tags associated with a given item id
-        :param tag_table_id: tag id from tag table
         :param item_id: item id
+        :param tag_table_id: tag id from tag table
         :return: number of rows deleted
         """
         cmd = f'delete from tags where item_id={item_id}' if tag_table_id is None \
@@ -408,16 +408,16 @@ class Sql:
                             (field_id, field_table_id, item_id, field_value, encrypted_value))
         return self.cursor.lastrowid if field_id is None else field_id
 
-    def delete_from_fields(self, field_table_id: int | None, item_id: int) -> int:
+    def delete_from_fields(self, item_id: int, field_id: Optional[int] = None) -> int:
         """
-        Remove fields associated with a given item id
-        :param field_table_id: field id from field table
+        Remove fields associated with a given item
         :param item_id: item id
+        :param field_id: field id, or None if all fields
         :return: number of rows deleted
         """
         # self.cursor.execute('delete from fields where item_id=?', (item_id,))
-        cmd = f'delete from fields where item_id={item_id}' if field_table_id is None \
-            else f'delete from fields where field_id={field_table_id} and item_id={item_id}'
+        cmd = f'delete from fields where item_id={item_id}' if field_id is None \
+            else f'delete from fields where id={field_id} and item_id={item_id}'
         self.cursor.execute(cmd)
         return self.cursor.rowcount
 
