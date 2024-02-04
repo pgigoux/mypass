@@ -13,6 +13,7 @@ def test_keywords():
     assert lx.token('write') == Token(Tid.WRITE, 'write')
     assert lx.token('export') == Token(Tid.EXPORT, 'export')
 
+    assert lx.token('use') == Token(Tid.USE, 'use')
     assert lx.token('list') == Token(Tid.LIST, 'list')
     assert lx.token('search') == Token(Tid.SEARCH, 'search')
     assert lx.token('print') == Token(Tid.PRINT, 'print')
@@ -22,6 +23,7 @@ def test_keywords():
     assert lx.token('create') == Token(Tid.CREATE, 'create')
     assert lx.token('add') == Token(Tid.ADD, 'add')
     assert lx.token('update') == Token(Tid.UPDATE, 'update')
+
     assert lx.token('dump') == Token(Tid.DUMP, 'dump')
     assert lx.token('report') == Token(Tid.REPORT, 'report')
     assert lx.token('trace') == Token(Tid.TRACE, 'trace')
@@ -40,10 +42,12 @@ def test_switches():
 
 def test_expressions():
     lx = Lexer()
-    assert lx.token('3.15') == Token(Tid.VALUE, 3.15)
-    assert lx.token('10') == Token(Tid.VALUE, 10)
-    assert lx.token('10/10/2020') == Token(Tid.VALUE, '10/10/2020')
-    assert lx.token('10/11') == Token(Tid.VALUE, '10/11')
+    # assert lx.token('3.15') == Token(Tid.VALUE, 3.15)
+    assert lx.token('100') == Token(Tid.INT, 100)
+    assert lx.token('3.15') == Token(Tid.FLOAT, 3.15)
+    # assert lx.token('10') == Token(Tid.VALUE, 10)
+    assert lx.token('10/10/2020') == Token(Tid.DATE, '10/10/2020')
+    assert lx.token('10/11') == Token(Tid.DATE, '10/11')
     assert lx.token('file.txt') == Token(Tid.FILE, 'file.txt')
     assert lx.token('word') == Token(Tid.NAME, 'word')
     assert lx.token('o123') == Token(Tid.NAME, 'o123')
@@ -74,7 +78,7 @@ def test_next():
     assert lx.next_token() == Token(Tid.ITEM, 'item')
     assert lx.next_token() == Token(Tid.SEARCH, 'search')
     assert lx.next_token() == Token(Tid.NAME, 'name')
-    assert lx.next_token() == Token(Tid.VALUE, 8)
+    assert lx.next_token() == Token(Tid.INT, 8)
     assert lx.next_token() == Token(Tid.STRING, 'one string')
     assert lx.next_token() == Token(Tid.NAME, 'joe')
     assert lx.next_token() == Token(Tid.EOS, '')

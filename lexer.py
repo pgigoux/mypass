@@ -25,10 +25,14 @@ class Tid(Enum):
     ADD = auto()
     UPDATE = auto()
     COPY = auto()
+    USE = auto()
     # data
     NAME = auto()
     FILE = auto()
-    VALUE = auto()
+    INT = auto()
+    FLOAT = auto()
+    # VALUE = auto()
+    DATE = auto()
     STRING = auto()
     # misc
     REPORT = auto()
@@ -60,13 +64,15 @@ class LexState(Enum):
 # Token classes
 LEX_ACTIONS = [Tid.DATABASE, Tid.ITEM, Tid.FIELD, Tid.TAG]
 LEX_DATABASE = [Tid.CREATE, Tid.READ, Tid.WRITE, Tid.EXPORT, Tid.DUMP, Tid.REPORT]
-LEX_ITEM = [Tid.LIST, Tid.COUNT, Tid.PRINT, Tid.SEARCH, Tid.ADD, Tid.DELETE, Tid.COPY, Tid.UPDATE]
+LEX_ITEM = [Tid.USE, Tid.LIST, Tid.COUNT, Tid.PRINT, Tid.SEARCH, Tid.ADD, Tid.DELETE, Tid.COPY, Tid.UPDATE]
 LEX_ITEM_TAG_FIELD = [Tid.ADD, Tid.DELETE, Tid.UPDATE]
 LEX_TAG = [Tid.LIST, Tid.COUNT, Tid.SEARCH, Tid.ADD, Tid.DELETE, Tid.RENAME]
 LEX_FIELD = [Tid.LIST, Tid.COUNT, Tid.SEARCH, Tid.ADD, Tid.DELETE, Tid.RENAME]
 LEX_MISC = [Tid.TRACE]
-LEX_STRINGS = [Tid.NAME, Tid.STRING]
-LEX_VALUES = [Tid.VALUE, Tid.NAME, Tid.FILE, Tid.STRING]
+LEX_STRING = [Tid.NAME, Tid.STRING]
+LEX_NUMBER = [Tid.INT, Tid.FLOAT]
+LEX_VALUE = [Tid.INT, Tid.FLOAT, Tid.NAME, Tid.FILE, Tid.STRING]
+
 
 # Regular expressions
 LONG_DATE_PATTERN = r'^\d\d/\d\d/\d\d\d\d'
@@ -122,7 +128,7 @@ class Lexer:
             'db': Tid.DATABASE, 'item': Tid.ITEM, 'tag': Tid.TAG, 'field': Tid.FIELD,
             'read': Tid.READ, 'write': Tid.WRITE, 'export': Tid.EXPORT,
             'print': Tid.PRINT, 'dump': Tid.DUMP,
-            'list': Tid.LIST, 'count': Tid.COUNT, 'search': Tid.SEARCH,
+            'use': Tid.USE, 'list': Tid.LIST, 'count': Tid.COUNT, 'search': Tid.SEARCH,
             'create': Tid.CREATE, 'copy': Tid.COPY, 'add': Tid.ADD, 'update': Tid.UPDATE,
             'rename': Tid.RENAME, 'delete': Tid.DELETE,
             'report': Tid.REPORT, 'trace': Tid.TRACE
@@ -172,11 +178,11 @@ class Lexer:
         elif re.search(LONG_DATE_PATTERN, pattern) \
                 or re.search(SHORT_DATE_PATTERN, pattern) \
                 or re.search(MONTH_YEAR_PATTERN, pattern):
-            t = Token(Tid.VALUE, pattern)
+            t = Token(Tid.DATE, pattern)
         elif re.search(FLOAT_PATTERN, pattern):
-            t = Token(Tid.VALUE, float(pattern))
+            t = Token(Tid.FLOAT, float(pattern))
         elif re.search(INT_PATTERN, pattern):
-            t = Token(Tid.VALUE, int(pattern))
+            t = Token(Tid.INT, int(pattern))
         elif re.search(FILE_PATTERN, pattern):
             t = Token(Tid.FILE, pattern)
         elif re.search(NAME_PATTERN, pattern):
