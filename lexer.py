@@ -31,7 +31,6 @@ class Tid(Enum):
     FILE = auto()
     INT = auto()
     FLOAT = auto()
-    # VALUE = auto()
     DATE = auto()
     STRING = auto()
     # misc
