@@ -47,11 +47,11 @@ copy   <item_id>                                    Copy/duplicate an item
 add    [-n <string>] [-t tag] [-note <string>]      Add new item
 update <item_name> [-n <string>] [-note <string>]   Update an existing item
 
-tag <item_id> add|delete <tag_name>                 Add/delete item tag
-
-field <item_id> add <field_name> <field_value>
-field <item_id> delete <field_id>
-field <item_id> update <field_id>
+use    <item_id>                                    Set item id for tag and field operations
+tag    add|delete <tag_name>                        Add/delete item tag
+field  add <field_name> <field_value>               Add item field
+field  delete <field_id>                            Delete item field
+field  update <field_id> TBD                        Update item field
 """
 
 
