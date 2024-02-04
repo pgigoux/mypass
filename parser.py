@@ -2,7 +2,7 @@ from db import DEFAULT_DATABASE_NAME
 from command import CommandProcessor, FileFormat
 from command import KEY_ID, KEY_NAME, KEY_TIMESTAMP, KEY_NOTE, KEY_TAGS, KEY_FIELDS
 from lexer import Lexer, Token, Tid
-from lexer import LEX_ACTIONS, LEX_DATABASE, LEX_MISC, LEX_STRINGS
+from lexer import LEX_ACTIONS, LEX_DATABASE, LEX_MISC, LEX_VALUE, LEX_STRING
 from utils import error, trace, confirm, trace_toggle, sensitive_mark, timestamp_to_string
 
 # Error messages
@@ -20,6 +20,7 @@ class Parser:
     def __init__(self):
         self.lexer = Lexer()
         self.cmd = ''
+        self.default_item_id = None
         self.cp = CommandProcessor(confirm=confirm)
 
     def get_token(self) -> Token:
@@ -92,7 +93,7 @@ class Parser:
             self.tag_count()
         elif token.tid in [Tid.SEARCH, Tid.DELETE]:
             tok = self.get_token()
-            if tok.tid in LEX_STRINGS:
+            if tok.tid in LEX_STRING:
                 if token.tid == Tid.SEARCH:
                     trace('tag search', tok)
                     self.tag_search(tok)
@@ -103,13 +104,13 @@ class Parser:
                 error('bad/missing tag name', tok)
         elif token.tid == Tid.ADD:
             tok = self.get_token()
-            if tok.tid in LEX_STRINGS:
+            if tok.tid in LEX_STRING:
                 # self.cp.tag_add(tok.value)
                 self.tag_add(tok)
         elif token.tid == Tid.RENAME:
             tok1 = self.get_token()
             tok2 = self.get_token()
-            if tok1.tid in LEX_STRINGS and tok2.tid in LEX_STRINGS:
+            if tok1.tid in LEX_STRING and tok2.tid in LEX_STRING:
                 # self.cp.tag_rename(tok1.value, tok2.value)
                 self.tag_rename(tok1, tok2)
             else:
@@ -175,7 +176,7 @@ class Parser:
             self.field_count()
         elif token.tid in [Tid.SEARCH, Tid.DELETE]:
             tok = self.get_token()
-            if tok.tid in LEX_STRINGS:
+            if tok.tid in LEX_STRING:
                 if token.tid == Tid.SEARCH:
                     trace('field search', tok)
                     self.field_search(tok)
@@ -187,14 +188,14 @@ class Parser:
         elif token.tid == Tid.ADD:
             tok = self.get_token()
             trace('field add', tok)
-            if tok.tid in LEX_STRINGS:
+            if tok.tid in LEX_STRING:
                 s_tok = self.get_token()
                 sensitive = True if s_tok.tid == Tid.SW_SENSITIVE else False
                 self.field_add(tok, sensitive)
         elif token.tid == Tid.RENAME:
             tok1 = self.get_token()
             tok2 = self.get_token()
-            if tok1.tid in LEX_STRINGS and tok2.tid in LEX_STRINGS:
+            if tok1.tid in LEX_STRING and tok2.tid in LEX_STRING:
                 self.field_rename(tok1, tok2)
             else:
                 error('bad field name', tok1, tok2)
@@ -224,7 +225,7 @@ class Parser:
             if token.tid == Tid.SW_NAME:
                 t1 = self.get_token()
                 trace('found name', t1)
-                if t1.tid in LEX_STRINGS:
+                if t1.tid in LEX_STRING:
                     item_name = t1.value
                 else:
                     raise ValueError(f'bad item name {t1}')
@@ -243,9 +244,7 @@ class Parser:
             elif token.tid == Tid.SW_NOTE:
                 t1 = self.get_token()
                 trace('found note', t1)
-                if t1.tid in LEX_STRINGS:
-                    note = t1.value
-                elif t1.tid == Tid.VALUE:
+                if t1.tid in LEX_VALUE:
                     note = str(t1.value)
                 else:
                     raise ValueError(f'bad note {t1}')
@@ -359,7 +358,7 @@ class Parser:
         """
         trace('item_tag_command', token)
         tok1 = self.get_token()
-        if tok1.tid == Tid.VALUE:
+        if tok1.tid == Tid.INT:
             tok2 = self.get_token()
             if tok2.tid == Tid.NAME:
                 if token.tid == Tid.ADD:
@@ -417,11 +416,13 @@ class Parser:
         trace('item_command', token)
         if token.tid == Tid.LIST:
             self.item_list()
-        elif token.tid in [Tid.PRINT, Tid.DELETE, Tid.COPY, Tid.UPDATE]:
+        elif token.tid in [Tid.USE, Tid.PRINT, Tid.DELETE, Tid.COPY, Tid.UPDATE]:
             tok = self.get_token()
             trace('item print, dump, delete, copy, tag, field', tok)
-            if tok.tid == Tid.VALUE:
-                if token.tid == Tid.PRINT:
+            if tok.tid == Tid.INT:
+                if token.tid == Tid.USE:
+                    self.default_item_id = tok.value
+                elif token.tid == Tid.PRINT:
                     self.item_print(tok)
                 elif token.tid == Tid.DELETE:
                     self.item_delete(tok)
@@ -453,7 +454,7 @@ class Parser:
         elif token.tid == Tid.SEARCH:
             tok = self.get_token()
             trace('item search', tok)
-            if tok.tid in LEX_STRINGS:
+            if tok.tid in LEX_STRING:
                 self.item_search(tok)
             else:
                 error('pattern expected')
