@@ -46,6 +46,12 @@ delete <item_id>                                    Delete an existing item
 copy   <item_id>                                    Copy/duplicate an item
 add    [-n <string>] [-t tag] [-note <string>]      Add new item
 update <item_name> [-n <string>] [-note <string>]   Update an existing item
+
+tag <item_id> add|delete <tag_name>                 Add/delete item tag
+
+field <item_id> add <field_name> <field_value>
+field <item_id> delete <field_id>
+field <item_id> update <field_id>
 """
 
 
