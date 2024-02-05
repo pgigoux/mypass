@@ -225,6 +225,14 @@ def test_items():
     assert sql.insert_into_items(None, 'i_four', 4000, 'note 4') == 4
     assert sql.insert_into_items(200, 'i_five', 5000, 'note 5') == 200
 
+    # Exists
+    assert sql.item_exists(1) is True
+    assert sql.item_exists(2) is True
+    assert sql.item_exists(3) is True
+    assert sql.item_exists(4) is True
+    assert sql.item_exists(5) is False
+    assert sql.item_exists(200) is True
+
     # List
     item_list = sql.get_item_list()
     assert isinstance(item_list, list)

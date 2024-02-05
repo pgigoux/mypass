@@ -456,6 +456,16 @@ class Sql:
     # Items
     # -------------------------------------------------------------
 
+    def item_exists(self, item_id: int) -> bool:
+        """
+        Check whether an item exists in the items table
+        :param item_id: item id
+        :return: True it it exists, False otherwise
+        """
+        # TODO - verify
+        self.cursor.execute(f'select * from items where id=?', (item_id, ))
+        return len(self.cursor.fetchall()) > 0
+
     def get_item_list(self, item_id: Optional[int] = None) -> list:
         """
         Select all items for a given item id, or all items if item id is None.
