@@ -34,6 +34,14 @@ class Response:
         return self.severity == Severity.OK
 
     @property
+    def is_bool(self) -> bool:
+        """
+        Is the value a boolean?
+        :return: True if it is, False otherwise
+        """
+        return isinstance(self._value, bool)
+
+    @property
     def is_int(self) -> bool:
         """
         Is the value an integer?
