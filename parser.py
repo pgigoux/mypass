@@ -263,17 +263,6 @@ class Parser:
 
         return item_name, tag_list, note
 
-    def item_use(self, token: Token):
-        trace('parser, item_use', token)
-        r = self.cp.item_exists(token.value)
-        if r.is_ok:
-            if r.value is True:
-                self.default_item_id = token.value
-            else:
-                error(f'item {token.value} does not exist')
-        else:
-            print(r)
-
     def item_list(self):
         trace('parser, item_list')
         r = self.cp.item_list()
@@ -440,7 +429,8 @@ class Parser:
             trace('parser, item print, dump, delete, copy, tag, field', tok)
             if tok.tid == Tid.INT:
                 if token.tid == Tid.USE:
-                    self.item_use(tok)
+                    # self.item_use(tok)
+                    self.default_item_id = tok.value
                 elif token.tid == Tid.PRINT:
                     self.item_print(tok)
                 elif token.tid == Tid.DELETE:
