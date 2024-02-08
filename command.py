@@ -386,16 +386,16 @@ class CommandProcessor:
     # Item commands
     # -----------------------------------------------------------------
 
-    def item_exists(self, item_id: int) -> Response:
-        """
-        Check whether the item exists in the database
-        :param item_id: item id
-        :return: True if it exists, False otherwise
-        """
-        if self.db_loaded():
-            return self.resp.ok(self.db.sql.item_exists(item_id))
-        else:
-            return self.resp.warning(NO_DATABASE)
+    # def item_exists(self, item_id: int) -> Response:
+    #     """
+    #     Check whether the item exists in the database
+    #     :param item_id: item id
+    #     :return: True if it exists, False otherwise
+    #     """
+    #     if self.db_loaded():
+    #         return self.resp.ok(self.db.sql.item_exists(item_id))
+    #     else:
+    #         return self.resp.warning(NO_DATABASE)
 
     def item_list(self) -> Response:
         """
