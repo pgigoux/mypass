@@ -359,7 +359,7 @@ class CommandProcessor:
                 tag_id = tag_mapping[tag_name][INDEX_ID]
                 if self.db.sql.tag_exists(item_id, tag_id):
                     return self.resp.error(f'tag {tag_name} already exists in item')
-                n = self.db.sql.insert_into_tags(None, tag_id, item_id)
+                n = self.db.sql.insert_into_tags(None, item_id, tag_id)
                 return self.resp.ok(f'added {tag_name} to item {item_id} with id={n}')
             else:
                 return self.resp.error(f'tag {tag_name} does not exist')
@@ -373,7 +373,7 @@ class CommandProcessor:
             if tag_name in tag_mapping:
                 tag_id = tag_mapping[tag_name][MAP_TAG_ID]
                 if self.db.sql.tag_exists(item_id, tag_id):
-                    n = self.db.sql.delete_from_tags(item_id, tag_table_id=tag_id)
+                    n = self.db.sql.delete_from_tags(item_id, tag_id)
                     return self.resp.ok(f'deleted {tag_name} from item {item_id}, {n} tags deleted')
                 else:
                     return self.resp.error(f'tag {tag_name} does not exist in item')
