@@ -43,9 +43,8 @@ class Tid(Enum):
     # switches
     SW_SENSITIVE = auto()
     SW_NAME = auto()
-    SW_FIELD = auto()
+    SW_FIELD_NAME = auto()
     SW_FIELD_VALUE = auto()
-    SW_FIELD_DELETE = auto()
     SW_TAG = auto()
     SW_NOTE = auto()
     SW_MULTILINE_NOTE = auto()  # multiline note
@@ -136,9 +135,7 @@ class Lexer:
             '-s': Tid.SW_SENSITIVE,
             '-n': Tid.SW_NAME,
             '-t': Tid.SW_TAG,
-            '-f': Tid.SW_FIELD,
-            '-fn': Tid.SW_FIELD,
-            '-fd': Tid.SW_FIELD_DELETE,
+            '-fn': Tid.SW_FIELD_NAME,
             '-fv': Tid.SW_FIELD_VALUE,
             '-note': Tid.SW_NOTE,
             '-text': Tid.SW_MULTILINE_NOTE
