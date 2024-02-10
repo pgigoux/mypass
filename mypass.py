@@ -38,20 +38,19 @@ rename <old_name> <new_name>    Rename an existing field
 """
 
 HELP_ITEM = """
+use    <item_id>                                    Set item id for tag/field/print operations
 list                                                List available items
 count                                               Return number of items
-print  <item_id>                                    Print item contents
+print  [item_id]                                    Print item contents
 search <string> [-n] [-t] [-fn] [-fv] [-note]       Search for an item
 delete <item_id>                                    Delete an existing item
 copy   <item_id>                                    Copy/duplicate an item
 add    [-n <string>] [-t tag] [-note <string>]      Add new item
 update <item_name> [-n <string>] [-note <string>]   Update an existing item
-
-use    <item_id>                                    Set item id for tag and field operations
 tag    add|delete <tag_name>                        Add/delete item tag
 field  add <field_name> <field_value>               Add item field
 field  delete <field_id>                            Delete item field
-field  update <field_id> TBD                        Update item field
+field  update <field_id> [-fn <name>] [-fv <value>] Update item field
 """
 
 
