@@ -294,7 +294,7 @@ class Sql:
 
     def rename_field_table_entry(self, old_name: str, new_name: str) -> int:
         """
-        Rename a tag.
+        Rename a tag
         :param old_name: old field name
         :param new_name: new field name
         :return: number of changes made (1 if ok, 0 if the tag didn't exist)
