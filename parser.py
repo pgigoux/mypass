@@ -210,15 +210,12 @@ class Parser:
     def _format_item(item_id: int, item_name: str, item_timestamp: int) -> str:
         return f'{item_id:5d}  {timestamp_to_string(item_timestamp, date_only=True)}  {item_name}'
 
-    def item_options(self, tag_flag=False) -> tuple[str, list, str]:
+    def item_options(self) -> dict | None:
         """
         Get item add/edit options
-        :return: tuple
+        :return: dictionary with options, or None if unknown option
         """
-        item_name = ''
-        tag_list = []
-        note = ""
-        # multiline_note = False
+        d = {Tid.SW_SENSITIVE: False, Tid.SW_TAG: [], Tid.SW_NOTE: '', Tid.SW_MULTILINE_NOTE: False}
         while True:
             token = self.get_token()
             trace('parser, token', token)
@@ -226,42 +223,47 @@ class Parser:
                 t1 = self.get_token()
                 trace('parser, found name', t1)
                 if t1.tid in LEX_STRING:
-                    item_name = t1.value
+                    d[Tid.SW_NAME] = t1.value
                 else:
-                    raise ValueError(f'bad item name {t1}')
-
+                    error(f'bad name option {t1}')
             elif token.tid == Tid.SW_TAG:
-                if tag_flag:
-                    t1 = self.get_token()
-                    trace('parser, found tag', t1)
-                    if t1.tid == Tid.NAME:
-                        tag_list.append(t1.value)
-                    else:
-                        raise ValueError(f'bad tag {t1}')
+                t1 = self.get_token()
+                trace('parser, found tag', t1, d)
+                if t1.tid == Tid.NAME:
+                    d[Tid.SW_TAG].append(t1.value)
                 else:
-                    raise ValueError(f'option not allowed', token)
-
+                    error(f'bad tag {t1}')
+            elif token.tid == Tid.SW_FIELD_NAME:
+                t1 = self.get_token()
+                trace('parser, found field name', t1)
+                if t1.tid == Tid.NAME:
+                    d[Tid.SW_FIELD_NAME] = t1.value
+                else:
+                    error(f'bad field name {t1}')
+            elif token.tid == Tid.SW_FIELD_NAME:
+                t1 = self.get_token()
+                trace('parser, found field name', t1)
+                if t1.tid in LEX_VALUE:
+                    d[Tid.SW_FIELD_VALUE] = t1.value
+                else:
+                    error(f'bad field value {t1}')
             elif token.tid == Tid.SW_NOTE:
                 t1 = self.get_token()
                 trace('parser, found note', t1)
                 if t1.tid in LEX_VALUE:
-                    note = str(t1.value)
+                    d[Tid.SW_NOTE] = str(t1.value)
                 else:
-                    raise ValueError(f'bad note {t1}')
-
-            # elif token.tid == Tid.SW_MULTILINE_NOTE:
-            # TODO
-            #     trace('found note text')
-            #     multiline_note = True
-
+                    error(f'bad note {t1}')
+            elif token.tid == Tid.SW_MULTILINE_NOTE:
+                # TODO - decide how to handle this option
+                d[Tid.SW_MULTILINE_NOTE] = True
             elif token.tid == Tid.EOS:
                 trace('parser, eos')
                 break
-
             else:
-                raise ValueError(f'unknown item option {token}')
-
-        return item_name, tag_list, note
+                error(f'unknown item option {token}')
+                return None
+        return d
 
     def item_list(self):
         trace('parser, item_list')
@@ -297,7 +299,7 @@ class Parser:
                 name_flag = True
             elif tok.tid == Tid.SW_TAG:
                 tag_flag = True
-            elif tok.tid == Tid.SW_FIELD:
+            elif tok.tid == Tid.SW_FIELD_NAME:
                 field_name_flag = True
             elif tok.tid == Tid.SW_FIELD_VALUE:
                 field_value_flag = True
@@ -321,9 +323,17 @@ class Parser:
         Add new item
         """
         trace('parser, item_add')
-        item_name, tag_list, note = self.item_options(tag_flag=True)
-        trace('parser, item_add', item_name, tag_list, note)
-        print(self.cp.item_add(item_name, tag_list, note))
+        opt = self.item_options()
+        if opt is not None:
+            try:
+                item_name = opt[Tid.SW_NAME]
+                tag_list = opt[Tid.SW_TAG]
+                note = opt[Tid.SW_NOTE]
+            except IndexError as e:
+                error('Missing option', e)
+                return
+            trace('parser, item_add', item_name, tag_list, note)
+            print(self.cp.item_add(item_name, tag_list, note))
 
     def item_delete(self, token: Token):
         """
@@ -347,12 +357,20 @@ class Parser:
         :param token: item id token
         """
         trace('parser, item_update', token)
-        item_name, _, note = self.item_options()
-        trace('parser, item_update', item_name, note)
-        print(self.cp.item_update(token.value, item_name, note))
+        opt = self.item_options()
+        if opt is not None:
+            try:
+                item_name = opt[Tid.SW_NAME]
+                note = opt[Tid.SW_NOTE]
+            except IndexError as e:
+                error('Missing option', e)
+                return
+            trace('parser, item_update', item_name, note)
+            print(self.cp.item_update(token.value, item_name, note))
 
     def item_tag_command(self, token: Token):
         """
+        TODO - update
         Add tag to item
         :param token: subcommand token
         """
@@ -624,7 +642,6 @@ class Parser:
 
 if __name__ == '__main__':
     pass
-    # parser = Parser()
     # while True:
     #     try:
     #         input_command = input('db> ')
