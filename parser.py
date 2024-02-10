@@ -370,27 +370,25 @@ class Parser:
 
     def item_tag_command(self, token: Token):
         """
-        TODO - update
         Add tag to item
         :param token: subcommand token
         """
         trace('parser, item_tag_command', token)
-        tok1 = self.get_token()
-        if tok1.tid == Tid.INT:
-            tok2 = self.get_token()
-            if tok2.tid == Tid.NAME:
+        if self.default_item_id is not None:
+            tok = self.get_token()
+            if tok.tid == Tid.NAME:
                 if token.tid == Tid.ADD:
-                    trace('parser, tag add', tok1, tok2)
-                    print(self.cp.tag_add(tok1.value, tok2.value))
+                    trace('parser, tag add', tok)
+                    print(self.cp.tag_add(self.default_item_id, tok.value))  # TODO
                 elif token.tid == Tid.DELETE:
-                    trace('parser, tag delete', tok1, tok2)
-                    print(self.cp.tag_delete(tok1.value, tok2.value))
+                    trace('parser, tag delete', tok)
+                    print(self.cp.tag_delete(self.default_item_id, tok.value))   # TODO
                 else:
                     error('Invalid tag subcommand', token)
             else:
-                error('tag name expected', tok2)
+                error('tag name expected', tok)
         else:
-            error('item id expected', tok1)
+            error('no item selected')
 
     def item_field_command(self, token: Token):
         """
@@ -447,7 +445,6 @@ class Parser:
             trace('parser, item print, dump, delete, copy, tag, field', tok)
             if tok.tid == Tid.INT:
                 if token.tid == Tid.USE:
-                    # self.item_use(tok)
                     self.default_item_id = tok.value
                 elif token.tid == Tid.PRINT:
                     self.item_print(tok)
