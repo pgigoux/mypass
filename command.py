@@ -485,9 +485,10 @@ class CommandProcessor:
             trace('item_id', item_id)
             if tag_list:
                 tag_mapping = self.db.sql.get_tag_table_name_mapping()
-                for tag in tag_list:
-                    trace('adding tag', tag)
-                    self.db.sql.insert_into_tags(None, tag_mapping[tag][MAP_TAG_ID], item_id)
+                for tag_name in tag_list:
+                    tag_id = tag_mapping[tag_name][MAP_TAG_ID]
+                    trace('adding tag', tag_name, tag_id)
+                    self.db.sql.insert_into_tags(None, item_id, tag_id)
             return self.resp.ok(f'added {item_id}')
         else:
             return self.resp.warning(NO_DATABASE)
