@@ -379,10 +379,10 @@ class Parser:
             if tok.tid == Tid.NAME:
                 if token.tid == Tid.ADD:
                     trace('parser, tag add', tok)
-                    print(self.cp.tag_add(self.default_item_id, tok.value))  # TODO
+                    print(self.cp.tag_add(self.default_item_id, tok.value))
                 elif token.tid == Tid.DELETE:
                     trace('parser, tag delete', tok)
-                    print(self.cp.tag_delete(self.default_item_id, tok.value))   # TODO
+                    print(self.cp.tag_delete(self.default_item_id, tok.value))
                 else:
                     error('Invalid tag subcommand', token)
             else:
