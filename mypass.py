@@ -6,7 +6,7 @@ HELP = """
 db    <command_options>         Database commands
 tag   <command_options>         Tag commands
 field <command_options>         Field commands
-item  <command_options>         Item commands
+item  <command_options>         Item command
 trace                           Toggle code trace
 """
 
