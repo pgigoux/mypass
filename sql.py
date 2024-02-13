@@ -444,7 +444,7 @@ class Sql:
             cmd += f'{comma}field_id={field_table_id}'
             comma = ', '
         if field_value is not None:
-            cmd += f'{comma}value="{field_value}"'
+            cmd += f"{comma}value='{field_value}'"
             comma = ', '
         if encrypted_value is not None:
             cmd += f'{comma}encrypted={encrypted_value}'
@@ -510,10 +510,11 @@ class Sql:
         """
         cmd = f'update items set date={item_timestamp}'
         if item_name is not None:
-            cmd += f', name="{item_name}"'
+            cmd += f", name='{item_name}'"
         if item_note is not None:
-            cmd += f', note="{item_note}"'
+            cmd += f", note='{item_note}'"
         cmd += f' where id={item_id}'
+        print('--', cmd)
         self.cursor.execute(cmd)
         return self.cursor.rowcount
 
