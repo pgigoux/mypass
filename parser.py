@@ -215,7 +215,14 @@ class Parser:
         Get item add/edit options
         :return: dictionary with options, or None if unknown option
         """
-        d = {Tid.SW_SENSITIVE: False, Tid.SW_TAG: [], Tid.SW_NOTE: '', Tid.SW_MULTILINE_NOTE: False}
+        d = {Tid.SW_SENSITIVE: False,
+             Tid.SW_NAME: None,
+             Tid.SW_NOTE: None,
+             Tid.SW_MULTILINE_NOTE: False,
+             Tid.SW_TAG: [],
+             Tid.SW_FIELD_NAME: None,
+             Tid.SW_FIELD_VALUE: None
+             }
         while True:
             token = self.get_token()
             trace('parser, token', token)
@@ -240,9 +247,9 @@ class Parser:
                     d[Tid.SW_FIELD_NAME] = t1.value
                 else:
                     error(f'bad field name {t1}')
-            elif token.tid == Tid.SW_FIELD_NAME:
+            elif token.tid == Tid.SW_FIELD_VALUE:
                 t1 = self.get_token()
-                trace('parser, found field name', t1)
+                trace('parser, found field value', t1)
                 if t1.tid in LEX_VALUE:
                     d[Tid.SW_FIELD_VALUE] = t1.value
                 else:
@@ -325,15 +332,14 @@ class Parser:
         trace('parser, item_add')
         opt = self.item_options()
         if opt is not None:
-            try:
-                item_name = opt[Tid.SW_NAME]
-                tag_list = opt[Tid.SW_TAG]
-                note = opt[Tid.SW_NOTE]
-            except IndexError as e:
-                error('Missing option', e)
-                return
+            item_name = opt[Tid.SW_NAME]
+            tag_list = opt[Tid.SW_TAG]
+            note = opt[Tid.SW_NOTE] if opt[Tid.SW_NOTE] is not None else ''
             trace('parser, item_add', item_name, tag_list, note)
-            print(self.cp.item_add(item_name, tag_list, note))
+            if item_name is not None:
+                print(self.cp.item_add(item_name, tag_list, note))
+            else:
+                error('no item name')
 
     def item_delete(self, token: Token):
         """
@@ -359,14 +365,13 @@ class Parser:
         trace('parser, item_update', token)
         opt = self.item_options()
         if opt is not None:
-            try:
-                item_name = opt[Tid.SW_NAME]
-                note = opt[Tid.SW_NOTE]
-            except IndexError as e:
-                error('Missing option', e)
-                return
+            item_name = opt[Tid.SW_NAME]
+            note = opt[Tid.SW_NOTE]
             trace('parser, item_update', item_name, note)
-            print(self.cp.item_update(token.value, item_name, note))
+            if item_name is not None or note is not None:
+                print(self.cp.item_update(token.value, item_name, note))
+            else:
+                error('missing item name')
 
     def item_tag_command(self, token: Token):
         """
@@ -390,6 +395,39 @@ class Parser:
         else:
             error('no item selected')
 
+    def item_field_add_command(self):
+        trace('parser, item_field_add_command')
+        tok1 = self.get_token()
+        tok2 = self.get_token()
+        if tok1.tid == Tid.NAME and tok2.tid in LEX_VALUE:
+            self.cp.field_add(self.default_item_id, tok1.value, tok2.value)
+        else:
+            error('missing or bad field name or value')
+
+    def item_field_delete_command(self):
+        trace('parser, item_field_delete_command')
+        tok = self.get_token()
+        if tok.tid == Tid.INT:
+            self.cp.field_delete(self.default_item_id, tok.value)
+        else:
+            error('bad field id')
+
+    def item_field_update_command(self):
+        trace('parser, item_field_update_command')
+        tok = self.get_token()
+        if tok.tid == Tid.INT:
+            opt = self.item_options()
+            if opt is not None:
+                field_name = opt[Tid.SW_FIELD_NAME]
+                field_value = opt[Tid.SW_FIELD_VALUE]
+                trace('parser, item_field_update', field_name, field_value)
+                if field_name is not None or field_value is not None:
+                    print(self.cp.field_update(self.default_item_id, tok.value, field_name, field_value))
+                else:
+                    error('must specify field name or value')
+        else:
+            error('bad or missing field id')
+
     def item_field_command(self, token: Token):
         """
         TODO
@@ -397,6 +435,17 @@ class Parser:
         :return:
         """
         trace('parser, item_field_command', token)
+        if self.default_item_id is not None:
+            if token.tid == Tid.ADD:
+                self.item_field_add_command()
+            elif token.tid == Tid.DELETE:
+                self.item_field_delete_command()
+            elif token.tid == Tid.UPDATE:
+                self.item_field_update_command()
+            else:
+                error('unknown item subcommand', token)
+        else:
+            error('no item selected')
 
     def item_print(self, token: Token):
         """
