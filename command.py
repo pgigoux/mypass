@@ -352,6 +352,12 @@ class CommandProcessor:
     # -----------------------------------------------------------------
 
     def tag_add(self, item_id: int, tag_name: str) -> Response:
+        """
+        Add tag to item
+        :param item_id: item id
+        :param tag_name: tag name
+        :return:
+        """
         trace('tag_add', item_id, tag_name)
         if self.db_loaded():
             tag_mapping = self.db.sql.get_tag_table_name_mapping()
@@ -367,6 +373,12 @@ class CommandProcessor:
             return self.resp.warning(NO_DATABASE)
 
     def tag_delete(self, item_id: int, tag_name: str) -> Response:
+        """
+        Delete tag from item
+        :param item_id: item id
+        :param tag_name: tag name
+        :return: response
+        """
         trace('tag_delete', item_id, tag_name)
         if self.db_loaded():
             tag_mapping = self.db.sql.get_tag_table_name_mapping()
@@ -379,6 +391,52 @@ class CommandProcessor:
                     return self.resp.error(f'tag {tag_name} does not exist in item')
             else:
                 return self.resp.error(f'tag {tag_name} does not exist')
+        else:
+            return self.resp.warning(NO_DATABASE)
+
+    # -----------------------------------------------------------------
+    # Field commands
+    # -----------------------------------------------------------------
+
+    def field_add(self, item_id: int, field_name: str, field_value: str) -> Response:
+        """
+        :param item_id: item id
+        :param field_name: field name
+        :param field_value: field value
+        :return: response
+        """
+        trace('field_add', item_id, field_name, field_value)
+        if self.db_loaded():
+            # TODO
+            pass
+        else:
+            return self.resp.warning(NO_DATABASE)
+
+    def field_delete(self, item_id: int, field_id: int) -> Response:
+        """
+        :param item_id: item id
+        :param field_id: field id
+        :return: response
+        """
+        trace('field_delete', item_id, field_id)
+        if self.db_loaded():
+            # TODO
+            pass
+        else:
+            return self.resp.warning(NO_DATABASE)
+
+    def field_update(self, item_id: int, field_id: int, field_name: str | None, field_value: str | None) -> Response:
+        """
+        :param item_id: item id
+        :param field_id: field id
+        :param field_name: field name
+        :param field_value: field value
+        :return: response
+        """
+        trace('field_update', item_id, field_id, field_name, field_value)
+        if self.db_loaded():
+            # TODO
+            pass
         else:
             return self.resp.warning(NO_DATABASE)
 
@@ -543,6 +601,7 @@ class CommandProcessor:
         :param item_name: item name
         :param note: item note
         """
+        trace('item_update', item_id, item_name, note)
         if self.db_loaded():
             if item_name or note:
                 n = self.db.sql.update_item(item_id, get_timestamp(), item_name=item_name, item_note=note)
