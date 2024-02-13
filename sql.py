@@ -462,7 +462,6 @@ class Sql:
         :param item_id: item id
         :return: True it it exists, False otherwise
         """
-        # TODO - verify
         self.cursor.execute(f'select * from items where id=?', (item_id, ))
         return len(self.cursor.fetchall()) > 0
 
