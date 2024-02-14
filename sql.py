@@ -25,8 +25,8 @@ INDEX_TAGS_ITEM_ID = 2
 # fields
 INDEX_FIELDS_FIELD_ID = 1
 INDEX_FIELDS_ITEM_ID = 2
-INDEX_FIELDS_ITEM_VALUE = 3
-INDEX_FIELDS_ITEM_ENCRYPTED = 4
+INDEX_FIELDS_VALUE = 3
+INDEX_FIELDS_ENCRYPTED = 4
 # items
 INDEX_ITEMS_NAME = 1
 INDEX_ITEMS_DATE = 2
@@ -317,7 +317,7 @@ class Sql:
         """
         field_counters = {f: 0 for f, _, _, _ in self.get_field_table_list()}
         for item_id, _, _, _ in self.get_item_list():
-            for _, f_id, _, _, f_count in self.get_field_list(item_id=item_id):
+            for _, f_id, _, _, _ in self.get_field_list(item_id=item_id):
                 field_counters[f_id] += 1
         for f_id, _, _, _ in self.get_field_table_list():
             self.cursor.execute('update field_table set count = ? where id = ?', (field_counters[f_id], f_id))
@@ -379,11 +379,30 @@ class Sql:
         """
         Check whether an item has a given field
         :param item_id: item id
-        :param field_id: field id from field table
+        :param field_id: field id
         :return: True it it exists, False otherwise
         """
-        self.cursor.execute(f'select * from fields where item_id=? and field_id=?', (item_id, field_id))
+        self.cursor.execute(f'select * from fields where item_id=? and id=?', (item_id, field_id))
         return len(self.cursor.fetchall()) > 0
+
+    def field_type_exists(self, item_id, field_table_id: int) -> bool:
+        """
+        Check whether an item has a given field type
+        :param item_id: item id
+        :param field_table_id: field id from field table
+        :return: True it it exists, False otherwise
+        """
+        self.cursor.execute(f'select * from fields where item_id=? and field_id=?', (item_id, field_table_id))
+        return len(self.cursor.fetchall()) > 0
+
+    def field_get(self, field_id: int) -> list:
+        """
+        Return specific field
+        :param field_id: field id
+        :return: field data as a list
+        """
+        self.cursor.execute(f'select * from fields where id=?', (field_id,))
+        return self.cursor.fetchall()
 
     def get_field_list(self, item_id: Optional[int] = None) -> list:
         """
@@ -424,7 +443,7 @@ class Sql:
         self.cursor.execute(cmd)
         return self.cursor.rowcount
 
-    def update_field(self, field_id: int, item_id: int, field_table_id: Optional[int] = None,
+    def update_field(self, item_id: int, field_id: int, field_table_id: Optional[int] = None,
                      field_value: Optional[str] = None, encrypted_value: Optional[bool] = None) -> int:
         """
         Update field value, encrypted flag and field table id.
@@ -462,7 +481,7 @@ class Sql:
         :param item_id: item id
         :return: True it it exists, False otherwise
         """
-        self.cursor.execute(f'select * from items where id=?', (item_id, ))
+        self.cursor.execute(f'select * from items where id=?', (item_id,))
         return len(self.cursor.fetchall()) > 0
 
     def get_item_list(self, item_id: Optional[int] = None) -> list:
@@ -514,7 +533,6 @@ class Sql:
         if item_note is not None:
             cmd += f", note='{item_note}'"
         cmd += f' where id={item_id}'
-        print('--', cmd)
         self.cursor.execute(cmd)
         return self.cursor.rowcount
 

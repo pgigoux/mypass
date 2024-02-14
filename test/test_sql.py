@@ -460,26 +460,66 @@ def test_fields():
         assert sql.insert_into_fields(None, 4, 6, 'v_bad', False) == 10
         assert sql.insert_into_fields(None, 10, 1, 'v_bad', False) == 11
 
-    # Exists (tag_id, item_id)
+    # Exists (item_id, field_table_id)
     assert sql.field_exists(1, 1) is True  # item 1
     assert sql.field_exists(1, 2) is True
     assert sql.field_exists(1, 3) is True
-    assert sql.field_exists(1, 4) is False
+    assert sql.field_exists(1, 10) is False
 
-    assert sql.field_exists(2, 1) is True  # item 2
-    assert sql.field_exists(2, 2) is False
-    assert sql.field_exists(2, 3) is False
-    assert sql.field_exists(2, 4) is True
+    assert sql.field_exists(2, 4) is True  # item 2
+    assert sql.field_exists(2, 5) is True
+    assert sql.field_exists(2, 10) is False
 
-    assert sql.field_exists(3, 1) is True  # item 3
-    assert sql.field_exists(3, 2) is True
-    assert sql.field_exists(3, 3) is False
-    assert sql.field_exists(3, 4) is True
+    assert sql.field_exists(3, 6) is True  # item 3
+    assert sql.field_exists(3, 7) is True
+    assert sql.field_exists(3, 8) is True
+    assert sql.field_exists(3, 10) is False
 
-    assert sql.field_exists(4, 1) is False  # item 4
-    assert sql.field_exists(4, 2) is False
-    assert sql.field_exists(4, 3) is True
-    assert sql.field_exists(4, 4) is False
+    assert sql.field_exists(4, 9) is True  # item 4
+    assert sql.field_exists(4, 10) is False
+
+    assert sql.field_exists(5, 10) is True  # item 5
+    assert sql.field_exists(5, 11) is True
+    assert sql.field_exists(5, 12) is False
+
+    # Exists (item_id, field_table_id)
+    assert sql.field_type_exists(1, 1) is True  # item 1
+    assert sql.field_type_exists(1, 2) is True
+    assert sql.field_type_exists(1, 3) is True
+    assert sql.field_type_exists(1, 4) is False
+
+    assert sql.field_type_exists(2, 1) is True  # item 2
+    assert sql.field_type_exists(2, 2) is False
+    assert sql.field_type_exists(2, 3) is False
+    assert sql.field_type_exists(2, 4) is True
+
+    assert sql.field_type_exists(3, 1) is True  # item 3
+    assert sql.field_type_exists(3, 2) is True
+    assert sql.field_type_exists(3, 3) is False
+    assert sql.field_type_exists(3, 4) is True
+
+    assert sql.field_type_exists(4, 1) is False  # item 4
+    assert sql.field_type_exists(4, 2) is False
+    assert sql.field_type_exists(4, 3) is True
+    assert sql.field_type_exists(4, 4) is False
+
+    assert sql.field_type_exists(5, 1) is True  # item 5
+    assert sql.field_type_exists(5, 2) is False
+    assert sql.field_type_exists(5, 3) is False
+    assert sql.field_type_exists(5, 4) is True
+
+    # Get (id)
+    assert sql.field_get(1) == [(1, 1, 1, 'v_one', 0)]
+    assert sql.field_get(2) == [(2, 2, 1, 'v_two', 0)]
+    assert sql.field_get(3) == [(3, 3, 1, 'v_three', 1)]
+    assert sql.field_get(4) == [(4, 1, 2, 'v_five', 1)]
+    assert sql.field_get(5) == [(5, 4, 2, 'v_six', 1)]
+    assert sql.field_get(6) == [(6, 1, 3, 'v_seven', 0)]
+    assert sql.field_get(7) == [(7, 2, 3, 'v_eight', 1)]
+    assert sql.field_get(8) == [(8, 4, 3, 'v_nine', 0)]
+    assert sql.field_get(9) == [(9, 3, 4, 'v_seven', 0)]
+    assert sql.field_get(10) == [(10, 1, 5, 'v_eight', 0)]
+    assert sql.field_get(11) == [(11, 4, 5, 'v_nine', 0)]
 
     # Get (item_id)
     field_list = sql.get_field_list()  # all items
@@ -596,17 +636,17 @@ def test_fields():
 
     # Delete single field 7 of item 3 (field_id, item_id)
     assert (sql.delete_from_fields(3, field_id=7)) == 1
-    assert sql.field_exists(3, 1) is True
-    assert sql.field_exists(3, 2) is False
-    assert sql.field_exists(3, 3) is False
-    assert sql.field_exists(3, 4) is True
-    assert sql.field_exists(3, 5) is False
-    assert sql.field_exists(3, 6) is False
-    assert sql.field_exists(3, 7) is False
-    assert sql.field_exists(3, 8) is False
-    assert sql.field_exists(3, 9) is False
-    assert sql.field_exists(3, 10) is False
-    assert sql.field_exists(3, 11) is False
+    assert sql.field_type_exists(3, 1) is True
+    assert sql.field_type_exists(3, 2) is False
+    assert sql.field_type_exists(3, 3) is False
+    assert sql.field_type_exists(3, 4) is True
+    assert sql.field_type_exists(3, 5) is False
+    assert sql.field_type_exists(3, 6) is False
+    assert sql.field_type_exists(3, 7) is False
+    assert sql.field_type_exists(3, 8) is False
+    assert sql.field_type_exists(3, 9) is False
+    assert sql.field_type_exists(3, 10) is False
+    assert sql.field_type_exists(3, 11) is False
     field_list = sql.get_field_list()
     assert len(field_list) == 7
     assert field_list == [(4, 1, 2, 'v_five', 1), (5, 4, 2, 'v_six', 1),
@@ -615,24 +655,24 @@ def test_fields():
                           (10, 1, 5, 'v_eight', 0), (11, 4, 5, 'v_nine', 0)]
 
     # Update field id for field 6, item 3
-    assert sql.update_field(6, 3, field_table_id=2) == 1
+    assert sql.update_field(3, 6, field_table_id=2) == 1
     assert sql.get_field_list(3) == [(6, 2, 3, 'v_seven', 0), (8, 4, 3, 'v_nine', 0)]
 
     # Update value for field 6, item 2
-    assert sql.update_field(4, 2, field_value='new_five') == 1
+    assert sql.update_field(2, 4, field_value='new_five') == 1
     assert sql.get_field_list(2) == [(4, 1, 2, 'new_five', 1), (5, 4, 2, 'v_six', 1)]
 
     # Update encrypted flag for field 11, item 5
-    assert sql.update_field(11, 5, encrypted_value=True) == 1
+    assert sql.update_field(5, 11, encrypted_value=True) == 1
     assert sql.get_field_list(5) == [(10, 1, 5, 'v_eight', 0), (11, 4, 5, 'v_nine', 1)]
 
     # Update everything for field 9 item 4
-    assert sql.update_field(9, 4, field_table_id=1, field_value='new_seven', encrypted_value=True) == 1
+    assert sql.update_field(4, 9, field_table_id=1, field_value='new_seven', encrypted_value=True) == 1
     assert sql.get_field_list(4) == [(9, 1, 4, 'new_seven', 1)]
 
     # Update non-existent fields
-    assert sql.update_field(1, 4, field_table_id=1, field_value='something', encrypted_value=True) == 0
-    assert sql.update_field(2, 4, field_table_id=2, field_value='anything', encrypted_value=False) == 0
+    assert sql.update_field(4, 1, field_table_id=1, field_value='something', encrypted_value=True) == 0
+    assert sql.update_field(4, 2, field_table_id=2, field_value='anything', encrypted_value=False) == 0
 
 
 if __name__ == '__main__':
