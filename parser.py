@@ -400,7 +400,7 @@ class Parser:
         tok1 = self.get_token()
         tok2 = self.get_token()
         if tok1.tid == Tid.NAME and tok2.tid in LEX_VALUE:
-            self.cp.field_add(self.default_item_id, tok1.value, tok2.value)
+            print(self.cp.field_add(self.default_item_id, tok1.value, tok2.value))
         else:
             error('missing or bad field name or value')
 
@@ -408,7 +408,7 @@ class Parser:
         trace('parser, item_field_delete_command')
         tok = self.get_token()
         if tok.tid == Tid.INT:
-            self.cp.field_delete(self.default_item_id, tok.value)
+            print(self.cp.field_delete(self.default_item_id, tok.value))
         else:
             error('bad field id')
 
