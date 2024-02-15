@@ -7,7 +7,7 @@ from sql import NAME_TAG_TABLE, NAME_FIELD_TABLE, NAME_ITEMS
 from sql import MAP_TAG_ID, MAP_TAG_NAME, MAP_TAG_COUNT
 from sql import MAP_FIELD_ID, MAP_FIELD_NAME, MAP_FIELD_SENSITIVE, MAP_FIELD_COUNT
 from sql import INDEX_ID, INDEX_ITEMS_NAME, INDEX_ITEMS_DATE, INDEX_ITEMS_NOTE
-from sql import INDEX_FIELDS_FIELD_ID, INDEX_FIELDS_ENCRYPTED
+from sql import INDEX_FIELDS_FIELD_ID, INDEX_FIELDS_VALUE, INDEX_FIELDS_ENCRYPTED
 from utils import get_password, get_timestamp, print_line, trace
 
 NO_DATABASE = 'no database'
@@ -457,72 +457,79 @@ class CommandProcessor:
         else:
             return self.resp.warning(NO_DATABASE)
 
-    def field_update(self, item_id: int, field_id: int, field_name: str | None, field_value: str | None) -> Response:
+    def get_name(self, f_id: int | None) -> str:
+        f_mapping = self.db.sql.get_field_table_id_mapping()
+        return f_mapping[f_id][MAP_FIELD_NAME] if f_id in f_mapping else '???'
+
+    def field_update(self, item_id: int, field_id: int, new_field_name: str | None,
+                     new_field_value: str | None) -> Response:
         """
         :param item_id: item id
         :param field_id: field id
-        :param field_name: field name
-        :param field_value: field value
+        :param new_field_name: field name
+        :param new_field_value: field value
         :return: response
         """
-        trace('field_update', item_id, field_id, field_name, field_value)
-        # print(f'it={item_id}, fid={field_id}, fn={field_name}, fv={field_value}')
-        # if self.db_loaded():
-        #     if field_name is None and field_value is None:
-        #         return self.resp.warning('nothing to update')
-        #
-        #     if self.db.sql.field_exists(item_id, field_id):
-        #
-        #         # Set default values to keep the IDE happy
-        #         field_table_id, f_value, f_sensitive, encrypted_value = None, None, None, None
-        #
-        #         # Determine attributes of the existing field
-        #         field = self.db.sql.field_get(field_id)[0]
-        #         ft_id = field[INDEX_FIELDS_FIELD_ID]
-        #         f_encrypted = field[INDEX_FIELDS_ENCRYPTED]
-        #         # field_mapping = self.db.sql.get_field_table_id_mapping()
-        #
-        #         print(f'ft_id={ft_id}')
-        #
-        #         if field_name is not None:
-        #             field_mapping = self.db.sql.get_field_table_name_mapping()
-        #             if field_name in field_mapping:
-        #                 if field_name in field_mapping:
-        #                     field_table_id = field_mapping[field_name][MAP_FIELD_ID]
-        #                     f_sensitive = field_mapping[field_name][MAP_FIELD_SENSITIVE]
-        #                 else:
-        #                     return self.resp.error(f'field name {field_name} does not exist')
-        #         else:
-        #             field_table_id = None
-        #             f_sensitive = None
-        #
-        #
-        #         # If the field name is specified, then use to determine the new sensitive flag
-        #         if field_name is not None:
-        #             field_mapping = self.db.sql.get_field_table_name_mapping()
-        #             if field_name in field_mapping:
-        #                 field_table_id = field_mapping[field_name][MAP_FIELD_ID]
-        #                 f_sensitive = field_mapping[field_name][MAP_FIELD_SENSITIVE]
-        #             else:
-        #                 return self.resp.error(f'field name {field_name} does not exist')
-        #
-        #         if field_value is not None:
-        #             if f_sensitive is None:
-        #                 ft_id = self.db.sql.field_get(field_id)[0][INDEX_FIELDS_FIELD_ID]
-        #                 # ft_id = field[INDEX_FIELDS_FIELD_ID]
-        #                 print(f'ft_id={ft_id}')
-        #                 field_mapping = self.db.sql.get_field_table_id_mapping()
-        #                 f_sensitive = field_mapping[ft_id][MAP_FIELD_SENSITIVE]
-        #             f_value = self.encrypt_value(str(field_value)) if f_sensitive else field_value
-        #             encrypted_value = f_value != field_value
-        #
-        #         print(f'f_id={field_table_id}, fs={f_sensitive}, f_v={f_value}, ev={encrypted_value}')
-        #         # return self.db.sql.update_field(item_id, field_id, field_table_id, f_value, encrypted_value)
-        #
-        #     else:
-        #         return self.resp.error(f'field {field_id} does not exist')
-        # else:
-        #     return self.resp.warning(NO_DATABASE)
+        trace('field_update', item_id, field_id, new_field_name, new_field_value)
+        # print('-' * 70)
+        # print(f'param: item={item_id}, field_id={field_id}, new_name={new_field_name}, new_value={new_field_value}')
+
+        if self.db_loaded():
+            if new_field_name is None and new_field_value is None:
+                return self.resp.warning('nothing to update')
+
+            if self.db.sql.field_exists(item_id, field_id):
+
+                # Get existing field attributes
+                field = self.db.sql.field_get(field_id)[0]
+                f_id = field[INDEX_FIELDS_FIELD_ID]
+                f_value = field[INDEX_FIELDS_VALUE]
+                f_encrypted = bool(field[INDEX_FIELDS_ENCRYPTED])
+                field_mapping = self.db.sql.get_field_table_id_mapping()
+                f_sensitive = field_mapping[f_id][MAP_FIELD_SENSITIVE]
+                # print(
+                #     f'field: f_id={f_id} ({self.get_name(f_id)}), f_v={f_value}, f_sens={f_sensitive}, f_enc={f_encrypted}')
+
+                # The field table id and sensible flag will be set by the new field name if defined.
+                # Otherwise the sensible flag will be inherited from the current field.
+                if new_field_name is not None:
+                    field_mapping = self.db.sql.get_field_table_name_mapping()
+                    if new_field_name in field_mapping:
+                        field_table_id = field_mapping[new_field_name][MAP_FIELD_ID]
+                        new_sensitive = field_mapping[new_field_name][MAP_FIELD_SENSITIVE]
+                        # print(f'name: ft_id={field_table_id} ({self.get_name(field_table_id)}), f_sens={new_sensitive}')
+                    else:
+                        return self.resp.error(f'field name {new_field_name} does not exist')
+                else:
+                    field_table_id = f_id
+                    new_sensitive = f_sensitive
+
+                # Decide whether the value needs to be encrypted, decrypted or left untouched.
+                new_value = f_value
+                encrypted_flag = False
+                if new_field_value is not None:
+                    new_value = self.encrypt_value(new_field_value) if new_sensitive else new_field_value
+                    encrypted_flag = new_value != new_field_value
+                else:
+                    if f_encrypted and not new_sensitive:
+                        new_value = self.decrypt_value(f_value)
+                    elif not f_encrypted and new_sensitive:
+                        new_value = self.encrypt_value(f_value)
+                        encrypted_flag = new_value != f_value
+                    elif f_encrypted and new_sensitive:
+                        encrypted_flag = True
+
+                # print(f'field_table_id={field_table_id} ({self.get_name(field_table_id)}), new_sens={new_sensitive}')
+                # print(f'new_value={new_value}, enc={encrypted_flag}')
+                n = self.db.sql.update_field(item_id, field_id, field_table_id, new_value, encrypted_flag)
+                if n > 0:
+                    return self.resp.ok(f'updated {n} fields')
+                else:
+                    return self.resp.warning('no fields updated')
+            else:
+                return self.resp.error(f'field {field_id} does not exist')
+        else:
+            return self.resp.warning(NO_DATABASE)
 
     # -----------------------------------------------------------------
     # Item commands
@@ -606,7 +613,7 @@ class CommandProcessor:
                      KEY_DICT_NOTE: item[INDEX_ITEMS_NOTE],
                      KEY_DICT_TAGS: [tag_mapping[t_id][MAP_TAG_NAME] for _, t_id, _ in tag_list],
                      KEY_DICT_FIELDS: [(f_id, field_mapping[field_id][MAP_FIELD_NAME], f_value, f_encrypted)
-                                  for f_id, field_id, _, f_value, f_encrypted in field_list],
+                                       for f_id, field_id, _, f_value, f_encrypted in field_list],
                      }
                 return self.resp.ok(d)
             else:
@@ -711,4 +718,3 @@ class CommandProcessor:
 
 if __name__ == '__main__':
     pass
-
