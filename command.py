@@ -13,12 +13,12 @@ from utils import get_password, get_timestamp, print_line, trace
 NO_DATABASE = 'no database'
 
 # Keys used to access the elements in the dictionary returned by item_print
-KEY_ID = 'id'
-KEY_NAME = 'name'
-KEY_TIMESTAMP = 'timestamp'
-KEY_NOTE = 'note'
-KEY_TAGS = 'tags'
-KEY_FIELDS = 'fields'
+KEY_DICT_ID = 'id'
+KEY_DICT_NAME = 'name'
+KEY_DICT_TIMESTAMP = 'timestamp'
+KEY_DICT_NOTE = 'note'
+KEY_DICT_TAGS = 'tags'
+KEY_DICT_FIELDS = 'fields'
 
 
 class FileFormat(Enum):
@@ -80,6 +80,7 @@ class CommandProcessor:
         """
         Create an empty database
         :param file_name: database file name
+        :return: response
         """
         trace('database_create', file_name)
         if self.db_loaded(overwrite=True):
@@ -98,7 +99,7 @@ class CommandProcessor:
         """
         Read database into memory
         :param file_name: database file name
-        :return:
+        :return: response
         """
         trace('database_read', file_name)
         if self.db_loaded(overwrite=True):
@@ -116,6 +117,10 @@ class CommandProcessor:
             return self.resp.exception(f'failed to read database {file_name}', e)
 
     def database_write(self) -> Response:
+        """
+        Write database to disk
+        :return: response
+        """
         trace('database_write')
         if self.db_loaded():
             assert isinstance(self.db, Database)
@@ -595,12 +600,12 @@ class CommandProcessor:
             item_list = self.db.sql.get_item_list(item_id=item_id)
             if len(item_list) > 0:
                 item = item_list[0]
-                d = {KEY_ID: item_id,
-                     KEY_NAME: item[INDEX_ITEMS_NAME],
-                     KEY_TIMESTAMP: item[INDEX_ITEMS_DATE],
-                     KEY_NOTE: item[INDEX_ITEMS_NOTE],
-                     KEY_TAGS: [tag_mapping[t_id][MAP_TAG_NAME] for _, t_id, _ in tag_list],
-                     KEY_FIELDS: [(f_id, field_mapping[field_id][MAP_FIELD_NAME], f_value, f_encrypted)
+                d = {KEY_DICT_ID: item_id,
+                     KEY_DICT_NAME: item[INDEX_ITEMS_NAME],
+                     KEY_DICT_TIMESTAMP: item[INDEX_ITEMS_DATE],
+                     KEY_DICT_NOTE: item[INDEX_ITEMS_NOTE],
+                     KEY_DICT_TAGS: [tag_mapping[t_id][MAP_TAG_NAME] for _, t_id, _ in tag_list],
+                     KEY_DICT_FIELDS: [(f_id, field_mapping[field_id][MAP_FIELD_NAME], f_value, f_encrypted)
                                   for f_id, field_id, _, f_value, f_encrypted in field_list],
                      }
                 return self.resp.ok(d)
@@ -706,3 +711,4 @@ class CommandProcessor:
 
 if __name__ == '__main__':
     pass
+

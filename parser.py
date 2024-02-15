@@ -1,6 +1,6 @@
 from db import DEFAULT_DATABASE_NAME
 from command import CommandProcessor, FileFormat
-from command import KEY_ID, KEY_NAME, KEY_TIMESTAMP, KEY_NOTE, KEY_TAGS, KEY_FIELDS
+from command import KEY_DICT_ID, KEY_DICT_NAME, KEY_DICT_TIMESTAMP, KEY_DICT_NOTE, KEY_DICT_TAGS, KEY_DICT_FIELDS
 from lexer import Lexer, Token, Tid
 from lexer import LEX_ACTIONS, LEX_DATABASE, LEX_MISC, LEX_VALUE, LEX_STRING
 from utils import error, trace, confirm, trace_toggle, sensitive_mark, timestamp_to_string
@@ -458,18 +458,18 @@ class Parser:
         if r.is_ok and r.is_dict:
             d = r.value
             assert isinstance(d, dict)
-            print(f'id:    {d[KEY_ID]}')
-            print(f'name:  {d[KEY_NAME]}')
-            print(f'date:  {timestamp_to_string(d[KEY_TIMESTAMP])}')
-            print(f'tags:  {d[KEY_TAGS]}')
+            print(f'id:    {d[KEY_DICT_ID]}')
+            print(f'name:  {d[KEY_DICT_NAME]}')
+            print(f'date:  {timestamp_to_string(d[KEY_DICT_TIMESTAMP])}')
+            print(f'tags:  {d[KEY_DICT_TAGS]}')
             print('fields:')
-            for f_id, f_name, f_value, f_encrypted in d[KEY_FIELDS]:
+            for f_id, f_name, f_value, f_encrypted in d[KEY_DICT_FIELDS]:
                 f_value = self.cp.decrypt_value(f_value) if f_encrypted and show_encrypted else f_value
                 print(f'  {f_id:4d} {sensitive_mark(f_encrypted)} {f_name} {f_value}')
                 del f_value
             print('note:')
-            if len(d[KEY_NOTE]) > 0:
-                print(f'{d[KEY_NOTE]}')
+            if len(d[KEY_DICT_NOTE]) > 0:
+                print(f'{d[KEY_DICT_NOTE]}')
         else:
             print(r)
 
