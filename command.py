@@ -8,7 +8,7 @@ from sql import MAP_TAG_ID, MAP_TAG_NAME, MAP_TAG_COUNT
 from sql import MAP_FIELD_ID, MAP_FIELD_NAME, MAP_FIELD_SENSITIVE, MAP_FIELD_COUNT
 from sql import INDEX_ID, INDEX_ITEMS_NAME, INDEX_ITEMS_DATE, INDEX_ITEMS_NOTE
 from sql import INDEX_FIELDS_FIELD_ID, INDEX_FIELDS_VALUE, INDEX_FIELDS_ENCRYPTED
-from utils import get_password, get_timestamp, print_line, trace
+from utils import get_timestamp, print_line, trace
 
 NO_DATABASE = 'no database'
 
@@ -28,15 +28,18 @@ class FileFormat(Enum):
 
 class CommandProcessor:
 
-    def __init__(self, confirm: Callable):
+    def __init__(self, confirm_callback: Callable, password_callback: Callable):
         """
-        The command processor handles the commands that interact with the database
+        The command processor handles the commands that interact with the database.
+        The two callbacks are used so it's up to the caller to decide how to prompt
+        the user for action confirmations and the database password.
         """
         self.file_name = ''  # database file name
         self.db = None  # database object
         self.loaded = False
         self.resp = ResponseGenerator()
-        self.confirm = confirm
+        self.confirm = confirm_callback
+        self.password = password_callback
 
     def db_loaded(self, overwrite=False) -> bool:
         """
@@ -92,7 +95,7 @@ class CommandProcessor:
             return self.resp.error(f'database {file_name} already exists')
         else:
             self.file_name = file_name
-            self.db = Database(file_name, get_password())
+            self.db = Database(file_name, self.password())
             return self.resp.ok(f'created database {file_name}')
 
     def database_read(self, file_name: str) -> Response:
@@ -107,7 +110,7 @@ class CommandProcessor:
 
         trace(f'Reading from {file_name}')
         try:
-            self.db = Database(file_name, get_password())
+            self.db = Database(file_name, self.password())
             self.db.read()
             self.file_name = file_name
             return self.resp.ok(f'read database {file_name}')

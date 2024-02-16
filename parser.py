@@ -3,7 +3,7 @@ from command import CommandProcessor, FileFormat
 from command import KEY_DICT_ID, KEY_DICT_NAME, KEY_DICT_TIMESTAMP, KEY_DICT_NOTE, KEY_DICT_TAGS, KEY_DICT_FIELDS
 from lexer import Lexer, Token, Tid
 from lexer import LEX_ACTIONS, LEX_DATABASE, LEX_MISC, LEX_VALUE, LEX_STRING
-from utils import error, trace, confirm, trace_toggle, sensitive_mark, timestamp_to_string
+from utils import error, trace, confirm, get_password, trace_toggle, sensitive_mark, timestamp_to_string
 
 # Error messages
 ERROR_UNKNOWN_COMMAND = 'unknown command'
@@ -21,7 +21,7 @@ class Parser:
         self.lexer = Lexer()
         self.cmd = ''
         self.default_item_id = None
-        self.cp = CommandProcessor(confirm=confirm)
+        self.cp = CommandProcessor(confirm_callback=confirm, password_callback=get_password)
 
     def get_token(self) -> Token:
         """
