@@ -24,6 +24,7 @@ class Crypt:
         """
         Generate a Fernet key from a string password
         The salt should be fixed to encrypt/decrypt consistently
+        TODO: modify to use a variable salt value
         :param password: password
         :return: key
         """
