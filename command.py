@@ -28,19 +28,6 @@ class FileFormat(Enum):
 
 class CommandProcessor:
 
-    # def __init__(self, confirm_callback: Callable, password_callback: Callable):
-    #     """
-    #     The command processor handles the commands that interact with the database.
-    #     The two callbacks are used so it's up to the caller to decide how to prompt
-    #     the user for action confirmations and the database password.
-    #     """
-    #     self.file_name = ''  # database file name
-    #     self.db = None  # database object
-    #     self.loaded = False
-    #     self.resp = ResponseGenerator()
-    #     self.confirm = confirm_callback
-    #     self.password = password_callback
-
     def __init__(self, confirm_callback: Callable, crypt_callback: Callable):
         """
         The command processor handles the commands that interact with the database.
