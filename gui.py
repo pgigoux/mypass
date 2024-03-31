@@ -1,7 +1,10 @@
 from typing import Callable
 from pathlib import Path
 import tkinter as tk
-from tkinter import filedialog as fd
+from tkinter import filedialog as tk_fd
+from tkinter import messagebox as tk_mb
+from crypt import Crypt
+from command import CommandProcessor, Response
 
 GUI_WIDTH = 900
 GUI_HEIGHT = 700
@@ -40,27 +43,51 @@ class Gui:
         self.directory = Path.home()
         self.file_name = tk.StringVar(value=NO_FILE_NAME)
         self.password = tk.StringVar(value='')
-        self.password.trace('w', self.dump_trace)
+        # self.password.trace('w', self.dump_trace)
+        #
+        self.cp = CommandProcessor(self.confirm_dialog, self.get_encryption_key)
 
     def dump_trace(self, variable_name: str, index: str, operation: str):
-        print('trace',  variable_name, operation, self.password.get(), index)
+        print('trace', variable_name, operation, self.password.get(), index)
+
+    def get_encryption_key(self) -> Crypt | None:
+        p = self.password.get()
+        key = Crypt(p) if p else None
+        self.password.set('')
+        del p
+        return key
 
     def select_files(self, title: str, file_type: tuple):
         f_types = (file_type, ('All files', '*.*'))
-        name = fd.askopenfilename(title=title, initialdir=self.directory, filetypes=f_types)
+        name = tk_fd.askopenfilename(title=title, initialdir=self.directory, filetypes=f_types)
         self.file_name.set(name)
 
+    @staticmethod
+    def confirm_dialog(text: str):
+        """
+        :param text: message text
+        :return: True if Yes, False if No.
+        """
+        return tk_mb.askyesno('Confirmation', text + '\n\n' + 'Do you want to proceed?')
+
     def file_dialog(self, title: str, file_type: tuple | None, ok_action: Callable, password_flag=True):
+        """
+        :param title: window title
+        :param file_type: file types (when selecting files to open)
+        :param ok_action: function to call if Ok button is selected
+        :param password_flag: prompt for password?
+        """
         w = tk.Toplevel()
         w.wm_title(title)
 
         # File name
         f = tk.Frame(master=w)
         f.pack(fill=tk.X, side=tk.TOP)
-        if file_type is None:  # create
+        self.file_name.set(NO_FILE_NAME)
+        if file_type is None:
             tk.Label(f, text='File name').pack(fill='x', side=tk.LEFT)
             tk.Entry(f, textvariable=self.file_name).pack(fill='x', side=tk.LEFT)
-        else:  # open
+        else:
             tk.Button(f, text="Select file", command=lambda: self.select_files(title, file_type)).pack(side=tk.LEFT)
             tk.Label(f, textvariable=self.file_name).pack(side=tk.LEFT)
 
@@ -86,8 +113,12 @@ class Gui:
         w.destroy()
 
     def open_action(self, w: tk.Toplevel):
-        print('action', self.file_name.get(), self.password.get())
         w.destroy()
+        print('action', self.file_name.get(), self.password.get())
+        r = self.cp.database_read(self.file_name.get())
+        print(r)
+        print(self.cp.item_list())
+        # print(self.confirm_dialog('Database already exists'))
 
     def open_menu_callback(self):
         self.file_dialog('Open', ('Database', '*.db'), self.open_action)
