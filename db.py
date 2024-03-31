@@ -2,8 +2,8 @@ import os
 import re
 import json
 from sql import Sql, TABLE_LIST
-from sql import MAP_TAG_ID, MAP_TAG_NAME, MAP_TAG_COUNT
-from sql import MAP_FIELD_ID, MAP_FIELD_NAME, MAP_FIELD_SENSITIVE, MAP_FIELD_COUNT
+from sql import MAP_TAG_ID, MAP_TAG_NAME
+from sql import MAP_FIELD_ID, MAP_FIELD_NAME
 from crypt import Crypt
 from utils import filter_control_characters, timestamp_to_string, get_string_timestamp
 
@@ -35,19 +35,18 @@ TEMP_FILE = 'db.tmp'
 
 class Database:
 
-    def __init__(self, file_name: str, password=''):
+    def __init__(self, file_name: str, crypt_key: Crypt | None):
         """
         :param file_name: database file name
-        :param password: password to encode data
+        :param crypt_key: key to encode/decode data
         """
         self.sql = Sql()
         self.file_name = file_name
-        self.password = password
-        # The database will be encrypted if a password is supplied
-        self.crypt_key = Crypt(password) if password else None
+        # The database will be encrypted if the key is not None
+        self.crypt_key = crypt_key
 
     def __str__(self) -> str:
-        return f'fn={self.file_name}, pw={self.password} sql={str(self.sql)} crypt={str(self.crypt_key)}'
+        return f'file={self.file_name}, sql={str(self.sql)} crypt={str(self.crypt_key)}'
 
     def tag_table_to_list(self) -> list:
         """

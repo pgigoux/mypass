@@ -76,7 +76,7 @@ import json
 import argparse
 from crypt import Crypt
 from db import Database, DEFAULT_DATABASE_NAME
-from utils import get_password, trimmed_string, trace, trace_toggle
+from utils import get_crypt_key, trimmed_string, trace, trace_toggle
 
 # Files used to save tables into separate files
 FIELD_FILE_NAME = 'fields.csv'
@@ -288,15 +288,15 @@ def import_items(db: Database, item_list: list, tag_mapping: dict):
             db.sql.insert_into_fields(None, item_id, f_id, f_value, f_encrypted)
 
 
-def import_database(input_file_name: str, output_file_name: str, password: str, dump_database=False):
+def import_database(input_file_name: str, output_file_name: str, crypt_key: Crypt, dump_database=False):
     """
     Import an Enpass database in json format
     :param input_file_name: input file name (json format)
     :param output_file_name: output file name
-    :param password: password to encrypt the output database
+    :param crypt_key: key used to encrypt the output database
     :param dump_database: print the database to the terminal?
     """
-    trace('import_database', input_file_name, output_file_name, password, dump_database)
+    trace('import_database', input_file_name, output_file_name, crypt_key, dump_database)
 
     # Read the data from the json file
     with open(input_file_name, 'r') as f:
@@ -305,7 +305,7 @@ def import_database(input_file_name: str, output_file_name: str, password: str, 
     assert isinstance(json_data, dict)
 
     # Import data into database
-    db = Database(output_file_name, password=password)
+    db = Database(output_file_name, crypt_key=crypt_key)
     tag_mapping = import_tags(db, json_data['folders'])
     import_fields(db, json_data['items'])
     import_items(db, json_data['items'], tag_mapping)
@@ -323,7 +323,7 @@ def import_database(input_file_name: str, output_file_name: str, password: str, 
 
 if __name__ == '__main__':
     # Testing
-    # import_database('pdb.json', 'pw.db', '', dump_database=False)
+    # import_database('pdb.json', 'pw.db', None, dump_database=False)
     # exit(0);
 
     # Command line arguments
@@ -355,14 +355,14 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    # Get the password to encrypt the output database
-    input_password = get_password()
+    # Get the key to encrypt the output database
+    encrypt_key = get_crypt_key()
 
     if args.trace:
         trace_toggle(False)
 
     # Import the data
     try:
-        import_database(args.input_file, args.output_file, input_password, dump_database=args.dump)
+        import_database(args.input_file, args.output_file, encrypt_key, dump_database=args.dump)
     except Exception as e:
         print(f'Error while importing file {e}')

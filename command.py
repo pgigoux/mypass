@@ -28,18 +28,33 @@ class FileFormat(Enum):
 
 class CommandProcessor:
 
-    def __init__(self, confirm_callback: Callable, password_callback: Callable):
+    # def __init__(self, confirm_callback: Callable, password_callback: Callable):
+    #     """
+    #     The command processor handles the commands that interact with the database.
+    #     The two callbacks are used so it's up to the caller to decide how to prompt
+    #     the user for action confirmations and the database password.
+    #     """
+    #     self.file_name = ''  # database file name
+    #     self.db = None  # database object
+    #     self.loaded = False
+    #     self.resp = ResponseGenerator()
+    #     self.confirm = confirm_callback
+    #     self.password = password_callback
+
+    def __init__(self, confirm_callback: Callable, crypt_callback: Callable):
         """
         The command processor handles the commands that interact with the database.
-        The two callbacks are used so it's up to the caller to decide how to prompt
-        the user for action confirmations and the database password.
+        Two callbacks are used so it's up to the caller to decide how to prompt
+        the user for action confirmations and the database encryption key.
+        :param confirm_callback: function called to confirm action (True/False)
+        :param crypt_callback: function to get the encryption key
         """
         self.file_name = ''  # database file name
         self.db = None  # database object
         self.loaded = False
         self.resp = ResponseGenerator()
         self.confirm = confirm_callback
-        self.password = password_callback
+        self.crypt = crypt_callback
 
     def db_loaded(self, overwrite=False) -> bool:
         """
@@ -64,7 +79,6 @@ class CommandProcessor:
         :return:
         """
         return self.db.crypt_key.encrypt_str2str(value) if self.db.crypt_key is not None else value
-        # return self.db.crypt_key.encrypt_str2str(value)
 
     def decrypt_value(self, value: str) -> str:
         """
@@ -73,7 +87,6 @@ class CommandProcessor:
         :return: encrypted value
         """
         return self.db.crypt_key.decrypt_str2str(value) if self.db.crypt_key is not None else value
-        # return self.db.crypt_key.decrypt_str2str(value)
 
     # -----------------------------------------------------------------
     # Database commands
@@ -95,7 +108,7 @@ class CommandProcessor:
             return self.resp.error(f'database {file_name} already exists')
         else:
             self.file_name = file_name
-            self.db = Database(file_name, self.password())
+            self.db = Database(file_name, self.crypt())
             return self.resp.ok(f'created database {file_name}')
 
     def database_read(self, file_name: str) -> Response:
@@ -110,7 +123,7 @@ class CommandProcessor:
 
         trace(f'Reading from {file_name}')
         try:
-            self.db = Database(file_name, self.password())
+            self.db = Database(file_name, self.crypt())
             self.db.read()
             self.file_name = file_name
             return self.resp.ok(f'read database {file_name}')

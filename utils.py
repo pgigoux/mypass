@@ -4,6 +4,7 @@ import re
 import getpass
 from datetime import datetime
 from typing import Optional
+from crypt import Crypt
 
 # Flag to control the trace output
 _trace_disable = True
@@ -77,9 +78,20 @@ def timestamp_to_string(time_stamp: int, date_only=False) -> str:
 def get_password() -> str:
     """
     Read a password from the standard input.
-    :return:
+    :return: password
     """
     return getpass.getpass('Password: ').strip()
+
+
+def get_crypt_key() -> Crypt | None:
+    """
+    Read a password from the standard input and return the corresponding encryption key
+    :return: encryption key, or None if no password
+    """
+    password = get_password()
+    key = Crypt(password) if password else None
+    del password
+    return key
 
 
 def sensitive_mark(sensitive: bool):
