@@ -447,7 +447,7 @@ class Sql:
                      field_value: Optional[str] = None, encrypted_value: Optional[bool] = None) -> int:
         """
         Update field value, encrypted flag and field table id.
-        The item id is redundant, but it's used to double check the correct field is being updated.
+        The item id is redundant, but it's used to double-check the correct field is being updated.
         :param field_id: field id
         :param item_id: item id
         :param field_table_id: field id from field table
