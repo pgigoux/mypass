@@ -8,6 +8,9 @@ class Severity(Enum):
     ERROR = auto()
     EXCEPTION = auto()
 
+    def __str__(self) -> str:
+        return self.name.capitalize()
+
 
 class Response:
 
@@ -19,7 +22,7 @@ class Response:
         :param severity: error severity
         :param value: value (or message)
         """
-        self.severity = severity
+        self._severity = severity
         self._value = value
 
     def __str__(self):
@@ -31,7 +34,7 @@ class Response:
         Is the response severity Ok?
         :return: True if it is, False otherwise
         """
-        return self.severity == Severity.OK
+        return self._severity == Severity.OK
 
     @property
     def is_bool(self) -> bool:
@@ -80,6 +83,14 @@ class Response:
         :return: response value
         """
         return 'None' if self._value is None else self._value
+
+    @property
+    def severity(self) -> Severity:
+        """
+        Return the response severity
+        :return:
+        """
+        return self._severity
 
 
 class ResponseGenerator:
