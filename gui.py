@@ -1,4 +1,4 @@
-from typing import Callable
+from typing import Callable, Optional
 from pathlib import Path
 import tkinter as tk
 from tkinter import filedialog as tk_fd
@@ -112,6 +112,21 @@ class Gui:
         tk.Button(b, text="Ok", command=lambda: ok_action(w)).pack(fill='x', padx=10, side=tk.LEFT)
         tk.Button(b, text="Cancel", command=w.destroy).pack(fill='x', padx=10, side=tk.RIGHT)
 
+    @staticmethod
+    def format_item_list(item_list) -> list:
+        return [(x[0], x[1]) for x in sorted(item_list, key=lambda x: x[1].lower())]
+
+    def update_item_list(self, pattern: Optional[str] = None, name_flag=False, tag_flag=False,
+                         field_name_flag=False, field_value_flag=False, note_flag=False):
+        if pattern is None:
+            r = self.cp.item_list()
+        else:
+            r = self.cp.item_search(pattern, name_flag, tag_flag, field_name_flag, field_value_flag, note_flag)
+        if r.is_ok and r.is_list:
+            self.update_list_frame(self.format_item_list(r.value))
+        else:
+            self.message_dialog(r)
+
     def create_menu_callback(self):
         self.file_dialog('Create', None, self.create_action)
 
@@ -122,25 +137,20 @@ class Gui:
     def open_menu_callback(self):
         self.file_dialog('Open', ('Database', '*.db'), self.open_action)
 
-    def get_item_list(self) -> list:
-        r = self.cp.item_list()
-        if r.is_ok and r.is_list:
-            return [(x[0], x[1]) for x in sorted(r.value, key=lambda x: x[1].lower())]
-        else:
-            return []
-
     def open_action(self, w: tk.Toplevel):
         w.destroy()
         print('action', self.file_name.get(), self.password.get())
         r = self.cp.database_read(self.file_name.get())
         if r.is_ok:
-            print(r)
-            self.init_list_frame(self.get_item_list())
+            self.update_item_list()
         else:
             self.message_dialog(r)
 
     def search_callback(self):
         print('search callback', self.search_pattern.get())
+        self.update_item_list(pattern=self.search_pattern.get(), name_flag=self.search_name.get(),
+                              tag_flag=self.search_tag.get(), field_name_flag=self.search_field_name.get(),
+                              field_value_flag=self.search_field_value.get(), note_flag=self.search_note.get())
 
     def init_menu_bar(self, root: tk.Tk):
         menu_bar = tk.Menu(root)
@@ -183,6 +193,7 @@ class Gui:
         tk.Entry(f, textvariable=self.search_pattern).pack(fill='x', side=tk.LEFT, expand=True)
 
         tk.Button(f, text="Search", command=self.search_callback).pack(fill='x', side=tk.LEFT)
+        tk.Button(f, text="Clear", command=self.update_item_list).pack(fill='x', side=tk.LEFT)
 
         tk.Checkbutton(f, text="Name", variable=self.search_name).pack(fill='x', side=tk.LEFT)
         tk.Checkbutton(f, text="Tag", variable=self.search_tag).pack(fill='x', side=tk.LEFT)
@@ -198,7 +209,8 @@ class Gui:
         n = self.item_listbox.curselection()[0]
         print(n, self.item_mapping[n], event)
 
-    def init_list_frame(self, item_list: list):
+    def update_list_frame(self, item_list: list):
+        self.clear_frame(self.list_frame)
         self.item_listbox = tk.Listbox(self.list_frame, width=30, bg="yellow", selectmode=tk.SINGLE,
                                        activestyle='dotbox', fg="black")
         scrollbar = tk.Scrollbar(self.list_frame, orient=tk.VERTICAL, command=self.item_listbox.yview)
@@ -216,29 +228,6 @@ class Gui:
         scrollbar.pack(side=tk.RIGHT, expand=True, fill=tk.Y)
         self.item_listbox.bind('<<ListboxSelect>>', self.item_select)
         self.item_listbox.pack(expand=True, fill=tk.BOTH, side=tk.LEFT)
-
-    # def init_list_frame(self):
-    #
-    #     self.item_listbox = tk.Listbox(self.list_frame, width=30, bg="yellow", selectmode=tk.SINGLE,
-    #                                    activestyle='dotbox', fg="black")
-    #     scrollbar = tk.Scrollbar(self.list_frame, orient=tk.VERTICAL, command=self.item_listbox.yview)
-    #     self.item_listbox['yscrollcommand'] = scrollbar.set
-    #
-    #     self.item_mapping = {}
-    #
-    #     n = 0
-    #     r = self.cp.item_list()
-    #     if r.is_ok and r.is_list:
-    #         item_list = r.value
-    #         for i_id, i_name, _, _, in item_list:
-    #             print(n, i_id, i_name)
-    #             self.item_mapping[n] = i_id
-    #             self.item_listbox.insert(n, f'{i_id: 3d}  {i_name}')
-    #             n += 1
-    #
-    #     scrollbar.pack(side=tk.RIGHT, expand=True, fill=tk.Y)
-    #     self.item_listbox.bind('<<ListboxSelect>>', self.item_select)
-    #     self.item_listbox.pack(expand=True, fill=tk.BOTH, side=tk.LEFT)
 
     def start_gui(self):
         self.root.title('Mypass')
@@ -265,7 +254,7 @@ class Gui:
     def clear_frame(frame: tk.Frame):
         for widget in frame.winfo_children():
             widget.destroy()
-        frame.pack_forget()
+        frame.pack()
 
 
 if __name__ == '__main__':
