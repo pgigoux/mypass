@@ -49,6 +49,8 @@ class Gui:
         self.item_listbox = None  # listbox
         # self.password.trace('w', self.dump_trace)
         self.cp = CommandProcessor(self.confirm_dialog, self.get_encryption_key)
+        # info
+        self.info_tag = tk.StringVar(value='')
 
     # def dump_trace(self, variable_name: tk.Variable, index: str, operation: str):
     #     print('trace', variable_name., operation, variable_name.get(), index)
@@ -116,6 +118,10 @@ class Gui:
     def format_item_list(item_list) -> list:
         return [(x[0], x[1]) for x in sorted(item_list, key=lambda x: x[1].lower())]
 
+    @staticmethod
+    def format_tag_list(tag_list) -> list:
+        return [x for x in sorted(tag_list, key=lambda x: x[1].lower())]
+
     def update_item_list(self, pattern: Optional[str] = None, name_flag=False, tag_flag=False,
                          field_name_flag=False, field_value_flag=False, note_flag=False):
         if pattern is None:
@@ -142,6 +148,7 @@ class Gui:
         print('action', self.file_name.get(), self.password.get())
         r = self.cp.database_read(self.file_name.get())
         if r.is_ok:
+            self.init_info_frame()
             self.update_item_list()
         else:
             self.message_dialog(r)
@@ -194,6 +201,7 @@ class Gui:
 
         tk.Button(f, text="Search", command=self.search_callback).pack(fill='x', side=tk.LEFT)
         tk.Button(f, text="Clear", command=self.update_item_list).pack(fill='x', side=tk.LEFT)
+        # tk.Button(f, text="Clear", command=self.clear).pack(fill='x', side=tk.LEFT)
 
         tk.Checkbutton(f, text="Name", variable=self.search_name).pack(fill='x', side=tk.LEFT)
         tk.Checkbutton(f, text="Tag", variable=self.search_tag).pack(fill='x', side=tk.LEFT)
@@ -205,12 +213,35 @@ class Gui:
 
         return f
 
+    def clear(self):
+        self.info_tag.set('')
+        self.update_item_list()
+
+    def init_info_frame(self):
+        top_frame = tk.Frame(master=self.info_frame, width=INFO_WIDTH)
+        top_frame.pack(fill=tk.X, side=tk.TOP)
+        r = self.cp.tag_table_list()
+        if r.is_ok and r.is_list:
+            n_row = 0
+            for t_id, t_name, t_count in self.format_tag_list(r.value):
+                t_name = t_name.strip()
+                tk.Radiobutton(top_frame, text=f'{t_name:30s}', value=t_name, variable=self.info_tag, command=self.action,
+                               tristatevalue=0, anchor=tk.W).grid(row=n_row, column=1, pady=1, sticky=tk.W)
+                tk.Label(master=top_frame, text=f'{t_count:-3d}').grid(row=n_row, column=2, pady=1)
+                n_row += 1
+        # bottom_frame = tk.Frame(master=self.info_frame, width=INFO_WIDTH, bg='magenta')
+        # bottom_frame.pack(fill=tk.BOTH, side=tk.TOP, expand=True)
+
+    def action(self):
+        print('action', self.info_tag.get())
+
     def item_select(self, event):
         n = self.item_listbox.curselection()[0]
         print(n, self.item_mapping[n], event)
 
     def update_list_frame(self, item_list: list):
         self.clear_frame(self.list_frame)
+
         self.item_listbox = tk.Listbox(self.list_frame, width=30, bg="yellow", selectmode=tk.SINGLE,
                                        activestyle='dotbox', fg="black")
         scrollbar = tk.Scrollbar(self.list_frame, orient=tk.VERTICAL, command=self.item_listbox.yview)
@@ -220,7 +251,6 @@ class Gui:
 
         n = 0
         for i_id, i_name, in item_list:
-            print(n, i_id, i_name)
             self.item_mapping[n] = i_id
             self.item_listbox.insert(n, f'{i_id:03d}  {i_name}')
             n += 1
@@ -228,6 +258,8 @@ class Gui:
         scrollbar.pack(side=tk.RIGHT, expand=True, fill=tk.Y)
         self.item_listbox.bind('<<ListboxSelect>>', self.item_select)
         self.item_listbox.pack(expand=True, fill=tk.BOTH, side=tk.LEFT)
+
+        self.list_frame.pack(fill=tk.BOTH, side=tk.LEFT, expand=True)
 
     def start_gui(self):
         self.root.title('Mypass')
