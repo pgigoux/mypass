@@ -1,7 +1,10 @@
+import os
 import string
 import time
 import re
 import getpass
+import subprocess
+import tempfile
 from datetime import datetime
 from typing import Optional
 from crypt import Crypt
@@ -13,12 +16,12 @@ _trace_disable = True
 def match_strings(pattern: str, s: str):
     """
     Check whether a regex pattern is contained into another string.
-    The string matching is case insensitive.
+    The string matching is case-insensitive.
     :param pattern: pattern to match
     :param s: string where to search
     :return: True in the string is
     """
-    return True if re.search(pattern.lower(), s.lower()) else False
+    return re.search(pattern.lower(), s.lower()) is not None
 
 
 def trimmed_string(value: str) -> str:
@@ -66,6 +69,7 @@ def timestamp_to_string(time_stamp: int, date_only=False) -> str:
     """
     Convert a Unix time stamp into a string, up to the second
     :param time_stamp: unix time stamp
+    :param date_only: return date without time
     :return: string of the form 'YYYYMMDDHHMMSS' or 'YYYYMMDD'
     """
     try:
@@ -105,7 +109,7 @@ def sensitive_mark(sensitive: bool):
 
 def print_line(width=70):
     """
-    Print an horizontal line
+    Print a horizontal line
     :param: with: line with in characters
     """
     print(horizontal_line(width=width))
@@ -117,7 +121,7 @@ def horizontal_line(width=40) -> str:
     :param width: line with (characters)
     :return: string with line characters
     """
-    return u'\u2015' * width
+    return '\u2015' * width
 
 
 def trace_toggle(disable_value: Optional[bool] = None):
@@ -170,6 +174,46 @@ def confirm(prompt: str) -> bool:
     print(prompt)
     answer = input('Do you want to proceed (yes/no)? ')
     return answer == 'yes'
+
+
+def edit_text(text: str) -> str | None:
+    """
+    Edit text in a text editor
+    The text editor to use is obtained from the EDITOR environment variable (default vim)
+    :param text:
+    :return: output text or None if an error occurred
+    """
+    # Create a temporary file with the text
+    temp_file_name = tempfile.mktemp()
+    try:
+        f = open(temp_file_name, 'w')
+        f.write(text)
+        f.close()
+    except OSError:
+        return None
+
+    # Edit the temporary file
+    command = [os.environ.get('EDITOR', 'vim'), temp_file_name]
+    try:
+        subprocess.run(command, check=True, capture_output=False)
+    except subprocess.CalledProcessError:
+        return None
+
+    # Read the file contents
+    try:
+        with open(temp_file_name, 'r') as f:
+            new_text = f.read()
+    except OSError:
+        return None
+
+    # Remove the temporary file
+    try:
+        os.remove(temp_file_name)
+    except OSError:
+        pass
+
+    # Return the edited text
+    return new_text
 
 
 if __name__ == '__main__':
