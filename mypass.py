@@ -46,7 +46,7 @@ search <string> [-n] [-t] [-fn] [-fv] [-note]       Search for an item
 delete <item_id>                                    Delete an existing item
 copy   <item_id>                                    Copy/duplicate an item
 add    [-n <string>] [-t tag] [-note <string>]      Add new item
-update <item_name> [-n <string>] [-note <string>]   Update an existing item
+update <item_id> [-n <string>] [-note <string>]     Update an existing item
 tag    add|delete <tag_name>                        Add/delete item tag
 field  add <field_name> <field_value>               Add item field
 field  delete <field_id>                            Delete item field
