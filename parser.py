@@ -371,7 +371,7 @@ class Parser:
             if item_name is not None or note is not None:
                 print(self.cp.item_update(token.value, item_name, note))
             else:
-                error('missing item name')
+                error('missing item name or note')
 
     def item_tag_command(self, token: Token):
         """
