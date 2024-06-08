@@ -21,6 +21,7 @@ KEY_DICT_TAGS = 'tags'
 KEY_DICT_FIELDS = 'fields'
 
 
+# Export formats
 class FileFormat(Enum):
     FORMAT_JSON = auto()
     FORMAT_SQL = auto()
@@ -51,18 +52,15 @@ class CommandProcessor:
         """
         if self.db is None:
             return False
-        elif overwrite:
-            if self.confirm("There's a database already in memory"):
-                return True
-            else:
-                return False
+        if overwrite:
+            return self.confirm("There's a database already in memory")
         else:
             return True
 
     def encrypt_value(self, value: str) -> str:
         """
         Auxiliary function used to encrypt a string value
-        :param value: value to encrypt
+        :param value: the value to encrypt
         :return:
         """
         return self.db.crypt_key.encrypt_str2str(value) if self.db.crypt_key is not None else value
@@ -93,10 +91,9 @@ class CommandProcessor:
         # Create an empty database if that's not the case.
         if exists(file_name):
             return self.resp.error(f'database {file_name} already exists')
-        else:
-            self.file_name = file_name
-            self.db = Database(file_name, self.crypt())
-            return self.resp.ok(f'created database {file_name}')
+        self.file_name = file_name
+        self.db = Database(file_name, self.crypt())
+        return self.resp.ok(f'created database {file_name}')
 
     def database_read(self, file_name: str) -> Response:
         """
@@ -147,7 +144,7 @@ class CommandProcessor:
                     self.db.sql.export_to_sql(file_name)
                 return self.resp.ok(f'database exported to {file_name}')
             except Exception as e:
-                return self.resp.exception(f'cannot export database', e)
+                return self.resp.exception('cannot export database', e)
         else:
             return self.resp.warning(NO_DATABASE)
 
