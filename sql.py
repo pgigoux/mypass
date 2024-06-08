@@ -332,7 +332,7 @@ class Sql:
         Check whether an item has a tag
         :param item_id: item id
         :param tag_id: tag id from tag table
-        :return: True it it exists, False otherwise
+        :return: True if it exists, False otherwise
         """
         self.cursor.execute(f'select * from tags where item_id=? and tag_id=?', (item_id, tag_id))
         return len(self.cursor.fetchall()) > 0
