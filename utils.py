@@ -7,10 +7,16 @@ import subprocess
 import tempfile
 from datetime import datetime
 from typing import Optional
+from dataclasses import dataclass
 from crypt import Crypt
 
-# Flag to control the trace output
-_trace_disable = True
+
+@dataclass
+class Trace:
+    """
+    Class used to control code tracing without global variables
+    """
+    trace_flag = False
 
 
 def match_strings(pattern: str, s: str):
@@ -124,14 +130,13 @@ def horizontal_line(width=40) -> str:
     return '\u2015' * width
 
 
-def trace_toggle(disable_value: Optional[bool] = None):
+def trace_toggle(value: Optional[bool] = None):
     """
-    Toggle the trace disable flag (used for debugging)
-    :param disable_value: value to force trace flag
+    Toggle the trace flag (used for debugging)
+    :param value: value to force trace flag
     :return:
     """
-    global _trace_disable
-    _trace_disable = not _trace_disable if disable_value is None else disable_value
+    Trace.trace_flag = not Trace.trace_flag if value is None else value
 
 
 def trace(label: str, *args):
@@ -141,12 +146,11 @@ def trace(label: str, *args):
     :param args: arguments
     :return:
     """
-    if _trace_disable:
-        return
-    if args:
-        print(f'TRACE: {label}: ' + str([f'{x}' for x in args]))
-    else:
-        print(f'TRACE: {label}')
+    if Trace.trace_flag:
+        if args:
+            print(f'TRACE: {label}: ' + str([f'{x}' for x in args]))
+        else:
+            print(f'TRACE: {label}')
 
 
 def error(message: str, *args):
@@ -173,6 +177,7 @@ def confirm(prompt: str) -> bool:
     """
     print(prompt)
     answer = input('Do you want to proceed (yes/no)? ')
+    print(answer == 'yes')
     return answer == 'yes'
 
 
