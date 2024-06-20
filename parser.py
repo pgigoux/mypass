@@ -3,7 +3,7 @@ from command import CommandProcessor, FileFormat, NO_DATABASE
 from command import KEY_DICT_ID, KEY_DICT_NAME, KEY_DICT_TIMESTAMP, KEY_DICT_NOTE, KEY_DICT_TAGS, KEY_DICT_FIELDS
 from lexer import Lexer, Token, Tid
 from lexer import LEX_ACTIONS, LEX_DATABASE, LEX_MISC, LEX_VALUE, LEX_STRING
-from utils import error, trace, confirm, get_crypt_key, trace_toggle, sensitive_mark, timestamp_to_string
+from utils import error, trace, confirm, get_crypt_key, trace_toggle, sensitive_mark, timestamp_to_string, edit_text
 
 # Error messages
 ERROR_UNKNOWN_COMMAND = 'unknown command'
@@ -490,10 +490,31 @@ class Parser:
         item_use_command: USE item_id
         :param token: item id token
         """
+        trace('parser, item_use', token)
         if self.cp.db_loaded():
             self.default_item_id = token.value
         else:
             error(NO_DATABASE)
+
+    def item_note(self, token: Token):
+        """
+        Edit item note
+        :param token: item id token
+        """
+        trace('parser, item_note', token)
+        r = self.cp.item_get(token.value)
+        if r.is_ok and r.is_dict:
+            note = r.value[KEY_DICT_NOTE]
+            new_note = edit_text(note)
+            if new_note is not None:
+                if new_note != note:
+                    print(self.cp.item_update(token.value, None, new_note))
+                else:
+                    print('note did not change; ignored')
+            else:
+                error('cannot edit note')
+        else:
+            print(r)
 
     def item_command(self, token: Token):
         """
@@ -503,22 +524,27 @@ class Parser:
         trace('parser, item_command', token)
         if token.tid == Tid.LIST:
             self.item_list()
-        elif token.tid == Tid.PRINT:
+        # commands that can use the default item id
+        elif token.tid in [Tid.PRINT, Tid.NOTE]:
             tok = self.get_token()
-            if tok.tid == Tid.EOS and self.default_item_id is not None:
-                self.item_print(Token(Tid.INT, self.default_item_id))
-            elif tok.tid == Tid.INT:
-                self.item_print(tok)
+            if tok.tid == Tid.INT:
+                pass
+            elif tok.tid == Tid.EOS and self.default_item_id is not None:
+                tok = Token(Tid.INT, self.default_item_id)
             else:
                 error('item id expected', tok)
+                return
+            if token.tid == Tid.PRINT:
+                self.item_print(tok)
+            else:
+                self.item_note(tok)
+        # commands that require the item id
         elif token.tid in [Tid.USE, Tid.DELETE, Tid.COPY, Tid.UPDATE]:
             tok = self.get_token()
             trace('parser, item print, dump, delete, copy, tag, field', tok)
             if tok.tid == Tid.INT:
                 if token.tid == Tid.USE:
                     self.item_use(tok)
-                elif token.tid == Tid.PRINT:
-                    self.item_print(tok)
                 elif token.tid == Tid.DELETE:
                     self.item_delete(tok)
                 elif token.tid == Tid.COPY:
