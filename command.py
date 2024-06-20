@@ -39,10 +39,17 @@ class CommandProcessor:
         """
         self.file_name = ''  # database file name
         self.db = None  # database object
-        self.loaded = False
+        # self.loaded = False
         self.resp = ResponseGenerator()
         self.confirm = confirm_callback
         self.crypt = crypt_callback
+
+    def get_database_name(self) -> str:
+        """
+        Return the database file name
+        :return: database file name
+        """
+        return self.file_name
 
     def db_loaded(self, overwrite=False) -> bool:
         """
