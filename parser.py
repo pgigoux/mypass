@@ -11,6 +11,9 @@ ERROR_UNKNOWN_SUBCOMMAND = 'unknown subcommand'
 ERROR_BAD_FILENAME = 'bad file name'
 ERROR_BAD_FORMAT = 'bad format, expected "json" or "sql"'
 
+# Default user prompt
+DEFAULT_PROMPT = 'cmd> '
+
 
 class Parser:
     """
@@ -31,6 +34,19 @@ class Parser:
         token = self.lexer.next_token()
         trace('parser, get_token', token)
         return token
+
+    def get_prompt(self) -> str:
+        """
+        Build a user prompt from the current database name and default item number
+        :return: user prompt
+        """
+        file_name = self.cp.get_database_name()
+        if file_name and self.default_item_id is not None:
+            return f'{file_name}:{self.default_item_id}> '
+        elif file_name:
+            return f'{file_name}> '
+        else:
+            return DEFAULT_PROMPT
 
     # -------------------------------------------------------------
     # Tag

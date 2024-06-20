@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 from cmd import Cmd
-from parser import Parser
+from parser import Parser, DEFAULT_PROMPT
 
 HELP = """
 db    <command_options>         Database commands
@@ -55,7 +55,7 @@ field  update <field_id> [-fn <name>] [-fv <value>] Update item field
 
 
 class CommandInterpreter(Cmd):
-    prompt = 'cmd> '
+    prompt = DEFAULT_PROMPT
     intro = 'Welcome to mypass'
 
     def __init__(self, p: Parser):
@@ -88,6 +88,7 @@ class CommandInterpreter(Cmd):
     # Process command
     def default(self, command: str):
         self.parser.execute(command)
+        CommandInterpreter.prompt = self.parser.get_prompt()
 
     def do_bye(self, _: str) -> bool:
         self.parser.quit(False)
