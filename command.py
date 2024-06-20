@@ -48,12 +48,12 @@ class CommandProcessor:
         """
         Check whether there's a database in memory
         Prompt the user whether to overwrite the database if there is one in memory already
-        :return: True if there's a database and the database can be overwritten, False otherwise
+        :return: True if there's a database and the database cannot be overwritten, False otherwise
         """
         if self.db is None:
             return False
         if overwrite:
-            return self.confirm("There's a database already in memory")
+            return not self.confirm("There's a database already in memory")
         else:
             return True
 
