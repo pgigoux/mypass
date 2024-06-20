@@ -1,5 +1,5 @@
 from db import DEFAULT_DATABASE_NAME
-from command import CommandProcessor, FileFormat
+from command import CommandProcessor, FileFormat, NO_DATABASE
 from command import KEY_DICT_ID, KEY_DICT_NAME, KEY_DICT_TIMESTAMP, KEY_DICT_NOTE, KEY_DICT_TAGS, KEY_DICT_FIELDS
 from lexer import Lexer, Token, Tid
 from lexer import LEX_ACTIONS, LEX_DATABASE, LEX_MISC, LEX_VALUE, LEX_STRING
@@ -469,6 +469,16 @@ class Parser:
         else:
             print(r)
 
+    def item_use(self, token: Token):
+        """
+        item_use_command: USE item_id
+        :param token: item id token
+        """
+        if self.cp.db_loaded():
+            self.default_item_id = token.value
+        else:
+            error(NO_DATABASE)
+
     def item_command(self, token: Token):
         """
         item_command : ITEM subcommand
@@ -490,7 +500,7 @@ class Parser:
             trace('parser, item print, dump, delete, copy, tag, field', tok)
             if tok.tid == Tid.INT:
                 if token.tid == Tid.USE:
-                    self.default_item_id = tok.value
+                    self.item_use(tok)
                 elif token.tid == Tid.PRINT:
                     self.item_print(tok)
                 elif token.tid == Tid.DELETE:
