@@ -218,7 +218,7 @@ def edit_text(text: str) -> str | None:
         pass
 
     # Return the edited text
-    return new_text
+    return new_text.rstrip()
 
 
 if __name__ == '__main__':
