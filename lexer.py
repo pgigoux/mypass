@@ -47,7 +47,6 @@ class Tid(Enum):
     SW_FIELD_VALUE = auto()
     SW_TAG = auto()
     SW_NOTE = auto()
-    SW_MULTILINE_NOTE = auto()  # multiline note
     # error
     INVALID = auto()
 
@@ -138,7 +137,6 @@ class Lexer:
             '-fn': Tid.SW_FIELD_NAME,
             '-fv': Tid.SW_FIELD_VALUE,
             '-note': Tid.SW_NOTE,
-            '-text': Tid.SW_MULTILINE_NOTE
         }
         # The formats are handled in a separate dictionary to keep them separate from the other keywords
         self.formats = {

@@ -218,7 +218,6 @@ class Parser:
         d = {Tid.SW_SENSITIVE: False,
              Tid.SW_NAME: None,
              Tid.SW_NOTE: None,
-             Tid.SW_MULTILINE_NOTE: False,
              Tid.SW_TAG: [],
              Tid.SW_FIELD_NAME: None,
              Tid.SW_FIELD_VALUE: None
@@ -261,9 +260,6 @@ class Parser:
                     d[Tid.SW_NOTE] = str(t1.value)
                 else:
                     error(f'bad note {t1}')
-            elif token.tid == Tid.SW_MULTILINE_NOTE:
-                # TODO - decide how to handle this option
-                d[Tid.SW_MULTILINE_NOTE] = True
             elif token.tid == Tid.EOS:
                 trace('parser, eos')
                 break
