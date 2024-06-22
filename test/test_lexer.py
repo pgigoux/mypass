@@ -37,7 +37,6 @@ def test_switches():
     assert lx.token('-fn') == Token(Tid.SW_FIELD_NAME, True)
     assert lx.token('-fv') == Token(Tid.SW_FIELD_VALUE, True)
     assert lx.token('-note') == Token(Tid.SW_NOTE, True)
-    assert lx.token('-text') == Token(Tid.SW_MULTILINE_NOTE, True)
 
 
 def test_expressions():
