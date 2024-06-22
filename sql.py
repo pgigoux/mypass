@@ -48,7 +48,7 @@ class Sql:
 
     def __init__(self):
         """
-        Create an sqlite database in memory
+        Create a sqlite database in memory
         """
         self.connection = sq.connect(':memory:')
         self.cursor = self.connection.cursor()
@@ -218,7 +218,7 @@ class Sql:
     def search_tag_table(self, pattern: str) -> list:
         """
         Search for a tag that matches a given pattern
-        :param pattern: pattern to search for
+        :param pattern: the pattern to search for
         :return: list of tags matching the
         """
         self.cursor.execute(f'select * from tag_table where name like ?', (f'%{pattern}%',))
@@ -305,7 +305,7 @@ class Sql:
     def search_field_table(self, pattern: str) -> list:
         """
         Search for a field that matches a given pattern
-        :param pattern: pattern to search for
+        :param pattern: the pattern to search for
         :return: list of fields matching the
         """
         self.cursor.execute(f'select * from field_table where name like ?', (f'%{pattern}%',))
@@ -350,7 +350,7 @@ class Sql:
 
     def insert_into_tags(self, tag_id: int | None, item_id: int, tag_table_id: int) -> int:
         """
-        Insert a new tag
+        Insert a new tag into the table
         :param tag_id: tag id (or None if autoincrement)
         :param item_id: item id the tag is associated with
         :param tag_table_id: tag id from the tag_table
@@ -380,7 +380,7 @@ class Sql:
         Check whether an item has a given field
         :param item_id: item id
         :param field_id: field id
-        :return: True it it exists, False otherwise
+        :return: True it exists, False otherwise
         """
         self.cursor.execute(f'select * from fields where item_id=? and id=?', (item_id, field_id))
         return len(self.cursor.fetchall()) > 0
@@ -390,14 +390,14 @@ class Sql:
         Check whether an item has a given field type
         :param item_id: item id
         :param field_table_id: field id from field table
-        :return: True it it exists, False otherwise
+        :return: True it exists, False otherwise
         """
         self.cursor.execute(f'select * from fields where item_id=? and field_id=?', (item_id, field_table_id))
         return len(self.cursor.fetchall()) > 0
 
     def field_get(self, field_id: int) -> list:
         """
-        Return specific field
+        Return field information
         :param field_id: field id
         :return: field data as a list
         """
@@ -418,7 +418,7 @@ class Sql:
     def insert_into_fields(self, field_id: int | None, item_id: int, field_table_id: int,
                            field_value: str, encrypted_value=False) -> int:
         """
-        Insert a new field
+        Insert a new field into the table
         :param field_id: field id (or None if autoincrement)
         :param item_id: item id the field belongs to
         :param field_table_id: field id from the field_table
@@ -433,7 +433,7 @@ class Sql:
     def delete_from_fields(self, item_id: int, field_id: Optional[int] = None) -> int:
         """
         Remove fields associated with a given item
-        :param item_id: item id
+        :param item_id: existing item id
         :param field_id: field id, or None if all fields
         :return: number of rows deleted
         """
@@ -479,7 +479,7 @@ class Sql:
         """
         Check whether an item exists in the items table
         :param item_id: item id
-        :return: True it it exists, False otherwise
+        :return: True it exists, False otherwise
         """
         self.cursor.execute(f'select * from items where id=?', (item_id,))
         return len(self.cursor.fetchall()) > 0
@@ -497,7 +497,7 @@ class Sql:
 
     def insert_into_items(self, item_id: int | None, item_name: str, item_timestamp: int, item_note: str) -> int:
         """
-        Insert a new item
+        Insert a new item into the database
         :param item_id: item id (or None if autoincrement)
         :param item_name: item name
         :param item_timestamp: time stamp
@@ -550,7 +550,7 @@ class Sql:
 
     def import_from_sql(self, file_name: str):
         """
-        Import the database from an sqlite file
+        Import the database from a sqlite file
         :param file_name: output file name
         :return:
         """
@@ -560,7 +560,7 @@ class Sql:
 
     def export_to_sql(self, file_name: str):
         """
-        Export the database to an sqlite file
+        Export the database to a sqlite file
         :param file_name: output file name
         :return:
         """
