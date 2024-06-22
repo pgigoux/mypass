@@ -21,13 +21,18 @@ KEY_DICT_TAGS = 'tags'
 KEY_DICT_FIELDS = 'fields'
 
 
-# Export formats
 class FileFormat(Enum):
+    """
+    Export formats
+    """
     FORMAT_JSON = auto()
     FORMAT_SQL = auto()
 
 
 class CommandProcessor:
+    """
+    Class that's in charge of executing commands that interact with the database
+    """
 
     def __init__(self, confirm_callback: Callable, crypt_callback: Callable):
         """
@@ -43,6 +48,10 @@ class CommandProcessor:
         self.resp = ResponseGenerator()
         self.confirm = confirm_callback
         self.crypt = crypt_callback
+
+    # -----------------------------------------------------------------
+    # Auxiliary functions
+    # -----------------------------------------------------------------
 
     def get_database_name(self) -> str:
         """
