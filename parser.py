@@ -424,8 +424,9 @@ class Parser:
             trace('parser, item_add', item_name, tag_list, note)
             if item_name is not None:
                 r = self.cp.item_add(item_name, tag_list, note)
-                if r.is_ok:
-                    self.default_item_id = int(r.value)
+                trace('parser, after item_add', repr(r))
+                if r.is_ok and r.is_int:
+                    self.default_item_id = r.value
                     print(f'Added item {self.default_item_id}')
                 else:
                     error('failed to add item')
@@ -438,7 +439,11 @@ class Parser:
         :param token: item id token
         """
         trace('parser, item_delete', token)
-        print(self.cp.item_delete(token.value))
+        r = self.cp.item_delete(token.value)
+        if r.is_ok:
+            if token.value == self.default_item_id:
+                self.default_item_id = None
+        print(r)
 
     def item_copy(self, token: Token):
         """
@@ -448,21 +453,39 @@ class Parser:
         trace('parser, item_copy', token)
         print(self.cp.item_copy(token.value))
 
-    def item_update(self, token: Token):
+    # def item_update(self, token: Token):
+    #     """
+    #     Edit existing item
+    #     :param token: item id token
+    #     """
+    #     trace('parser, item_update', token)
+    #     opt = self.item_options()
+    #     if opt is not None:
+    #         item_name = opt[Tid.SW_NAME]
+    #         note = opt[Tid.SW_NOTE]
+    #         trace('parser, item_update', item_name, note)
+    #         if item_name is not None or note is not None:
+    #             print(self.cp.item_update(token.value, item_name, note))
+    #         else:
+    #             error('missing item name or note')
+
+    def item_update(self):
         """
-        Edit existing item
-        :param token: item id token
+        Edit existing item (name and/or note)
         """
-        trace('parser, item_update', token)
+        trace('parser, item_update')
         opt = self.item_options()
-        if opt is not None:
-            item_name = opt[Tid.SW_NAME]
-            note = opt[Tid.SW_NOTE]
-            trace('parser, item_update', item_name, note)
-            if item_name is not None or note is not None:
-                print(self.cp.item_update(token.value, item_name, note))
-            else:
-                error('missing item name or note')
+        if self.default_item_id is not None:
+            if opt is not None:
+                item_name = opt[Tid.SW_NAME]
+                note = opt[Tid.SW_NOTE]
+                trace('parser, item_update', item_name, note)
+                if item_name is not None or note is not None:
+                    print(self.cp.item_update(self.default_item_id, item_name, note))
+                else:
+                    error('missing item name or note')
+        else:
+            error('no item selected')
 
     def item_tag_command(self, token: Token):
         """
@@ -572,21 +595,24 @@ class Parser:
         else:
             print(r)
 
-    def item_use(self, token: Token):
+    def item_use(self):
         """
         item_use_command: USE item_id
-        Define default item id
-        :param token: item id token
+        Set default item id
         """
-        trace('parser, item_use', token)
+        trace('parser, item_use')
         if self.cp.db_loaded():
-            self.default_item_id = token.value
+            tok = self.get_token()
+            if tok.tid == Tid.INT:
+                self.default_item_id = tok.value
+            else:
+                error('item id expected', tok)
         else:
             error(NO_DATABASE)
 
     def item_note(self, token: Token):
         """
-        Edit item note
+        Edit item note.
         :param token: item id token
         """
         trace('parser, item_note', token)
@@ -610,15 +636,31 @@ class Parser:
         :param token: token with subcommand
         """
         trace('parser, item_command', token)
-        if token.tid == Tid.LIST:
+        if token.tid == Tid.USE:
+            self.item_use()
+        elif token.tid == Tid.LIST:
             trace('parser, item list', token)
             self.item_list()
         elif token.tid == Tid.COUNT:
             trace('parser, item count', token)
             self.item_count()
-        # commands that can use the default item id
-        elif token.tid in [Tid.PRINT, Tid.NOTE]:
+        elif token.tid == Tid.SEARCH:
             tok = self.get_token()
+            trace('parser, item search', tok)
+            if tok.tid in LEX_STRING:
+                self.item_search(tok)
+            else:
+                error('pattern expected')
+        elif token.tid == Tid.ADD:
+            trace('parser, item add', token)
+            self.item_add()
+        elif token.tid == Tid.UPDATE:
+            self.item_update()
+        elif token.tid in [Tid.PRINT, Tid.NOTE, Tid.DELETE, Tid.COPY]:
+            # These commands accept an optional item id
+            # Return an error if no item id is specified and the default item id is not defined
+            tok = self.get_token()
+            trace('paser, print, note, delete, copy', tok)
             if tok.tid == Tid.INT:
                 pass
             elif tok.tid == Tid.EOS and self.default_item_id is not None:
@@ -628,25 +670,14 @@ class Parser:
                 return
             if token.tid == Tid.PRINT:
                 self.item_print(tok)
-            else:
+            elif token.tid == Tid.DELETE:
+                self.item_delete(tok)
+            elif token.tid == Tid.COPY:
+                self.item_copy(tok)
+            elif token.tid == Tid.NOTE:
                 self.item_note(tok)
-        # commands that require the item id
-        elif token.tid in [Tid.USE, Tid.DELETE, Tid.COPY, Tid.UPDATE]:
-            tok = self.get_token()
-            trace('parser, item print, dump, delete, copy, tag, field', tok)
-            if tok.tid == Tid.INT:
-                if token.tid == Tid.USE:
-                    self.item_use(tok)
-                elif token.tid == Tid.DELETE:
-                    self.item_delete(tok)
-                elif token.tid == Tid.COPY:
-                    self.item_copy(tok)
-                elif token.tid == Tid.UPDATE:
-                    self.item_update(tok)
-                else:
-                    error('Unknown item subcommand', tok)
             else:
-                error('item id expected', tok)
+                error('Unknown item subcommand', tok)
         elif token.tid == Tid.TAG:
             tok = self.get_token()
             trace('parser, item tag', tok)
@@ -661,16 +692,6 @@ class Parser:
                 self.item_field_command(tok)
             else:
                 error('Invalid item tag subcommand', tok)
-        elif token.tid == Tid.SEARCH:
-            tok = self.get_token()
-            trace('parser, item search', tok)
-            if tok.tid in LEX_STRING:
-                self.item_search(tok)
-            else:
-                error('pattern expected')
-        elif token.tid == Tid.ADD:
-            trace('parser, item add', token)
-            self.item_add()
         else:
             error(ERROR_UNKNOWN_SUBCOMMAND, token)
 
