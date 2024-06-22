@@ -631,7 +631,7 @@ class CommandProcessor:
     def item_add(self, item_name: str, tag_list: list, note: str) -> Response:
         """
         Add/create new item
-        :param item_name: item name
+        :param item_name: new items name
         :param tag_list: tag name list
         :param note: note
         """
@@ -645,7 +645,7 @@ class CommandProcessor:
                     tag_id = tag_mapping[tag_name][MAP_TAG_ID]
                     trace('adding tag', tag_name, tag_id)
                     self.db.sql.insert_into_tags(None, item_id, tag_id)
-            return self.resp.ok(f'added {item_id}')
+            return self.resp.ok(f'{item_id}')
         else:
             return self.resp.warning(NO_DATABASE)
 
