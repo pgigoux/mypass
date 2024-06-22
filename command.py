@@ -32,7 +32,7 @@ class CommandProcessor:
     def __init__(self, confirm_callback: Callable, crypt_callback: Callable):
         """
         The command processor handles the commands that interact with the database.
-        Two callbacks are used so it's up to the caller to decide how to prompt
+        Two callbacks are used, so it's up to the caller to decide how to prompt
         the user for action confirmations and the database encryption key.
         :param confirm_callback: function called to confirm action (True/False)
         :param crypt_callback: function to get the encryption key
@@ -87,7 +87,7 @@ class CommandProcessor:
     def database_create(self, file_name=DEFAULT_DATABASE_NAME) -> Response:
         """
         Create an empty database
-        :param file_name: database file name
+        :param file_name: new database file name
         :return: response
         """
         trace('database_create', file_name)
@@ -320,7 +320,7 @@ class CommandProcessor:
 
     def field_table_add(self, name: str, sensitive_flag: bool) -> Response:
         """
-        Add new field
+        Add new field to the field table
         :param name: field name
         :param sensitive_flag: sensitive?
         :return: response

@@ -161,7 +161,7 @@ class Lexer:
         Check for matching patterns and return token code and data.
         Keywords are always checked first.
         The order patterns are checked matters.
-        :param pattern: pattern to chek
+        :param pattern: pattern to check
         :return: Token
         """
         if pattern in self.keywords:

@@ -17,7 +17,7 @@ class Response:
     def __init__(self, severity: Severity, value: int | str | list | dict | None):
         """
         A response is an object that handles a severity code and value.
-        If the severity is OK, the value will containg data (string, list or dictionary).
+        If the severity is OK, the value will contain data (string, list or dictionary).
         Otherwise, the value will contain an error message.
         :param severity: error severity
         :param value: value (or message)

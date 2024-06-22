@@ -113,7 +113,7 @@ class Database:
 
     def convert_to_json(self, decrypt_flag=False) -> str:
         """
-        Convert the database to json
+        Convert the database to json format
         :return: json string
         """
         d = {KEY_TAG_SECTION: self.tag_table_to_list(),

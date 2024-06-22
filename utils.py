@@ -95,7 +95,7 @@ def get_password() -> str:
 
 def get_crypt_key() -> Crypt | None:
     """
-    Read a password from the standard input and return the corresponding encryption key
+    Read a password from the standard input and return the corresponding encryption/decryption key
     :return: encryption key, or None if no password
     """
     password = get_password()
