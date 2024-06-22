@@ -478,9 +478,6 @@ class CommandProcessor:
         :return: response
         """
         trace('field_update', item_id, field_id, new_field_name, new_field_value)
-        # print('-' * 70)
-        # print(f'param: item={item_id}, field_id={field_id}, new_name={new_field_name}, new_value={new_field_value}')
-
         if self.db_loaded():
             if new_field_name is None and new_field_value is None:
                 return self.resp.warning('nothing to update')
@@ -494,8 +491,6 @@ class CommandProcessor:
                 f_encrypted = bool(field[INDEX_FIELDS_ENCRYPTED])
                 field_mapping = self.db.sql.get_field_table_id_mapping()
                 f_sensitive = field_mapping[f_id][MAP_FIELD_SENSITIVE]
-                # print(
-                #     f'field: f_id={f_id} ({self.get_name(f_id)}), f_v={f_value}, f_sens={f_sensitive}, f_enc={f_encrypted}')
 
                 # The field table id and sensible flag will be set by the new field name if defined.
                 # Otherwise the sensible flag will be inherited from the current field.
@@ -504,7 +499,6 @@ class CommandProcessor:
                     if new_field_name in field_mapping:
                         field_table_id = field_mapping[new_field_name][MAP_FIELD_ID]
                         new_sensitive = field_mapping[new_field_name][MAP_FIELD_SENSITIVE]
-                        # print(f'name: ft_id={field_table_id} ({self.get_name(field_table_id)}), f_sens={new_sensitive}')
                     else:
                         return self.resp.error(f'field name {new_field_name} does not exist')
                 else:
@@ -525,9 +519,6 @@ class CommandProcessor:
                         encrypted_flag = new_value != f_value
                     elif f_encrypted and new_sensitive:
                         encrypted_flag = True
-
-                # print(f'field_table_id={field_table_id} ({self.get_name(field_table_id)}), new_sens={new_sensitive}')
-                # print(f'new_value={new_value}, enc={encrypted_flag}')
                 n = self.db.sql.update_field(item_id, field_id, field_table_id, new_value, encrypted_flag)
                 if n > 0:
                     return self.resp.ok(f'updated {n} fields')
