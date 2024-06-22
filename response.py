@@ -26,7 +26,10 @@ class Response:
         self._value = value
 
     def __str__(self):
-        return f'{str(self._value)} {type(self._value)}'
+        return f'{str(self._value)}'
+
+    def __repr__(self):
+        return f'{str(self._value)} {type(self._value)} {self.severity}'
 
     @property
     def is_ok(self) -> bool:
