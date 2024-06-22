@@ -71,7 +71,6 @@ class Parser:
         r = self.cp.tag_table_list()
         if r.is_ok and r.is_list:
             for t_id, t_name, t_count in r.value:
-                # print(f'{t_id:2d} {t_count:3d} {t_name}')
                 print(self._format_table_tag(t_id, t_name, t_count))
         else:
             print(r)
@@ -358,9 +357,13 @@ class Parser:
         List all items
         """
         trace('parser, item_list')
+        tok = self.get_token()
+        sort_by_name = tok.tid == Tid.SW_NAME
         r = self.cp.item_list()
         if r.is_ok and r.is_list:
-            for i_id, i_name, i_timestamp, _ in r.value:
+            i_list = [(x[0], x[1], x[2], x[3]) for x in
+                      sorted(r.value, key=lambda x: x[1].lower())] if sort_by_name else r.value
+            for i_id, i_name, i_timestamp, _ in i_list:
                 print(self._format_item(i_id, i_name, i_timestamp))
         else:
             print(r)
