@@ -692,7 +692,7 @@ class CommandProcessor:
         else:
             return self.resp.warning(NO_DATABASE)
 
-    def item_update(self, item_id: int, item_name: str, note: str) -> Response:
+    def item_update(self, item_id: int, item_name: str | None, note: str | None) -> Response:
         """
         Update item contents
         :param item_id: item id
@@ -701,7 +701,7 @@ class CommandProcessor:
         """
         trace('item_update', item_id, item_name, note)
         if self.db_loaded():
-            if item_name or note:
+            if item_name is not None or note is not None:
                 n = self.db.sql.update_item(item_id, get_timestamp(), item_name=item_name, item_note=note)
                 if n > 0:
                     return self.resp.ok(f'updated {n} items')
