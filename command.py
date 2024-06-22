@@ -636,7 +636,7 @@ class CommandProcessor:
                     tag_id = tag_mapping[tag_name][MAP_TAG_ID]
                     trace('adding tag', tag_name, tag_id)
                     self.db.sql.insert_into_tags(None, item_id, tag_id)
-            return self.resp.ok(f'{item_id}')
+            return self.resp.ok(item_id)
         else:
             return self.resp.warning(NO_DATABASE)
 
