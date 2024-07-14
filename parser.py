@@ -49,7 +49,7 @@ class Parser:
             return DEFAULT_PROMPT
 
     # -------------------------------------------------------------
-    # Tag
+    # Tag table
     # -------------------------------------------------------------
 
     @staticmethod
@@ -124,6 +124,23 @@ class Parser:
         trace('parser, tag_delete', tok)
         print(self.cp.tag_table_delete(tok.value))
 
+    def tag_import(self, tok: Token):
+        """
+        Import tags
+        :param tok: token with file name
+        :return:
+        """
+        trace('parser, tag_import', tok)
+        print(self.cp.tag_table_import(tok.value))
+
+    def tag_export(self, tok: Token):
+        """
+        Export tags
+        :param tok: token with file name
+        """
+        trace('parser, tag_export', tok)
+        print(self.cp.tag_table_export(tok.value))
+
     def tag_command(self, token: Token):
         """
         tag_command : TAG subcommand
@@ -160,11 +177,20 @@ class Parser:
                 self.tag_rename(tok1, tok2)
             else:
                 error('bad tag name', tok1, tok2)
+        elif token.tid in [Tid.IMPORT, Tid.EXPORT]:
+            tok = self.get_token()
+            if tok.tid == Tid.FILE:
+                if token.tid == Tid.IMPORT:
+                    self.tag_import(tok)
+                else:
+                    self.tag_export(tok)
+            else:
+                error('file name expected', tok)
         else:
             error(ERROR_UNKNOWN_SUBCOMMAND, token)
 
     # -------------------------------------------------------------
-    # Fields
+    # Field table
     # -------------------------------------------------------------
 
     @staticmethod
@@ -241,6 +267,19 @@ class Parser:
         trace('parser, field_delete', tok)
         print(self.cp.field_table_delete(tok.value))
 
+    def field_import(self, tok: Token):
+        """
+        Import fields
+        :param tok: token with file name
+        :return:
+        """
+        trace('parser, field_import', tok)
+        # TODO
+
+    def field_export(self, tok: Token):
+        trace('parser, field_export', tok)
+        print(self.cp.field_table_export(tok.value))
+
     def field_command(self, token: Token):
         """
         field_command : FIELD subcommand
@@ -276,6 +315,15 @@ class Parser:
                 self.field_rename(tok1, tok2)
             else:
                 error('bad field name', tok1, tok2)
+        elif token.tid in [Tid.IMPORT, Tid.EXPORT]:
+            tok = self.get_token()
+            if tok.tid == Tid.FILE:
+                if token.tid == Tid.IMPORT:
+                    self.field_import(tok)
+                else:
+                    self.field_export(tok)
+            else:
+                error('file name expected', tok)
         else:
             error(ERROR_UNKNOWN_SUBCOMMAND, token)
 
@@ -455,22 +503,6 @@ class Parser:
         """
         trace('parser, item_copy', token)
         print(self.cp.item_copy(token.value))
-
-    # def item_update(self, token: Token):
-    #     """
-    #     Edit existing item
-    #     :param token: item id token
-    #     """
-    #     trace('parser, item_update', token)
-    #     opt = self.item_options()
-    #     if opt is not None:
-    #         item_name = opt[Tid.SW_NAME]
-    #         note = opt[Tid.SW_NOTE]
-    #         trace('parser, item_update', item_name, note)
-    #         if item_name is not None or note is not None:
-    #             print(self.cp.item_update(token.value, item_name, note))
-    #         else:
-    #             error('missing item name or note')
 
     def item_update(self):
         """

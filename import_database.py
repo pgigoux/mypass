@@ -173,17 +173,22 @@ def save_tables(db: Database):
     :param db: database
     """
     trace('save_tables', db)
-    # Field table
-    with open(FIELD_FILE_NAME, 'w') as f:
-        for f_name, f_uid, f_sensitive, f_count in db.sql.get_field_table_list():
-            f.write(f'{f_name},{f_uid},{f_sensitive},{f_count}\n')
-        f.close()
-
-    # Tag table
-    with open(TAG_FILE_NAME, 'w') as f:
-        for t_name, t_uid, t_count in db.sql.get_tag_table_list():
-            f.write(f'{t_name},{t_uid},{t_count}\n')
-        f.close()
+    # # Field table
+    # with open(FIELD_FILE_NAME, 'w') as f:
+    #     for f_name, f_uid, f_sensitive, f_count in db.sql.get_field_table_list():
+    #         f.write(f'{f_name},{f_uid},{f_sensitive},{f_count}\n')
+    #     f.close()
+    #
+    # # Tag table
+    # with open(TAG_FILE_NAME, 'w') as f:
+    #     for t_name, t_uid, t_count in db.sql.get_tag_table_list():
+    #         f.write(f'{t_name},{t_uid},{t_count}\n')
+    #     f.close()
+    try:
+        db.tag_table_export(TAG_FILE_NAME)
+        db.field_table_export(FIELD_FILE_NAME)
+    except Exception as ex:
+        print('Failed to save tables', ex)
 
 
 def import_tags(db: Database, folder_list: list) -> dict:

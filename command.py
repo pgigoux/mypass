@@ -171,7 +171,7 @@ class CommandProcessor:
         :param input_format: file format
         :return:
         """
-        pass
+        trace('database_import', file_name, input_format)
 
     def database_dump(self):
         """
@@ -189,6 +189,7 @@ class CommandProcessor:
         """
         Print a database report to the terminal (debugging)
         """
+        trace('database_report')
         if self.db_loaded():
             assert isinstance(self.db, Database)
             self.db.database_report()
@@ -202,6 +203,7 @@ class CommandProcessor:
         List all tags
         :return: response
         """
+        trace('tag_table_list')
         if self.db_loaded():
             assert isinstance(self.db, Database)
             return self.resp.ok(self.db.sql.get_tag_table_list())
@@ -213,6 +215,7 @@ class CommandProcessor:
         Print tag count (or how many there are)
         :return: response
         """
+        trace('tag_table_count')
         if self.db_loaded():
             assert isinstance(self.db, Database)
             return self.resp.ok(self.db.sql.get_table_count(NAME_TAG_TABLE))
@@ -238,6 +241,7 @@ class CommandProcessor:
         :param name: tag name
         :return: response
         """
+        trace('tag_table_add', name)
         if self.db_loaded():
             assert isinstance(self.db, Database)
             tag_mapping = self.db.sql.get_tag_table_name_mapping()
@@ -256,6 +260,7 @@ class CommandProcessor:
         :param new_name: new tag name
         :return: response
         """
+        trace('tag_table_rename', old_name, new_name)
         if self.db_loaded():
             assert isinstance(self.db, Database)
             if self.db.sql.rename_tag_table_entry(old_name, new_name) == 0:
@@ -271,6 +276,7 @@ class CommandProcessor:
         :param name: tag name
         :return: response
         """
+        trace('tag_table_delete', name)
         if self.db_loaded():
             assert isinstance(self.db, Database)
             self.db.sql.update_tag_table_counters()
@@ -286,6 +292,32 @@ class CommandProcessor:
         else:
             return self.resp.warning(NO_DATABASE)
 
+    def tag_table_import(self, file_name: str):
+        """
+        Import tags from a csv file
+        :param file_name: input file name
+        :return: response
+        """
+        # TODO
+        trace('tag_table_import', file_name)
+        return self.resp.warning('Not implemented')
+
+    def tag_table_export(self, file_name: str):
+        """
+        Export the tag table in csv format
+        :param file_name: output file name
+        :return: response
+        """
+        trace('tag_table_import', file_name)
+        if self.db_loaded():
+            assert isinstance(self.db, Database)
+            try:
+                self.db.tag_table_export(file_name)
+            except IOError:
+                return self.resp.error(f'Cannot export tags to {file_name}')
+        else:
+            return self.resp.warning(NO_DATABASE)
+
     # -----------------------------------------------------------------
     # Field table commands
     # -----------------------------------------------------------------
@@ -295,7 +327,7 @@ class CommandProcessor:
         List all fields
         :return: response
         """
-        trace('field_list')
+        trace('field_table_list')
         if self.db_loaded():
             assert isinstance(self.db, Database)
             return self.resp.ok(self.db.sql.get_field_table_list())
@@ -307,7 +339,7 @@ class CommandProcessor:
         Print field count (or how many there are)
         :return: response
         """
-        trace('field_count')
+        trace('field_table_count')
         if self.db_loaded():
             assert isinstance(self.db, Database)
             return self.resp.ok(self.db.sql.get_table_count(NAME_FIELD_TABLE))
@@ -320,7 +352,7 @@ class CommandProcessor:
         :param pattern: regexp pattern
         :return: response
         """
-        trace('field_search', pattern)
+        trace('field_table_search', pattern)
         if self.db_loaded():
             assert isinstance(self.db, Database)
             return self.resp.ok(self.db.sql.search_field_table(pattern))
@@ -334,7 +366,7 @@ class CommandProcessor:
         :param sensitive_flag: sensitive?
         :return: response
         """
-        trace('field_add', name, sensitive_flag)
+        trace('field_table_add', name, sensitive_flag)
         if self.db_loaded():
             assert isinstance(self.db, Database)
             field_mapping = self.db.sql.get_field_table_name_mapping()
@@ -353,6 +385,7 @@ class CommandProcessor:
         :param new_name: new field name
         :return: response
         """
+        trace('field_table_rename', old_name, new_name)
         if self.db_loaded():
             assert isinstance(self.db, Database)
             if self.db.sql.rename_field_table_entry(old_name, new_name) == 0:
@@ -381,6 +414,32 @@ class CommandProcessor:
                     return self.resp.error(f'field {name} is being used')
             else:
                 return self.resp.error(f'field {name} does not exist')
+        else:
+            return self.resp.warning(NO_DATABASE)
+
+    def field_table_import(self, file_name: str):
+        """
+        TODO
+        Import fields from a csv file
+        :param file_name: output file name
+        :return: response
+        """
+        trace('field_table_import', file_name)
+        return self.resp.warning('Not implemented')
+
+    def field_table_export(self, file_name: str):
+        """
+        Export fields into csv file
+        :param file_name: output file name
+        :return: response
+        """
+        trace('field_table_export', file_name)
+        if self.db_loaded():
+            assert isinstance(self.db, Database)
+            try:
+                self.db.field_table_export(file_name)
+            except IOError:
+                return self.resp.error(f'Cannot export fields to {file_name}')
         else:
             return self.resp.warning(NO_DATABASE)
 

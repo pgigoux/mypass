@@ -70,6 +70,26 @@ class Database:
             output_list.append({KEY_ID: f_id, KEY_NAME: f_name, KEY_SENSITIVE: bool(f_sensitive), KEY_COUNT: f_count})
         return output_list
 
+    def tag_table_export(self, file_name: str):
+        """
+        Export tag table in csv format
+        :param file_name: output file name
+        """
+        with open(file_name, 'w') as f:
+            for t_name, t_uid, t_count in self.sql.get_tag_table_list():
+                f.write(f'{t_name},{t_uid},{t_count}\n')
+            f.close()
+
+    def field_table_export(self, file_name: str):
+        """
+        Export field table in csv format
+        :param file_name: output file name
+        """
+        with open(file_name, 'w') as f:
+            for f_name, f_uid, f_sensitive, f_count in self.sql.get_field_table_list():
+                f.write(f'{f_name},{f_uid},{f_sensitive},{f_count}\n')
+            f.close()
+
     def items_to_dict(self, decrypt_flag=False) -> dict:
         """
         Convert the items in the database into a dictionary. Aside from the fixed

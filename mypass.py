@@ -26,6 +26,8 @@ search <name>                   Search for a tag by name
 add    <name>                   Add a new tag
 delete <name>                   Delete an existing tag
 rename <old_name> <new_name>    Rename an existing tag
+import <file_name>              Import tags from csv file
+export <file_name>              Export tags to csv file
 """
 
 HELP_FIELD = """
@@ -35,6 +37,8 @@ search <name>                   Search for a field by name
 add    <name>                   Add a new field
 delete <name>                   Delete an existing field
 rename <old_name> <new_name>    Rename an existing field
+import <file_name>              Import fields from csv file
+export <file_name>              Export fields to csv file
 """
 
 HELP_ITEM = """
