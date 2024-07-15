@@ -61,11 +61,11 @@ class LexState(Enum):
 
 # Token classes
 LEX_ACTIONS = [Tid.DATABASE, Tid.ITEM, Tid.FIELD, Tid.TAG]
-LEX_DATABASE = [Tid.CREATE, Tid.READ, Tid.WRITE, Tid.EXPORT, Tid.DUMP, Tid.REPORT]
-LEX_ITEM = [Tid.USE, Tid.LIST, Tid.COUNT, Tid.PRINT, Tid.SEARCH, Tid.ADD, Tid.DELETE, Tid.COPY, Tid.UPDATE, Tid.NOTE]
-LEX_ITEM_TAG_FIELD = [Tid.ADD, Tid.DELETE, Tid.UPDATE]
-LEX_TAG = [Tid.LIST, Tid.COUNT, Tid.SEARCH, Tid.ADD, Tid.DELETE, Tid.RENAME]
-LEX_FIELD = [Tid.LIST, Tid.COUNT, Tid.SEARCH, Tid.ADD, Tid.DELETE, Tid.RENAME]
+# LEX_DATABASE = [Tid.CREATE, Tid.READ, Tid.WRITE, Tid.EXPORT, Tid.DUMP, Tid.REPORT]
+# LEX_ITEM = [Tid.USE, Tid.LIST, Tid.COUNT, Tid.PRINT, Tid.SEARCH, Tid.ADD, Tid.DELETE, Tid.COPY, Tid.UPDATE, Tid.NOTE]
+# LEX_ITEM_TAG_FIELD = [Tid.ADD, Tid.DELETE, Tid.UPDATE]
+# LEX_TAG = [Tid.LIST, Tid.COUNT, Tid.SEARCH, Tid.ADD, Tid.DELETE, Tid.RENAME]
+# LEX_FIELD = [Tid.LIST, Tid.COUNT, Tid.SEARCH, Tid.ADD, Tid.DELETE, Tid.RENAME]
 LEX_MISC = [Tid.TRACE]
 LEX_STRING = [Tid.NAME, Tid.STRING]
 LEX_NUMBER = [Tid.INT, Tid.FLOAT]
@@ -124,7 +124,7 @@ class Lexer:
         self.state = LexState.START
         self.keywords = {
             'db': Tid.DATABASE, 'item': Tid.ITEM, 'tag': Tid.TAG, 'field': Tid.FIELD,
-            'read': Tid.READ, 'write': Tid.WRITE, 'export': Tid.EXPORT,
+            'read': Tid.READ, 'write': Tid.WRITE, 'import': Tid.IMPORT, 'export': Tid.EXPORT,
             'print': Tid.PRINT, 'dump': Tid.DUMP,
             'use': Tid.USE, 'note': Tid.NOTE, 'list': Tid.LIST, 'count': Tid.COUNT, 'search': Tid.SEARCH,
             'create': Tid.CREATE, 'copy': Tid.COPY, 'add': Tid.ADD, 'update': Tid.UPDATE,

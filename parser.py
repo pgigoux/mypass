@@ -2,7 +2,7 @@ from db import DEFAULT_DATABASE_NAME
 from command import CommandProcessor, FileFormat, NO_DATABASE
 from command import KEY_DICT_ID, KEY_DICT_NAME, KEY_DICT_TIMESTAMP, KEY_DICT_NOTE, KEY_DICT_TAGS, KEY_DICT_FIELDS
 from lexer import Lexer, Token, Tid
-from lexer import LEX_ACTIONS, LEX_DATABASE, LEX_MISC, LEX_VALUE, LEX_STRING
+from lexer import LEX_ACTIONS, LEX_STRING, LEX_VALUE, LEX_MISC
 from utils import error, trace, confirm, get_crypt_key, trace_toggle, sensitive_mark, timestamp_to_string, edit_text
 
 # Error messages
@@ -274,7 +274,7 @@ class Parser:
         :return:
         """
         trace('parser, field_import', tok)
-        # TODO
+        print(self.cp.field_table_import(tok.value))
 
     def field_export(self, tok: Token):
         trace('parser, field_export', tok)
@@ -745,12 +745,6 @@ class Parser:
         :param token: next token
         """
         trace('parser, database_command', token)
-
-        # Check subcommand
-        if token.tid not in LEX_DATABASE:
-            error('invalid database action', token)
-            return
-
         # Process actions
         if token.tid in [Tid.CREATE, Tid.READ]:
 
@@ -800,7 +794,7 @@ class Parser:
             self.cp.database_report()
 
         else:
-            error(ERROR_UNKNOWN_COMMAND, token)  # should never get here
+            error(ERROR_UNKNOWN_COMMAND, token)
 
     # -------------------------------------------------------------
     # Misc
