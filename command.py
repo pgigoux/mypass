@@ -44,7 +44,6 @@ class CommandProcessor:
         """
         self.file_name = ''  # database file name
         self.db = None  # database object
-        # self.loaded = False
         self.resp = ResponseGenerator()
         self.confirm = confirm_callback
         self.crypt = crypt_callback
@@ -298,9 +297,19 @@ class CommandProcessor:
         :param file_name: input file name
         :return: response
         """
-        # TODO
         trace('tag_table_import', file_name)
-        return self.resp.warning('Not implemented')
+        if self.db_loaded():
+            assert isinstance(self.db, Database)
+            if self.db.sql.get_table_count(NAME_TAG_TABLE) == 0:
+                try:
+                    self.db.tag_table_import(file_name)
+                    return self.resp.ok(f'imported {self.db.sql.get_table_count(NAME_TAG_TABLE)} tags')
+                except Exception as e:
+                    return self.resp.exception('cannot import tags', e)
+            else:
+                return self.resp.error('database already has tags defined')
+        else:
+            return self.resp.warning(NO_DATABASE)
 
     def tag_table_export(self, file_name: str):
         """
@@ -425,7 +434,18 @@ class CommandProcessor:
         :return: response
         """
         trace('field_table_import', file_name)
-        return self.resp.warning('Not implemented')
+        if self.db_loaded():
+            assert isinstance(self.db, Database)
+            if self.db.sql.get_table_count(NAME_FIELD_TABLE) == 0:
+                try:
+                    self.db.field_table_import(file_name)
+                    return self.resp.ok(f'imported {self.db.sql.get_table_count(NAME_FIELD_TABLE)} fields')
+                except Exception as e:
+                    return self.resp.exception('cannot import fields', e)
+            else:
+                return self.resp.error('database already has fields defined')
+        else:
+            return self.resp.warning(NO_DATABASE)
 
     def field_table_export(self, file_name: str):
         """

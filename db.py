@@ -5,7 +5,7 @@ from sql import Sql, TABLE_LIST
 from sql import MAP_TAG_ID, MAP_TAG_NAME
 from sql import MAP_FIELD_ID, MAP_FIELD_NAME
 from crypt import Crypt
-from utils import filter_control_characters, timestamp_to_string, get_string_timestamp
+from utils import trace, filter_control_characters, timestamp_to_string, get_string_timestamp
 
 # Keywords used to export the database to json
 # common
@@ -70,14 +70,39 @@ class Database:
             output_list.append({KEY_ID: f_id, KEY_NAME: f_name, KEY_SENSITIVE: bool(f_sensitive), KEY_COUNT: f_count})
         return output_list
 
+    def tag_table_import(self, file_name: str):
+        """
+        Export tag table in csv format
+        :param file_name: output file name
+        """
+        trace(f'db.tag_table_import {file_name}')
+        with open(file_name, 'r') as f:
+            for line in f:
+                tag_id, tag_name, _ = line.strip().split(',')
+                self.sql.insert_into_tag_table(int(tag_id), tag_name)
+            f.close()
+
     def tag_table_export(self, file_name: str):
         """
         Export tag table in csv format
         :param file_name: output file name
         """
+        trace(f'db.tag_table_export {file_name}')
         with open(file_name, 'w') as f:
             for t_name, t_uid, t_count in self.sql.get_tag_table_list():
                 f.write(f'{t_name},{t_uid},{t_count}\n')
+            f.close()
+
+    def field_table_import(self, file_name: str):
+        """
+        Import field table from csv format
+        :param file_name: output file name
+        """
+        trace(f'db.field_table_import {file_name}')
+        with open(file_name, 'r') as f:
+            for line in f:
+                f_id, f_name, f_sensitive, _ = line.strip().split(',')
+                self.sql.insert_into_field_table(int(f_id), f_name, True if f_sensitive == 1 else False)
             f.close()
 
     def field_table_export(self, file_name: str):
@@ -85,6 +110,7 @@ class Database:
         Export field table in csv format
         :param file_name: output file name
         """
+        trace(f'db.field_table_export {file_name}')
         with open(file_name, 'w') as f:
             for f_name, f_uid, f_sensitive, f_count in self.sql.get_field_table_list():
                 f.write(f'{f_name},{f_uid},{f_sensitive},{f_count}\n')
@@ -163,8 +189,11 @@ class Database:
 
     def export_to_json(self, file_name: str, decrypt_flag=False):
         """
-        :return:
+        Export database in json format
+        :param file_name: output file name
+        :param decrypt_flag: decrypt data before writing
         """
+        trace('db.export_to_json', file_name, decrypt_flag)
         with open(file_name, 'w') as f:
             f.write(self.convert_to_json(decrypt_flag=decrypt_flag))
         f.close()
@@ -181,6 +210,7 @@ class Database:
         :param note_flag: search in the note?
         :return: list of items matching the search criteria
         """
+        trace(f'db.search', pattern, item_name_flag, tag_flag, field_name_flag, field_value_flag, note_flag)
         output_list = []
         compiled_pattern = re.compile(pattern, flags=re.IGNORECASE)
         tag_mapping = self.sql.get_tag_table_id_mapping()
@@ -211,6 +241,7 @@ class Database:
         """
         Read database from disk. The file name was specified when the database was created.
         """
+        trace(f'db.read', self.file_name, self.read_mode())
         with open(self.file_name, self.read_mode()) as f:
             data = f.read()
             if self.crypt_key is not None:
@@ -260,6 +291,7 @@ class Database:
         """
         Write database to disk
         """
+        trace('db.write', self.file_name)
         # Make sure all the changes are saved to the database
         self.sql.update_counters()
 
