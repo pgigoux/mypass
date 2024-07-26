@@ -166,7 +166,7 @@ class Lexer:
         """
         Check word for matching patterns and return token code and data.
         Keywords are always checked first. The order is important.
-        :param word: word to check agaist patterns
+        :param word: word to check against patterns
         :return: Token
         """
         if word in self.keywords:
@@ -238,7 +238,8 @@ class Lexer:
 if __name__ == '__main__':
     lx = Lexer()
     lx.input(
-        'item name "this is a string" security_1 list 20/10/2022 07/24 /home/test_1.txt 8.310.444-3 3.4 7 333-555-8888 -s -n -t -fn -fv -note')
+        'item name "this is a string" security_1 list 20/10/2022 07/24'
+        ' /home/test_1.txt 8.310.444-3 3.4 7 333-555-8888 -s -n -t -fn -fv -note')
     while True:
         tok = lx.next_token()
         print(tok)
