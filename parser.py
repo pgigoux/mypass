@@ -31,9 +31,12 @@ class Parser:
         Get next token from the lexer
         :return: token id and value
         """
-        token = self.lexer.next_token()
-        trace('parser, get_token', token)
-        return token
+        try:
+            token = self.lexer.next_token()
+            trace('parser, get_token', token)
+            return token
+        except Exception as e:
+            return Token(Tid.INVALID, str(e))
 
     def get_prompt(self) -> str:
         """
