@@ -872,11 +872,12 @@ class CommandProcessor:
     # Misc commands
     # -----------------------------------------------------------------
 
-    def quit_command(self, keyboard_interrupt: bool):
+    def quit_command(self):
         """
         Command that will be called when the program exits
         """
-        trace(f'quit_command {self.file_name}', keyboard_interrupt)
+        trace(f'quit_command {self.file_name}')
+        return self.confirm('Are you sure you want to quit')
 
 
 if __name__ == '__main__':

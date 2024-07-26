@@ -830,13 +830,12 @@ class Parser:
         else:
             error(ERROR_UNKNOWN_COMMAND, token)
 
-    def quit(self, keyboard_interrupt: bool):
+    def quit(self):
         """
         Terminate the parser
-        :param keyboard_interrupt: program terminated by ctrl-c?
         """
         trace('parser, quit')
-        self.cp.quit_command(keyboard_interrupt)
+        return self.cp.quit_command()
 
     # -------------------------------------------------------------
     # General

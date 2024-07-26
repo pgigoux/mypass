@@ -95,8 +95,7 @@ class CommandInterpreter(Cmd):
         CommandInterpreter.prompt = self.parser.get_prompt()
 
     def do_bye(self, _: str) -> bool:
-        self.parser.quit(False)
-        return True
+        return self.parser.quit()
 
 
 if __name__ == '__main__':
@@ -105,4 +104,4 @@ if __name__ == '__main__':
     try:
         ci.cmdloop()
     except KeyboardInterrupt:
-        parser.quit(True)
+        pass
