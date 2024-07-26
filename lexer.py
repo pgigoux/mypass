@@ -28,12 +28,12 @@ class Tid(Enum):
     NOTE = auto()
     USE = auto()
     # data
-    NAME = auto()
     FILE = auto()
-    INT = auto()
-    FLOAT = auto()
     DATE = auto()
     STRING = auto()
+    INT = auto()
+    FLOAT = auto()
+    NAME = auto()  # anything string with no whitespaces
     # misc
     REPORT = auto()
     TRACE = auto()
@@ -61,23 +61,17 @@ class LexState(Enum):
 
 # Token classes
 LEX_ACTIONS = [Tid.DATABASE, Tid.ITEM, Tid.FIELD, Tid.TAG]
-# LEX_DATABASE = [Tid.CREATE, Tid.READ, Tid.WRITE, Tid.EXPORT, Tid.DUMP, Tid.REPORT]
-# LEX_ITEM = [Tid.USE, Tid.LIST, Tid.COUNT, Tid.PRINT, Tid.SEARCH, Tid.ADD, Tid.DELETE, Tid.COPY, Tid.UPDATE, Tid.NOTE]
-# LEX_ITEM_TAG_FIELD = [Tid.ADD, Tid.DELETE, Tid.UPDATE]
-# LEX_TAG = [Tid.LIST, Tid.COUNT, Tid.SEARCH, Tid.ADD, Tid.DELETE, Tid.RENAME]
-# LEX_FIELD = [Tid.LIST, Tid.COUNT, Tid.SEARCH, Tid.ADD, Tid.DELETE, Tid.RENAME]
 LEX_MISC = [Tid.TRACE]
 LEX_STRING = [Tid.NAME, Tid.STRING]
 LEX_NUMBER = [Tid.INT, Tid.FLOAT]
 LEX_VALUE = [Tid.INT, Tid.FLOAT, Tid.NAME, Tid.FILE, Tid.STRING]
 
-
 # Regular expressions
 LONG_DATE_PATTERN = r'^\d\d/\d\d/\d\d\d\d'
 SHORT_DATE_PATTERN = r'^\d\d/\d\d/\d\d'
 MONTH_YEAR_PATTERN = r'^\d\d/\d\d'
-FILE_PATTERN = r'^[a-z0-9]+\.[a-z0-9]+'
-NAME_PATTERN = r'^[a-zA-Z_][a-zA-Z_0-9]*'
+FILE_PATTERN = r'^[a-z0-9_/]+\.[a-z0-9]+'
+NAME_PATTERN = r'^\S+'
 INT_PATTERN = r'^\d+'
 FLOAT_PATTERN = r'^\d*\.\d+'
 
@@ -156,35 +150,51 @@ class Lexer:
         self.state = LexState.START
         self.count = 0
 
-    def token(self, pattern: str) -> Token:
+    @staticmethod
+    def _match(pattern: str, word: str) -> bool:
         """
-        Check for matching patterns and return token code and data.
-        Keywords are always checked first.
-        The order patterns are checked matters.
-        :param pattern: pattern to check
+        Check whether the input word matches a regular expression.
+        Make sure the matching string is the same as the full word
+        :param pattern: regular expression pattern
+        :param word: input word
+        :return: True if there is a match, False otherwise
+        """
+        m = re.search(pattern, word)
+        return True if m is not None and len(m.group()) == len(word) else False
+
+    def token(self, word: str) -> Token:
+        """
+        Check word for matching patterns and return token code and data.
+        Keywords are always checked first. The order is important.
+        :param word: word to check agaist patterns
         :return: Token
         """
-        if pattern in self.keywords:
-            t = Token(self.keywords[pattern], pattern)
-        elif pattern in self.switches:
-            t = Token(self.switches[pattern], True)
-        elif pattern in self.formats:
-            t = Token(self.formats[pattern], pattern)
-        elif re.search(LONG_DATE_PATTERN, pattern) \
-                or re.search(SHORT_DATE_PATTERN, pattern) \
-                or re.search(MONTH_YEAR_PATTERN, pattern):
-            t = Token(Tid.DATE, pattern)
-        elif re.search(FLOAT_PATTERN, pattern):
-            t = Token(Tid.FLOAT, float(pattern))
-        elif re.search(INT_PATTERN, pattern):
-            t = Token(Tid.INT, int(pattern))
-        elif re.search(FILE_PATTERN, pattern):
-            t = Token(Tid.FILE, pattern)
-        elif re.search(NAME_PATTERN, pattern):
-            t = Token(Tid.NAME, pattern)
-        else:
-            t = Token(Tid.INVALID, pattern)
-        return t
+        if word in self.keywords:
+            return Token(self.keywords[word], word)
+        if word in self.switches:
+            return Token(self.switches[word], True)
+        if word in self.formats:
+            return Token(self.formats[word], word)
+
+        if self._match(LONG_DATE_PATTERN, word) \
+                or re.search(SHORT_DATE_PATTERN, word) \
+                or re.search(MONTH_YEAR_PATTERN, word):
+            return Token(Tid.DATE, word)
+
+        try:
+            if self._match(FLOAT_PATTERN, word):
+                return Token(Tid.FLOAT, float(word))
+            if self._match(INT_PATTERN, word):
+                return Token(Tid.INT, int(word))
+        except ValueError:
+            return Token(Tid.INVALID, word)
+
+        if self._match(FILE_PATTERN, word):
+            return Token(Tid.FILE, word)
+        if self._match(NAME_PATTERN, word):
+            return Token(Tid.NAME, word)
+
+        return Token(Tid.INVALID, word)
 
     def next_token(self) -> Token:
         """
@@ -227,7 +237,8 @@ class Lexer:
 
 if __name__ == '__main__':
     lx = Lexer()
-    lx.input('item name "this is a string" security_1 list 20/10/2022 07/24 3.4 7 -s -n -t -fn -fv -note')
+    lx.input(
+        'item name "this is a string" security_1 list 20/10/2022 07/24 /home/test_1.txt 8.310.444-3 3.4 7 333-555-8888 -s -n -t -fn -fv -note')
     while True:
         tok = lx.next_token()
         print(tok)

@@ -41,16 +41,17 @@ def test_switches():
 
 def test_expressions():
     lx = Lexer()
-    # assert lx.token('3.15') == Token(Tid.VALUE, 3.15)
     assert lx.token('100') == Token(Tid.INT, 100)
     assert lx.token('3.15') == Token(Tid.FLOAT, 3.15)
-    # assert lx.token('10') == Token(Tid.VALUE, 10)
     assert lx.token('10/10/2020') == Token(Tid.DATE, '10/10/2020')
     assert lx.token('10/11') == Token(Tid.DATE, '10/11')
     assert lx.token('file.txt') == Token(Tid.FILE, 'file.txt')
+    assert lx.token('/home/file.txt') == Token(Tid.FILE, '/home/file.txt')
+    assert lx.token('data/file.txt') == Token(Tid.FILE, 'data/file.txt')
     assert lx.token('word') == Token(Tid.NAME, 'word')
     assert lx.token('o123') == Token(Tid.NAME, 'o123')
-    assert lx.token('()') == Token(Tid.INVALID, '()')
+    assert lx.token('123-456-789') == Token(Tid.NAME, '123-456-789')
+    assert lx.token('1.234.567-8') == Token(Tid.NAME, '1.234.567-8')
 
 
 def test_strings():
