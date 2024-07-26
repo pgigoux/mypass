@@ -547,17 +547,32 @@ class Parser:
         else:
             error('no item selected')
 
+    # def item_field_add_command(self):
+    #     """
+    #     Add field to item
+    #     """
+    #     trace('parser, item_field_add_command')
+    #     tok1 = self.get_token()
+    #     tok2 = self.get_token()
+    #     if tok1.tid == Tid.NAME and tok2.tid in LEX_VALUE:
+    #         print(self.cp.field_add(self.default_item_id, tok1.value, tok2.value))
+    #     else:
+    #         error('missing or bad field name or value')
+
     def item_field_add_command(self):
         """
         Add field to item
         """
         trace('parser, item_field_add_command')
-        tok1 = self.get_token()
-        tok2 = self.get_token()
-        if tok1.tid == Tid.NAME and tok2.tid in LEX_VALUE:
-            print(self.cp.field_add(self.default_item_id, tok1.value, tok2.value))
-        else:
-            error('missing or bad field name or value')
+        opt = self.item_options()
+        if opt is not None:
+            field_name = opt[Tid.SW_FIELD_NAME]
+            field_value = opt[Tid.SW_FIELD_VALUE]
+            trace('parser, item_field_add', field_name, field_value)
+            if field_name is not None and field_value is not None:
+                print(self.cp.field_add(self.default_item_id, field_name, field_value))
+            else:
+                error('missing or bad field name or value')
 
     def item_field_delete_command(self):
         """

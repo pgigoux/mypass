@@ -52,7 +52,7 @@ copy   [item_id]                                    Copy/duplicate an item
 add    [-n <string>] [-t tag] [-note <string>]      Add new item
 update [-n <string>] [-note <string>]               Update an existing item
 tag    add|delete <tag_name>                        Add/delete item tag
-field  add <field_name> <field_value>               Add item field
+field  add -fn <field_name> -fv <field_value>       Add item field
 field  delete <field_id>                            Delete item field
 field  update <field_id> [-fn <name>] [-fv <value>] Update item field
 """
