@@ -177,7 +177,6 @@ def confirm(prompt: str) -> bool:
     """
     print(prompt)
     answer = input('Do you want to proceed (yes/no)? ')
-    print(answer == 'yes')
     return answer == 'yes'
 
 
