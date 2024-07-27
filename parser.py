@@ -1,3 +1,6 @@
+import os
+import re
+
 from db import DEFAULT_DATABASE_NAME
 from command import CommandProcessor, FileFormat, NO_DATABASE
 from command import KEY_DICT_ID, KEY_DICT_NAME, KEY_DICT_TIMESTAMP, KEY_DICT_NOTE, KEY_DICT_TAGS, KEY_DICT_FIELDS
@@ -13,6 +16,9 @@ ERROR_BAD_FORMAT = 'bad format, expected "json" or "sql"'
 
 # Default user prompt
 DEFAULT_PROMPT = 'cmd> '
+
+# Prefix used to run shell commands
+SHELL_COMMAND = r'^sh'
 
 
 class Parser:
@@ -883,11 +889,18 @@ class Parser:
     def execute(self, command: str):
         """
         Parse command and execute it
+        Shell commands are intercepted at this point
         :param command: command to parse/execute
         """
-        self.cmd = command.strip()
-        self.lexer.input(self.cmd)
-        return self.command()
+        cmd = command.strip()
+        if re.search(SHELL_COMMAND, cmd):
+            os_cmd = re.sub(SHELL_COMMAND, '', cmd).strip()
+            try:
+                os.system(os_cmd)
+            except Exception as e:
+                error(f'cannot execute {os_cmd} in the shell', str(e))
+        else:
+            return self.command()
 
 
 if __name__ == '__main__':

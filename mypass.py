@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import os
 from signal import signal, SIGINT, SIG_IGN
 from cmd import Cmd
 from parser import Parser, DEFAULT_PROMPT
@@ -8,6 +9,7 @@ db    <command_options>         Database commands
 tag   <command_options>         Tag commands
 field <command_options>         Field commands
 item  <command_options>         Item command
+sh    <command>                 Run shell command
 trace                           Toggle code trace
 bye                             Quit the program
 """
