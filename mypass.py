@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from signal import signal, SIGINT, SIG_IGN
 from cmd import Cmd
 from parser import Parser, DEFAULT_PROMPT
 
@@ -8,6 +9,7 @@ tag   <command_options>         Tag commands
 field <command_options>         Field commands
 item  <command_options>         Item command
 trace                           Toggle code trace
+bye                             Quit the program
 """
 
 HELP_DB = """
@@ -99,6 +101,7 @@ class CommandInterpreter(Cmd):
 
 
 if __name__ == '__main__':
+    signal(SIGINT, SIG_IGN)  # Ignore SIGINT (CTRL-C)
     parser = Parser()
     ci = CommandInterpreter(parser)
     try:
