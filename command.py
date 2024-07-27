@@ -872,12 +872,16 @@ class CommandProcessor:
     # Misc commands
     # -----------------------------------------------------------------
 
-    def quit_command(self):
+    def quit_command(self) -> bool:
         """
         Command that will be called when the program exits
+        :return: True if okay to exit, False otherwise
         """
         trace(f'quit_command {self.file_name}')
-        return self.confirm('Are you sure you want to quit')
+        if self.db_loaded():
+            if self.db.get_checksum() != self.db.calculate_checksum():
+                return self.confirm('There are unsaved changes, are you sure you want to quit')
+        return True
 
 
 if __name__ == '__main__':
