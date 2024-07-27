@@ -1,5 +1,8 @@
+import hashlib
 import sqlite3 as sq
+from io import BytesIO
 from typing import Optional
+from crypt import CHARACTER_ENCODING
 
 # List of tables in the database
 NAME_TAG_TABLE = 'tag_table'
@@ -587,7 +590,20 @@ class Sql:
         self.cursor.execute(f"pragma table_info('{table}')")
         return self.cursor.fetchall()
 
+    def get_checksum(self) -> str:
+        """
+        Calculate the database checksum after converting it to bytes
+        :return: checksum in hex format
+        """
+        bio = BytesIO()
+        for line in self.connection.iterdump():
+            bio.write(line.encode(CHARACTER_ENCODING))
+        h = hashlib.sha256()
+        h.update(bio.getvalue())
+        return h.hexdigest()
+
 
 if __name__ == '__main__':
     sql = Sql()
+    print(sql.get_checksum())
     sql.dump()

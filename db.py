@@ -44,9 +44,26 @@ class Database:
         self.file_name = file_name
         # The database will be encrypted if the key is not None
         self.crypt_key = crypt_key
+        self.checksum = self.calculate_checksum()
 
     def __str__(self) -> str:
         return f'file={self.file_name}, sql={str(self.sql)} crypt={str(self.crypt_key)}'
+
+    def get_checksum(self):
+        return self.checksum
+
+    def calculate_checksum(self) -> str:
+        """
+        Calculate the database checksum
+        :return: string containing the checksum
+        """
+        return self.sql.get_checksum()
+
+    def update_checksum(self):
+        """
+        Update the database checksum
+        """
+        self.checksum = self.calculate_checksum()
 
     def tag_table_to_list(self) -> list:
         """
@@ -287,6 +304,9 @@ class Database:
         except Exception as e:
             raise ValueError(f'failed to read items: {repr(e)}')
 
+        # Update the database checksum
+        self.update_checksum()
+
     def write(self):
         """
         Write database to disk
@@ -309,6 +329,9 @@ class Database:
             os.rename(self.file_name, self.file_name + '-' + get_string_timestamp())
         os.rename(TEMP_FILE, self.file_name)
 
+        # Update the database checksum
+        self.update_checksum()
+
     def close(self):
         """
         Close the database
@@ -322,6 +345,9 @@ class Database:
         tag_mapping = self.sql.get_tag_table_name_mapping()
         field_mapping = self.sql.get_field_table_name_mapping()
 
+        print('Checksums')
+        print(f'\tStored  {self.checksum}')
+        print(f'\tCurrent {self.calculate_checksum()}')
         print('Tags')
         for t_id, t_name, t_count in self.sql.get_tag_table_list():
             print(f'\t{t_id:2} {t_name} {t_count}')
