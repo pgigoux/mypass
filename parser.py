@@ -1,6 +1,5 @@
 import os
 import re
-
 from db import DEFAULT_DATABASE_NAME
 from command import CommandProcessor, FileFormat, NO_DATABASE
 from command import KEY_DICT_ID, KEY_DICT_NAME, KEY_DICT_TIMESTAMP, KEY_DICT_NOTE, KEY_DICT_TAGS, KEY_DICT_FIELDS
@@ -886,20 +885,30 @@ class Parser:
         else:
             error(ERROR_UNKNOWN_COMMAND, token)
 
+    # def execute(self, command: str):
+    #     """
+    #     Parse command and execute it
+    #     :param command: command to parse/execute
+    #     """
+    #     self.cmd = command.strip()
+    #     self.lexer.input(self.cmd)
+    #     return self.command()
+
     def execute(self, command: str):
         """
         Parse command and execute it
         Shell commands are intercepted at this point
         :param command: command to parse/execute
         """
-        cmd = command.strip()
-        if re.search(SHELL_COMMAND, cmd):
-            os_cmd = re.sub(SHELL_COMMAND, '', cmd).strip()
+        self.cmd = command.strip()
+        if re.search(SHELL_COMMAND, self.cmd):
+            os_cmd = re.sub(SHELL_COMMAND, '', self.cmd).strip()
             try:
                 os.system(os_cmd)
             except Exception as e:
                 error(f'cannot execute {os_cmd} in the shell', str(e))
         else:
+            self.lexer.input(self.cmd)
             return self.command()
 
 
