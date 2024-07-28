@@ -49,6 +49,20 @@ class Database:
     def __str__(self) -> str:
         return f'file={self.file_name}, sql={str(self.sql)} crypt={str(self.crypt_key)}'
 
+    def read_mode(self) -> str:
+        """
+        Return the file write mode depending on whether encryption is enabled
+        :return: write mode
+        """
+        return 'r' if self.crypt_key is None else 'rb'
+
+    def write_mode(self) -> str:
+        """
+        Return the file write mode depending on whether encryption is enabled
+        :return: write mode
+        """
+        return 'w' if self.crypt_key is None else 'wb'
+
     def get_checksum(self):
         return self.checksum
 
@@ -65,7 +79,7 @@ class Database:
         """
         self.checksum = self.calculate_checksum()
 
-    def tag_table_to_list(self) -> list:
+    def _tag_table_to_list(self) -> list:
         """
         Return the tag_table as a list of where each element is a dictionary
         containing the tag id, tag name and count.
@@ -76,7 +90,7 @@ class Database:
             output_list.append({KEY_ID: tag_id, KEY_NAME: t_name, KEY_COUNT: t_count})
         return output_list
 
-    def field_table_to_list(self) -> list:
+    def _field_table_to_list(self) -> list:
         """
         Return the tag_table as a list of where each element is a dictionary
         containing the tag id, tag name and count.
@@ -86,6 +100,102 @@ class Database:
         for f_id, f_name, f_sensitive, f_count in self.sql.get_field_table_list():
             output_list.append({KEY_ID: f_id, KEY_NAME: f_name, KEY_SENSITIVE: bool(f_sensitive), KEY_COUNT: f_count})
         return output_list
+
+    def _items_to_dict(self, decrypt_flag=False) -> dict:
+        """
+        Convert the items in the database into a dictionary. Aside from the fixed
+        item attributes (name, timestamp, note), the dictionary also contains the
+        list of tags and a dictionary with the field information.
+        :param decrypt_flag: decrypt field values if encryption is enabled?
+        :return: dictionary with items
+        """
+        output_dict = {}
+
+        # Get the tag and field mappings to convert ids into names
+        tag_mapping = self.sql.get_tag_table_id_mapping()
+        field_mapping = self.sql.get_field_table_id_mapping()
+
+        # Query the database to get all items
+        item_fetch_list = self.sql.get_item_list()
+
+        # Iterate over all items
+        for item_id, item_name, item_date, item_note in item_fetch_list:
+            # Item fixed attributes
+            item_dict = {KEY_NAME: item_name, KEY_TIMESTAMP: item_date, KEY_NOTE: item_note}
+
+            # Process the item tags
+            tag_fetch_list = self.sql.get_tag_list(item_id=item_id)
+            item_dict[KEY_TAGS] = [tag_mapping[tag_id][MAP_TAG_NAME] for _, tag_id, _ in tag_fetch_list]
+
+            # Process the item fields
+            field_fetch_list = self.sql.get_field_list(item_id=item_id)
+            field_dict = {}
+            for field_id, f_id, _, field_value, f_encrypted in field_fetch_list:
+                if decrypt_flag and f_encrypted and self.crypt_key is not None:
+                    field_value = self.crypt_key.decrypt_str2str(field_value)
+                tmp_dict = {KEY_NAME: field_mapping[f_id][MAP_FIELD_NAME], KEY_VALUE: field_value,
+                            KEY_ENCRYPTED: bool(f_encrypted)}
+                field_dict[field_id] = tmp_dict
+            item_dict[KEY_FIELDS] = field_dict
+
+            output_dict[item_id] = item_dict
+
+        return output_dict
+
+    def convert_to_json(self, decrypt_flag=False) -> str:
+        """
+        Convert the database to a json format string
+        :return: json string
+        """
+        d = {KEY_TAG_SECTION: self._tag_table_to_list(),
+             KEY_FIELD_SECTION: self._field_table_to_list(),
+             KEY_ITEM_SECTION: self._items_to_dict(decrypt_flag=decrypt_flag)}
+        return json.dumps(d)
+
+    def convert_from_json(self, data: str):
+        """
+        Convert data in json format into a database
+        :param data: json data
+        """
+        try:
+            json_data = json.loads(data)
+        except Exception as e:
+            raise ValueError(f'failed to convert to json: {repr(e)}')
+
+        # Read the tag table
+        try:
+            for tag in json_data[KEY_TAG_SECTION]:
+                self.sql.insert_into_tag_table(int(tag[KEY_ID]), tag[KEY_NAME], tag[KEY_COUNT])
+        except Exception as e:
+            raise ValueError(f'failed to read the tag table: {repr(e)}')
+
+        # Read the field table
+        try:
+            for field in json_data[KEY_FIELD_SECTION]:
+                self.sql.insert_into_field_table(int(field[KEY_ID]), field[KEY_NAME],
+                                                 bool(field[KEY_SENSITIVE]), field[KEY_COUNT])
+        except Exception as e:
+            # self.clear()
+            raise ValueError(f'failed to read the field table: {repr(e)}')
+
+        # Read items
+        tag_mapping = self.sql.get_tag_table_name_mapping()
+        field_mapping = self.sql.get_field_table_name_mapping()
+        try:
+            for item_id in json_data[KEY_ITEM_SECTION]:
+                item = json_data[KEY_ITEM_SECTION][item_id]
+                self.sql.insert_into_items(None, item[KEY_NAME], int(item[KEY_TIMESTAMP]), item[KEY_NOTE])
+                for tag in item[KEY_TAGS]:
+                    self.sql.insert_into_tags(None, int(item_id), tag_mapping[tag][MAP_TAG_ID])
+                for field_id in item[KEY_FIELDS]:
+                    field = item[KEY_FIELDS][field_id]
+                    self.sql.insert_into_fields(None, int(item_id), int(field_mapping[field[KEY_NAME]][MAP_FIELD_ID]),
+                                                field[KEY_VALUE], field[KEY_ENCRYPTED])
+        except Exception as e:
+            raise ValueError(f'failed to read the items: {repr(e)}')
+
+        # Update the database checksum
+        self.update_checksum()
 
     def tag_table_import(self, file_name: str):
         """
@@ -133,76 +243,13 @@ class Database:
                 f.write(f'{f_name},{f_uid},{f_sensitive},{f_count}\n')
             f.close()
 
-    def items_to_dict(self, decrypt_flag=False) -> dict:
+    def import_from_json(self, file_name: str):
         """
-        Convert the items in the database into a dictionary. Aside from the fixed
-        item attributes (name, timestamp, note), the dictionary also contains the
-        list of tags and a dictionary with the field information.
-        :param decrypt_flag: decrypt field values if encryption is enabled?
-        :return: dictionary with items
+        :param file_name: input file name
         """
-        output_dict = {}
-
-        # Get the tag and field mappings to convert ids into names
-        tag_mapping = self.sql.get_tag_table_id_mapping()
-        field_mapping = self.sql.get_field_table_id_mapping()
-
-        # Query the database to get all items
-        item_fetch_list = self.sql.get_item_list()
-
-        # Iterate over all items
-        for item_id, item_name, item_date, item_note in item_fetch_list:
-            # Item fixed attributes
-            item_dict = {KEY_NAME: item_name, KEY_TIMESTAMP: item_date, KEY_NOTE: item_note}
-
-            # Process the item tags
-            tag_fetch_list = self.sql.get_tag_list(item_id=item_id)
-            item_dict[KEY_TAGS] = [tag_mapping[tag_id][MAP_TAG_NAME] for _, tag_id, _ in tag_fetch_list]
-
-            # Process the item fields
-            field_fetch_list = self.sql.get_field_list(item_id=item_id)
-            field_dict = {}
-            for field_id, f_id, _, field_value, f_encrypted in field_fetch_list:
-                if decrypt_flag and f_encrypted and self.crypt_key is not None:
-                    field_value = self.crypt_key.decrypt_str2str(field_value)
-                tmp_dict = {KEY_NAME: field_mapping[f_id][MAP_FIELD_NAME], KEY_VALUE: field_value,
-                            KEY_ENCRYPTED: bool(f_encrypted)}
-                field_dict[field_id] = tmp_dict
-            item_dict[KEY_FIELDS] = field_dict
-
-            output_dict[item_id] = item_dict
-
-        return output_dict
-
-    def convert_to_json(self, decrypt_flag=False) -> str:
-        """
-        Convert the database to json format
-        :return: json string
-        """
-        d = {KEY_TAG_SECTION: self.tag_table_to_list(),
-             KEY_FIELD_SECTION: self.field_table_to_list(),
-             KEY_ITEM_SECTION: self.items_to_dict(decrypt_flag=decrypt_flag)}
-        return json.dumps(d)
-
-    def read_mode(self) -> str:
-        """
-        Return the file write mode depending on whether encryption is enabled
-        :return: write mode
-        """
-        return 'r' if self.crypt_key is None else 'rb'
-
-    def write_mode(self) -> str:
-        """
-        Return the file write mode depending on whether encryption is enabled
-        :return: write mode
-        """
-        return 'w' if self.crypt_key is None else 'wb'
-
-    def import_from_json(self):
-        """
-        TODO - low priority
-        """
-        pass
+        with open(file_name, 'r') as f:
+            data = f.read()
+        self.convert_from_json(data)
 
     def export_to_json(self, file_name: str, decrypt_flag=False):
         """
@@ -254,11 +301,66 @@ class Database:
                             output_list.append(tup)
         return output_list
 
+    # def read(self):
+    #     """
+    #     Read database from disk. The file name was specified when the database was created.
+    #     """
+    #     trace(f'db.read', self.file_name, self.read_mode())
+    #     with open(self.file_name, self.read_mode()) as f:
+    #         data = f.read()
+    #         if self.crypt_key is not None:
+    #             assert isinstance(data, bytes)
+    #             try:
+    #                 data = self.crypt_key.decrypt_byte2str(data)
+    #             except Exception as e:
+    #                 raise ValueError(f'failed to decrypt data: {repr(e)}')
+    #     try:
+    #         json_data = json.loads(data)
+    #     except Exception as e:
+    #         raise ValueError(f'failed to read the data: {repr(e)}')
+    #
+    #     # Read the tag table
+    #     try:
+    #         for tag in json_data[KEY_TAG_SECTION]:
+    #             self.sql.insert_into_tag_table(int(tag[KEY_ID]), tag[KEY_NAME], tag[KEY_COUNT])
+    #     except Exception as e:
+    #         raise ValueError(f'failed to read tag table: {repr(e)}')
+    #
+    #     # Read the field table
+    #     try:
+    #         for field in json_data[KEY_FIELD_SECTION]:
+    #             self.sql.insert_into_field_table(int(field[KEY_ID]), field[KEY_NAME],
+    #                                              bool(field[KEY_SENSITIVE]), field[KEY_COUNT])
+    #     except Exception as e:
+    #         # self.clear()
+    #         raise ValueError(f'failed to read field table: {repr(e)}')
+    #
+    #     # Read items
+    #     tag_mapping = self.sql.get_tag_table_name_mapping()
+    #     field_mapping = self.sql.get_field_table_name_mapping()
+    #     try:
+    #         for item_id in json_data[KEY_ITEM_SECTION]:
+    #             item = json_data[KEY_ITEM_SECTION][item_id]
+    #             self.sql.insert_into_items(None, item[KEY_NAME], int(item[KEY_TIMESTAMP]), item[KEY_NOTE])
+    #             for tag in item[KEY_TAGS]:
+    #                 self.sql.insert_into_tags(None, int(item_id), tag_mapping[tag][MAP_TAG_ID])
+    #             for field_id in item[KEY_FIELDS]:
+    #                 field = item[KEY_FIELDS][field_id]
+    #                 self.sql.insert_into_fields(None, int(item_id), int(field_mapping[field[KEY_NAME]][MAP_FIELD_ID]),
+    #                                             field[KEY_VALUE], field[KEY_ENCRYPTED])
+    #     except Exception as e:
+    #         raise ValueError(f'failed to read items: {repr(e)}')
+    #
+    #     # Update the database checksum
+    #     self.update_checksum()
+
     def read(self):
         """
         Read database from disk. The file name was specified when the database was created.
         """
         trace(f'db.read', self.file_name, self.read_mode())
+
+        # Open and decrypt the input file
         with open(self.file_name, self.read_mode()) as f:
             data = f.read()
             if self.crypt_key is not None:
@@ -267,45 +369,9 @@ class Database:
                     data = self.crypt_key.decrypt_byte2str(data)
                 except Exception as e:
                     raise ValueError(f'failed to decrypt data: {repr(e)}')
-        try:
-            json_data = json.loads(data)
-        except Exception as e:
-            raise ValueError(f'failed to read the data: {repr(e)}')
 
-        # Read the tag table
-        try:
-            for tag in json_data[KEY_TAG_SECTION]:
-                self.sql.insert_into_tag_table(int(tag[KEY_ID]), tag[KEY_NAME], tag[KEY_COUNT])
-        except Exception as e:
-            raise ValueError(f'failed to read tag table: {repr(e)}')
-
-        # Read the field table
-        try:
-            for field in json_data[KEY_FIELD_SECTION]:
-                self.sql.insert_into_field_table(int(field[KEY_ID]), field[KEY_NAME],
-                                                 bool(field[KEY_SENSITIVE]), field[KEY_COUNT])
-        except Exception as e:
-            # self.clear()
-            raise ValueError(f'failed to read field table: {repr(e)}')
-
-        # Read items
-        tag_mapping = self.sql.get_tag_table_name_mapping()
-        field_mapping = self.sql.get_field_table_name_mapping()
-        try:
-            for item_id in json_data[KEY_ITEM_SECTION]:
-                item = json_data[KEY_ITEM_SECTION][item_id]
-                self.sql.insert_into_items(None, item[KEY_NAME], int(item[KEY_TIMESTAMP]), item[KEY_NOTE])
-                for tag in item[KEY_TAGS]:
-                    self.sql.insert_into_tags(None, int(item_id), tag_mapping[tag][MAP_TAG_ID])
-                for field_id in item[KEY_FIELDS]:
-                    field = item[KEY_FIELDS][field_id]
-                    self.sql.insert_into_fields(None, int(item_id), int(field_mapping[field[KEY_NAME]][MAP_FIELD_ID]),
-                                                field[KEY_VALUE], field[KEY_ENCRYPTED])
-        except Exception as e:
-            raise ValueError(f'failed to read items: {repr(e)}')
-
-        # Update the database checksum
-        self.update_checksum()
+        # Read the file contents into the database.
+        self.convert_from_json(data)
 
     def write(self):
         """
@@ -355,7 +421,7 @@ class Database:
         for f_id, f_name, f_sensitive, f_count in self.sql.get_field_table_list():
             print(f'\t{f_id:2} {f_name} {bool(f_sensitive)} {f_count}')
         print('Items')
-        item_dict = self.items_to_dict()
+        item_dict = self._items_to_dict()
         for i_id in item_dict:
             print(f'\t{i_id}')
             item = item_dict[i_id]

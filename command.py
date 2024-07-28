@@ -151,6 +151,12 @@ class CommandProcessor:
             return self.resp.warning(NO_DATABASE)
 
     def database_export(self, file_name: str, output_format: FileFormat) -> Response:
+        """
+        Export database to json or sql format
+        :param file_name: file to import from
+        :param output_format: output format (json|sql)
+        :return: response
+        """
         trace('database_export', file_name)
         if self.db_loaded():
             try:
@@ -165,15 +171,21 @@ class CommandProcessor:
         else:
             return self.resp.warning(NO_DATABASE)
 
-    def database_import(self, file_name: str, input_format: FileFormat) -> Response:
+    def database_import(self, file_name: str) -> Response:
         """
-        TODO - low priority
-        :param file_name: input file name
-        :param input_format: file format
-        :return:
+        :param file_name: input file name in json format
+        :return: response
         """
-        trace('database_import', file_name, input_format)
-        return self.resp.warning('not yet implemented')
+        trace('database_import', file_name)
+        if self.db_loaded():
+            try:
+                assert isinstance(self.db, Database)
+                self.db.import_from_json(file_name)
+                return self.resp.ok(f'imported database from {file_name}')
+            except Exception as e:
+                return self.resp.exception('cannot import database', e)
+        else:
+            return self.resp.warning(NO_DATABASE + ', create one first')
 
     def database_dump(self):
         """

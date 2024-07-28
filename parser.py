@@ -796,6 +796,16 @@ class Parser:
             trace('parser, write', token.value)
             print(self.cp.database_write())
 
+        elif token.tid == Tid.IMPORT:
+            trace('parser, import', token.value)
+            # Get file name
+            tok = self.get_token()
+            if tok.tid == Tid.FILE:
+                trace('parser, import', tok.value)
+                print(self.cp.database_import(tok.value))
+            else:
+                error(ERROR_BAD_FILENAME, token)
+
         elif token.tid == Tid.EXPORT:
             tok = self.get_token()
             trace('parser, export', tok)
