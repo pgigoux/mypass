@@ -194,9 +194,6 @@ class Database:
         except Exception as e:
             raise ValueError(f'failed to read the items: {repr(e)}')
 
-        # Update the database checksum
-        self.update_checksum()
-
     def tag_table_import(self, file_name: str):
         """
         Export tag table in csv format
@@ -245,6 +242,8 @@ class Database:
 
     def import_from_json(self, file_name: str):
         """
+        Import database from json format.
+        The input file should not be encrypted.
         :param file_name: input file name
         """
         with open(file_name, 'r') as f:
@@ -301,59 +300,6 @@ class Database:
                             output_list.append(tup)
         return output_list
 
-    # def read(self):
-    #     """
-    #     Read database from disk. The file name was specified when the database was created.
-    #     """
-    #     trace(f'db.read', self.file_name, self.read_mode())
-    #     with open(self.file_name, self.read_mode()) as f:
-    #         data = f.read()
-    #         if self.crypt_key is not None:
-    #             assert isinstance(data, bytes)
-    #             try:
-    #                 data = self.crypt_key.decrypt_byte2str(data)
-    #             except Exception as e:
-    #                 raise ValueError(f'failed to decrypt data: {repr(e)}')
-    #     try:
-    #         json_data = json.loads(data)
-    #     except Exception as e:
-    #         raise ValueError(f'failed to read the data: {repr(e)}')
-    #
-    #     # Read the tag table
-    #     try:
-    #         for tag in json_data[KEY_TAG_SECTION]:
-    #             self.sql.insert_into_tag_table(int(tag[KEY_ID]), tag[KEY_NAME], tag[KEY_COUNT])
-    #     except Exception as e:
-    #         raise ValueError(f'failed to read tag table: {repr(e)}')
-    #
-    #     # Read the field table
-    #     try:
-    #         for field in json_data[KEY_FIELD_SECTION]:
-    #             self.sql.insert_into_field_table(int(field[KEY_ID]), field[KEY_NAME],
-    #                                              bool(field[KEY_SENSITIVE]), field[KEY_COUNT])
-    #     except Exception as e:
-    #         # self.clear()
-    #         raise ValueError(f'failed to read field table: {repr(e)}')
-    #
-    #     # Read items
-    #     tag_mapping = self.sql.get_tag_table_name_mapping()
-    #     field_mapping = self.sql.get_field_table_name_mapping()
-    #     try:
-    #         for item_id in json_data[KEY_ITEM_SECTION]:
-    #             item = json_data[KEY_ITEM_SECTION][item_id]
-    #             self.sql.insert_into_items(None, item[KEY_NAME], int(item[KEY_TIMESTAMP]), item[KEY_NOTE])
-    #             for tag in item[KEY_TAGS]:
-    #                 self.sql.insert_into_tags(None, int(item_id), tag_mapping[tag][MAP_TAG_ID])
-    #             for field_id in item[KEY_FIELDS]:
-    #                 field = item[KEY_FIELDS][field_id]
-    #                 self.sql.insert_into_fields(None, int(item_id), int(field_mapping[field[KEY_NAME]][MAP_FIELD_ID]),
-    #                                             field[KEY_VALUE], field[KEY_ENCRYPTED])
-    #     except Exception as e:
-    #         raise ValueError(f'failed to read items: {repr(e)}')
-    #
-    #     # Update the database checksum
-    #     self.update_checksum()
-
     def read(self):
         """
         Read database from disk. The file name was specified when the database was created.
@@ -372,6 +318,9 @@ class Database:
 
         # Read the file contents into the database.
         self.convert_from_json(data)
+
+        # Update the database checksum
+        self.update_checksum()
 
     def write(self):
         """
