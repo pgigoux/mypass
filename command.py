@@ -10,7 +10,7 @@ from sql import INDEX_ID, INDEX_ITEMS_NAME, INDEX_ITEMS_DATE, INDEX_ITEMS_NOTE
 from sql import INDEX_FIELDS_FIELD_ID, INDEX_FIELDS_VALUE, INDEX_FIELDS_ENCRYPTED
 from utils import get_timestamp, print_line, trace
 
-NO_DATABASE = 'no database'
+NO_DATABASE = 'no database, read or create one'
 
 # Keys used to access the elements in the dictionary returned by item_print
 KEY_DICT_ID = 'id'
@@ -180,12 +180,15 @@ class CommandProcessor:
         if self.db_loaded():
             try:
                 assert isinstance(self.db, Database)
-                self.db.import_from_json(file_name)
-                return self.resp.ok(f'imported database from {file_name}')
+                if self.db.sql.empty_tables():
+                    self.db.import_from_json(file_name)
+                    return self.resp.ok(f'imported database from {file_name}')
+                else:
+                    return self.resp.warning('database already has data')
             except Exception as e:
                 return self.resp.exception('cannot import database', e)
         else:
-            return self.resp.warning(NO_DATABASE + ', create one first')
+            return self.resp.warning(NO_DATABASE)
 
     def database_dump(self):
         """
@@ -481,7 +484,6 @@ class CommandProcessor:
 
     def field_table_import(self, file_name: str):
         """
-        TODO
         Import fields from a csv file
         :param file_name: output file name
         :return: response

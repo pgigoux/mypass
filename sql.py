@@ -581,6 +581,16 @@ class Sql:
         self.cursor.execute(f'select count() from {table}')
         return int(self.cursor.fetchone()[0])
 
+    def empty_tables(self) -> bool:
+        """
+        Check whether all the database tables are empty
+        :return: True if that's the case, False otherwise
+        """
+        for table in TABLE_LIST:
+            if self.get_table_count(table) > 0:
+                return False
+        return True
+
     def get_table_info(self, table: str) -> list:
         """
         Get the table structure
