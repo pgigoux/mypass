@@ -27,7 +27,7 @@ if __name__ == '__main__':
 
     # Initialize encryption/decryption with password from user
     password = get_password()
-    c = Crypt(password)
+    c = Crypt(password, None)
 
     # Decryption is expected to fail with ill-formed encrypted strings or password mismatch
     if args.decrypt:

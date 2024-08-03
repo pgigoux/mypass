@@ -99,7 +99,7 @@ def get_crypt_key() -> Crypt | None:
     :return: encryption key, or None if no password
     """
     password = get_password()
-    key = Crypt(password) if password else None
+    key = Crypt(password, None) if password else None
     del password
     return key
 

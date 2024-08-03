@@ -6,34 +6,38 @@ from cryptography.fernet import Fernet
 # Character encoding
 CHARACTER_ENCODING = 'utf-8'
 
+# Default salt
+DEFAULT_SALT = b'TDkmQ2TyV6HRw7pW'
+
 
 class Crypt:
 
-    def __init__(self, password: str):
+    def __init__(self, password: str, salt: bytes | None):
         """
         Implement data encryption and decryption
         :param password:
         """
-        self.key = self.generate_crypt_key(password)
+        self.key = self.generate_crypt_key(password, salt)
 
     def __str__(self):
         return f'{str(self.key)}'
 
     @staticmethod
-    def generate_crypt_key(password: str) -> Fernet:
+    def generate_crypt_key(password: str, salt: bytes | None) -> Fernet:
         """
         Generate a Fernet key from a string password
         The salt should be fixed to encrypt/decrypt consistently
         TODO: modify to use a variable salt value
         :param password: password
+        :param salt: encryption salt
         :return: key
         """
         password_bytes = password.encode(CHARACTER_ENCODING)
-        salt = b'TDkmQ2TyV6HRw7pW'
+        print('salt', salt)
         kdf = PBKDF2HMAC(
             algorithm=hashes.SHA512(),
             length=32,
-            salt=salt,
+            salt=salt if salt is not None else DEFAULT_SALT,
             iterations=480000,
         )
         return Fernet(base64.urlsafe_b64encode(kdf.derive(bytes(password_bytes))))
