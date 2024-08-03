@@ -33,7 +33,6 @@ class Crypt:
         :return: key
         """
         password_bytes = password.encode(CHARACTER_ENCODING)
-        print('salt', salt)
         kdf = PBKDF2HMAC(
             algorithm=hashes.SHA512(),
             length=32,
