@@ -359,10 +359,6 @@ class Database:
         """
         tag_mapping = self.sql.get_tag_table_name_mapping()
         field_mapping = self.sql.get_field_table_name_mapping()
-
-        print('Checksums')
-        print(f'\tStored  {self.checksum}')
-        print(f'\tCurrent {self.calculate_checksum()}')
         print('Tags')
         for t_id, t_name, t_count in self.sql.get_tag_table_list():
             print(f'\t{t_id:2} {t_name} {t_count}')
@@ -389,11 +385,16 @@ class Database:
         """
         Print a database report (debugging)
         """
+        print('File name')
+        print(f'\t{self.file_name}')
+        print('Checksums')
+        print(f'\tStored  {self.checksum}')
+        print(f'\tCurrent {self.calculate_checksum()}')
         print('Table lengths')
         for table in TABLE_LIST:
             n_rows = self.sql.get_table_count(table)
             print(f'\t{table} {n_rows}')
-        print('Table information')
+        print('Table schemas')
         for table in TABLE_LIST:
             print(f'\t{table}')
             for _, c_name, c_type, _, _, _ in self.sql.get_table_info(table):
