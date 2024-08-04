@@ -3,8 +3,7 @@
 Simple program to quickly encrypt and decrypt strings. Used during software validation.
 """
 import argparse
-from crypt import Crypt, DEFAULT_SALT, CHARACTER_ENCODING
-from utils import get_password
+from utils import get_crypt_key
 
 if __name__ == '__main__':
 
@@ -26,14 +25,14 @@ if __name__ == '__main__':
     parser.add_argument('-s', '--salt',
                         dest='salt',
                         action='store',
+                        type=str,
                         default='',
                         help='encryption salt [default=blank]')
 
     args = parser.parse_args()
 
     # Initialize encryption/decryption with password from user
-    password = get_password()
-    c = Crypt(password, bytes(args.salt, CHARACTER_ENCODING) if len(args.salt) > 0 else DEFAULT_SALT)
+    c = get_crypt_key(salt=args.salt)
 
     # Decryption is expected to fail with ill-formed encrypted strings or password mismatch
     if args.decrypt:

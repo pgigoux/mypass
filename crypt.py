@@ -1,4 +1,5 @@
 import base64
+from typing import Optional
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.fernet import Fernet
@@ -12,7 +13,7 @@ DEFAULT_SALT = b'TDkmQ2TyV6HRw7pW'
 
 class Crypt:
 
-    def __init__(self, password: str, salt: bytes | None):
+    def __init__(self, password: str, salt=''):
         """
         Implement data encryption and decryption
         :param password:
@@ -23,7 +24,7 @@ class Crypt:
         return f'{str(self.key)}'
 
     @staticmethod
-    def generate_crypt_key(password: str, salt: bytes | None) -> Fernet:
+    def generate_crypt_key(password: str, salt='') -> Fernet:
         """
         Generate a Fernet key from a string password
         The salt should be fixed to encrypt/decrypt consistently
@@ -32,14 +33,15 @@ class Crypt:
         :param salt: encryption salt
         :return: key
         """
-        password_bytes = password.encode(CHARACTER_ENCODING)
+        # password_bytes = password.encode(CHARACTER_ENCODING)
         kdf = PBKDF2HMAC(
             algorithm=hashes.SHA512(),
             length=32,
-            salt=salt if salt is not None else DEFAULT_SALT,
+            salt=bytes(salt, CHARACTER_ENCODING) if len(salt) > 0 else DEFAULT_SALT,
             iterations=480000,
         )
-        return Fernet(base64.urlsafe_b64encode(kdf.derive(bytes(password_bytes))))
+        # return Fernet(base64.urlsafe_b64encode(kdf.derive(bytes(password_bytes))))
+        return Fernet(base64.urlsafe_b64encode(kdf.derive(password.encode(CHARACTER_ENCODING))))
 
     def encrypt_str2byte(self, data: str) -> bytes:
         """

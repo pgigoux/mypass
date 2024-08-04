@@ -85,21 +85,14 @@ def timestamp_to_string(time_stamp: int, date_only=False) -> str:
         return 'overflow'
 
 
-def get_password() -> str:
-    """
-    Read a password from the standard input.
-    :return: password
-    """
-    return getpass.getpass('Password: ').strip()
-
-
-def get_crypt_key() -> Crypt | None:
+def get_crypt_key(salt='') -> Crypt | None:
     """
     Read a password from the standard input and return the corresponding encryption/decryption key
+    :param salt: encryption salt
     :return: encryption key, or None if no password
     """
-    password = get_password()
-    key = Crypt(password, None) if password else None
+    password = getpass.getpass('Password: ').strip()
+    key = Crypt(password, salt=salt) if password else None
     del password
     return key
 

@@ -16,7 +16,7 @@ def test_string_encryption():
 
 
 def test_byte_encryption():
-    c = Crypt('password')
+    c = Crypt('password', salt='some_salt')
 
     m_in = 'this is a message'
     data = c.encrypt_str2byte(m_in)
@@ -29,7 +29,7 @@ def test_byte_encryption():
 
 
 def test_file_encryption():
-    c = Crypt('password')
+    c = Crypt('password', salt='another_salt')
     file_name = 'test_file.txt'
     m_in = 'This is a message'
 

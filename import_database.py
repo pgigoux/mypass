@@ -335,6 +335,13 @@ if __name__ == '__main__':
                         default=DEFAULT_DATABASE_NAME,
                         help='Output database file')
 
+    parser.add_argument('-s', '--salt',
+                        dest='salt',
+                        action='store',
+                        type=str,
+                        default='',
+                        help='Encryption salt')
+
     parser.add_argument('-d',
                         dest='dump',
                         action='store_true',
@@ -350,7 +357,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # Get the key to encrypt the output database
-    encrypt_key = get_crypt_key()
+    encrypt_key = get_crypt_key(salt=args.salt)
 
     if args.trace:
         trace_toggle(False)
