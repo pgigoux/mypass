@@ -38,7 +38,7 @@ HELP_FIELD = """
 list                            List available fields
 count                           Return number of tags
 search <name>                   Search for a field by name
-add    <name>                   Add a new field
+add    <name> [-s]              Add a new field
 delete <name>                   Delete an existing field
 rename <old_name> <new_name>    Rename an existing field
 import <file_name>              Import fields from csv file
@@ -50,7 +50,7 @@ use    <item_id>                                    Set default item id
 list                                                List available items
 count                                               Return number of items
 search <string> [-n] [-t] [-fn] [-fv] [-note]       Search for an item    
-print  [item_id]                                    Print item contents
+print  [item_id] [-s]                               Print item contents
 delete [item_id]                                    Delete an existing item
 copy   [item_id]                                    Copy/duplicate an item
 add    [-n <string>] [-t tag] [-note <string>]      Add new item
@@ -59,6 +59,7 @@ tag    add|delete <tag_name>                        Add/delete item tag
 field  add -fn <field_name> -fv <field_value>       Add item field
 field  delete <field_id>                            Delete item field
 field  update <field_id> [-fn <name>] [-fv <value>] Update item field
+note                                                Edit note
 """
 
 
