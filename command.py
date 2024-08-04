@@ -851,9 +851,10 @@ class CommandProcessor:
                     _, i_name, _, i_note = item_list[0]
                     new_item_id = self.db.sql.insert_into_items(None, 'Copy of ' + i_name, get_timestamp(), i_note)
                     for _, t_id, _ in tag_list:
-                        self.db.sql.insert_into_tags(None, t_id, new_item_id)
+                        print(t_id, new_item_id)
+                        self.db.sql.insert_into_tags(None, new_item_id, t_id)
                     for _, f_id, _, f_value, f_encrypted in field_list:
-                        self.db.sql.insert_into_fields(None, f_id, new_item_id, f_value, f_encrypted)
+                        self.db.sql.insert_into_fields(None, new_item_id, f_id, f_value, f_encrypted)
                     return self.resp.ok(f'added item {new_item_id}, {len(tag_list)} tags, {len(field_list)} fields')
                 else:
                     return self.resp.error(f'item {item_id} does not exist')
