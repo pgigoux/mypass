@@ -162,7 +162,7 @@ class CommandProcessor:
             try:
                 assert isinstance(self.db, Database)
                 if output_format == FileFormat.FORMAT_JSON:
-                    self.db.export_to_json(file_name)
+                    self.db.export_to_json(file_name, decrypt_flag=True)
                 else:
                     self.db.sql.export_to_sql(file_name)
                 return self.resp.ok(f'database exported to {file_name}')
