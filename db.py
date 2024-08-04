@@ -145,6 +145,7 @@ class Database:
     def convert_to_json(self, decrypt_flag=False) -> str:
         """
         Convert the database to a json format string
+        :param decrypt_flag: decrypt item fields?
         :return: json string
         """
         d = {KEY_TAG_SECTION: self._tag_table_to_list(),
@@ -152,9 +153,10 @@ class Database:
              KEY_ITEM_SECTION: self._items_to_dict(decrypt_flag=decrypt_flag)}
         return json.dumps(d)
 
-    def convert_from_json(self, data: str):
+    def convert_from_json(self, data: str, encrypt_flag=False):
         """
         Convert data in json format into a database
+        :param encrypt_flag: encrypt fields?
         :param data: json data
         """
         try:
@@ -189,8 +191,12 @@ class Database:
                     self.sql.insert_into_tags(None, int(item_id), tag_mapping[tag][MAP_TAG_ID])
                 for field_id in item[KEY_FIELDS]:
                     field = item[KEY_FIELDS][field_id]
-                    self.sql.insert_into_fields(None, int(item_id), int(field_mapping[field[KEY_NAME]][MAP_FIELD_ID]),
-                                                field[KEY_VALUE], field[KEY_ENCRYPTED])
+                    f_value = field[KEY_VALUE]
+                    f_name = field[KEY_NAME]
+                    if encrypt_flag and field[KEY_ENCRYPTED] and self.crypt_key is not None:
+                        f_value = self.crypt_key.encrypt_str2str(f_value)
+                    self.sql.insert_into_fields(None, int(item_id), int(field_mapping[f_name][MAP_FIELD_ID]),
+                                                f_value, field[KEY_ENCRYPTED])
         except Exception as e:
             raise ValueError(f'failed to read the items: {repr(e)}')
 
@@ -248,7 +254,7 @@ class Database:
         """
         with open(file_name, 'r') as f:
             data = f.read()
-        self.convert_from_json(data)
+        self.convert_from_json(data, encrypt_flag=True)
 
     def export_to_json(self, file_name: str, decrypt_flag=False):
         """
