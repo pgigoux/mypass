@@ -101,7 +101,7 @@ def get_crypt_key(input_salt='') -> Crypt | None:
     if password and not salt:
         try:
             salt = os.environ[SALT_VARIABLE]
-            print('Using sea salt')
+            print('S' * len(salt))
         except KeyError:
             pass
     key = Crypt(password, salt=salt) if password else None
