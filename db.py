@@ -397,6 +397,8 @@ class Database:
         """
         print('File name')
         print(f'\t{self.file_name}')
+        print('File name')
+        print(f'\t{self.crypt_key}')
         print('Checksums')
         print(f'\tStored  {self.checksum}')
         print(f'\tCurrent {self.calculate_checksum()}')
