@@ -644,7 +644,11 @@ class Parser:
             print(f'tags:  {d[KEY_DICT_TAGS]}')
             print('fields:')
             for f_id, f_name, f_value, f_encrypted in d[KEY_DICT_FIELDS]:
-                f_value = self.cp.decrypt_value(f_value) if f_encrypted and show_encrypted else f_value
+                # f_value = self.cp.decrypt_value(f_value) if f_encrypted and show_encrypted else f_value
+                if f_encrypted and show_encrypted:
+                    f_value = self.cp.decrypt_value(f_value)
+                elif f_encrypted:
+                    f_value = '<<<encrypted>>>'
                 print(f'  {f_id:4d} {sensitive_mark(f_encrypted)} {f_name} {f_value}')
                 del f_value
             print('note:')
@@ -652,7 +656,7 @@ class Parser:
                 print(f'{d[KEY_DICT_NOTE]}')
         else:
             print(r)
-
+>
     def item_use(self):
         """
         item_use_command: USE item_id
