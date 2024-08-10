@@ -895,7 +895,7 @@ class CommandProcessor:
         trace(f'quit_command {self.file_name}')
         if self.db_loaded():
             if self.db.get_checksum() != self.db.calculate_checksum():
-                return self.confirm('There are unsaved changes, are you sure you want to quit')
+                return self.confirm('There are unsaved changes')
         return True
 
 
