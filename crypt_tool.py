@@ -32,7 +32,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # Initialize encryption/decryption with password from user
-    c = get_crypt_key(salt=args.salt)
+    c = get_crypt_key(input_salt=args.salt)
 
     # Decryption is expected to fail with ill-formed encrypted strings or password mismatch
     if args.decrypt:

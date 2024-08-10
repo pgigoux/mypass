@@ -357,7 +357,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # Get the key to encrypt the output database
-    encrypt_key = get_crypt_key(salt=args.salt)
+    encrypt_key = get_crypt_key(input_salt=args.salt)
 
     if args.trace:
         trace_toggle(False)

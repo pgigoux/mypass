@@ -10,6 +10,10 @@ from typing import Optional
 from dataclasses import dataclass
 from crypt import Crypt
 
+# Name of the environment variable used to get the encryption salt.
+# The name is based on words from the Colossal Cave Adventure game.
+SALT_VARIABLE = 'XYZY_PLUGH'
+
 
 @dataclass
 class Trace:
@@ -85,15 +89,23 @@ def timestamp_to_string(time_stamp: int, date_only=False) -> str:
         return 'overflow'
 
 
-def get_crypt_key(salt='') -> Crypt | None:
+def get_crypt_key(input_salt='') -> Crypt | None:
     """
     Read a password from the standard input and return the corresponding encryption/decryption key
-    :param salt: encryption salt
+    If the encryption salt is blank, it will try to get it from the environment
+    :param input_salt: encryption salt
     :return: encryption key, or None if no password
     """
     password = getpass.getpass('Password: ').strip()
+    salt = input_salt
+    if password and not salt:
+        try:
+            salt = os.environ[SALT_VARIABLE]
+            print('Using sea salt')
+        except KeyError:
+            pass
     key = Crypt(password, salt=salt) if password else None
-    del password
+    del password, salt
     return key
 
 
