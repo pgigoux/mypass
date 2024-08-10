@@ -33,14 +33,12 @@ class Crypt:
         :param salt: encryption salt
         :return: key
         """
-        # password_bytes = password.encode(CHARACTER_ENCODING)
         kdf = PBKDF2HMAC(
             algorithm=hashes.SHA512(),
             length=32,
             salt=bytes(salt, CHARACTER_ENCODING) if len(salt) > 0 else DEFAULT_SALT,
             iterations=480000,
         )
-        # return Fernet(base64.urlsafe_b64encode(kdf.derive(bytes(password_bytes))))
         return Fernet(base64.urlsafe_b64encode(kdf.derive(password.encode(CHARACTER_ENCODING))))
 
     def encrypt_str2byte(self, data: str) -> bytes:
