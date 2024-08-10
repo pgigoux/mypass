@@ -3,7 +3,7 @@ import re
 import json
 from sql import Sql, TABLE_LIST
 from sql import MAP_TAG_ID, MAP_TAG_NAME
-from sql import MAP_FIELD_ID, MAP_FIELD_NAME
+from sql import MAP_FIELD_ID, MAP_FIELD_NAME, MAP_FIELD_SENSITIVE
 from crypt import Crypt
 from utils import trace, filter_control_characters, timestamp_to_string, get_string_timestamp
 
@@ -133,6 +133,7 @@ class Database:
             for field_id, f_id, _, field_value, f_encrypted in field_fetch_list:
                 if decrypt_flag and f_encrypted and self.crypt_key is not None:
                     field_value = self.crypt_key.decrypt_str2str(field_value)
+                    f_encrypted = False
                 tmp_dict = {KEY_NAME: field_mapping[f_id][MAP_FIELD_NAME], KEY_VALUE: field_value,
                             KEY_ENCRYPTED: bool(f_encrypted)}
                 field_dict[field_id] = tmp_dict
@@ -142,7 +143,7 @@ class Database:
 
         return output_dict
 
-    def convert_to_json(self, decrypt_flag=False) -> str:
+    def sql_to_json(self, decrypt_flag=False) -> str:
         """
         Convert the database to a json format string
         :param decrypt_flag: decrypt item fields?
@@ -153,7 +154,7 @@ class Database:
              KEY_ITEM_SECTION: self._items_to_dict(decrypt_flag=decrypt_flag)}
         return json.dumps(d)
 
-    def convert_from_json(self, data: str, encrypt_flag=False):
+    def json_to_sql(self, data: str, encrypt_flag=False):
         """
         Convert data in json format into a database
         :param encrypt_flag: encrypt fields?
@@ -191,12 +192,15 @@ class Database:
                     self.sql.insert_into_tags(None, int(item_id), tag_mapping[tag][MAP_TAG_ID])
                 for field_id in item[KEY_FIELDS]:
                     field = item[KEY_FIELDS][field_id]
-                    f_value = field[KEY_VALUE]
                     f_name = field[KEY_NAME]
-                    if encrypt_flag and field[KEY_ENCRYPTED] and self.crypt_key is not None:
+                    f_value = field[KEY_VALUE]
+                    f_encrypted = field[KEY_ENCRYPTED]
+                    if (encrypt_flag and self.crypt_key is not None and not f_encrypted and
+                            field_mapping[f_name][MAP_FIELD_SENSITIVE]):
                         f_value = self.crypt_key.encrypt_str2str(f_value)
+                        f_encrypted = True
                     self.sql.insert_into_fields(None, int(item_id), int(field_mapping[f_name][MAP_FIELD_ID]),
-                                                f_value, field[KEY_ENCRYPTED])
+                                                f_value, f_encrypted)
         except Exception as e:
             raise ValueError(f'failed to read the items: {repr(e)}')
 
@@ -254,7 +258,7 @@ class Database:
         """
         with open(file_name, 'r') as f:
             data = f.read()
-        self.convert_from_json(data, encrypt_flag=True)
+        self.json_to_sql(data, encrypt_flag=True)
 
     def export_to_json(self, file_name: str, decrypt_flag=False):
         """
@@ -264,7 +268,7 @@ class Database:
         """
         trace('db.export_to_json', file_name, decrypt_flag)
         with open(file_name, 'w') as f:
-            f.write(self.convert_to_json(decrypt_flag=decrypt_flag))
+            f.write(self.sql_to_json(decrypt_flag=decrypt_flag))
         f.close()
 
     def search(self, pattern: str, item_name_flag=True, tag_flag=False,
@@ -323,7 +327,7 @@ class Database:
                     raise ValueError(f'failed to decrypt data: {repr(e)}')
 
         # Read the file contents into the database.
-        self.convert_from_json(data)
+        self.json_to_sql(data)
 
         # Update the database checksum
         self.update_checksum()
@@ -337,7 +341,7 @@ class Database:
         self.sql.update_counters()
 
         # Export the database to json and encrypt it if a password was defined
-        json_data = self.convert_to_json()
+        json_data = self.sql_to_json()
         data = json_data if self.crypt_key is None else self.crypt_key.encrypt_str2byte(json_data)
 
         # Write the data to a temporary file first
