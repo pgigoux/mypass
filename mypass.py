@@ -10,17 +10,18 @@ tag   <command_options>         Tag commands
 field <command_options>         Field commands
 item  <command_options>         Item command
 sh    <command>                 Run shell command
-trace                           Toggle code trace
 bye                             Quit the program
+trace                           Toggle code trace
 """
 
 HELP_DB = """
 create <file_name>              Create empty database
 read [file_name]                Read database from file
 write                           Write database
+import <file_name>              Import database from a json file
 export sql|json <file_name>     Export database as sql or json
-dump                            Dump database (debugging)
 report                          Print database report (debugging)
+dump                            Dump database (debugging)
 """
 
 HELP_TAG = """
