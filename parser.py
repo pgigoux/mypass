@@ -488,7 +488,7 @@ class Parser:
                     self.default_item_id = r.value
                     print(f'Added item {self.default_item_id}')
                 else:
-                    error('failed to add item')
+                    print(r)
             else:
                 error('no item name')
 
