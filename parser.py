@@ -825,10 +825,10 @@ class Parser:
                 error(ERROR_BAD_FORMAT, tok)
 
         elif token.tid == Tid.DUMP:
-            self.cp.database_dump()
+            print(self.cp.database_dump())
 
         elif token.tid == Tid.REPORT:
-            self.cp.database_report()
+            print(self.cp.database_report())
 
         else:
             error(ERROR_UNKNOWN_COMMAND, token)
