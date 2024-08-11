@@ -5,7 +5,7 @@ from sql import Sql, TABLE_LIST
 from sql import MAP_TAG_ID, MAP_TAG_NAME
 from sql import MAP_FIELD_ID, MAP_FIELD_NAME, MAP_FIELD_SENSITIVE
 from crypt import Crypt
-from utils import trace, filter_control_characters, timestamp_to_string, get_string_timestamp
+from utils import trace, filter_control_characters, timestamp_to_string, get_string_timestamp, print_line
 
 # Keywords used to export the database to json
 # common
@@ -367,6 +367,7 @@ class Database:
         """
         Dump database contents to the terminal (debugging)
         """
+        print_line()
         tag_mapping = self.sql.get_tag_table_name_mapping()
         field_mapping = self.sql.get_field_table_name_mapping()
         print('Tags')
@@ -390,6 +391,7 @@ class Database:
                 field = field_dict[f_id]
                 f_tid = field_mapping[field[KEY_NAME]][MAP_TAG_ID]
                 print(f'\t\t{f_id} ({f_tid}) {field[KEY_NAME]} {field[KEY_VALUE]} {field[KEY_ENCRYPTED]}')
+        print_line()
 
     def database_report(self):
         """
