@@ -96,7 +96,10 @@ def get_crypt_key(input_salt='') -> Crypt | None:
     :param input_salt: encryption salt
     :return: encryption key, or None if no password
     """
-    password = getpass.getpass('Password: ').strip()
+    try:
+        password = getpass.getpass('Password: ').strip()
+    except KeyboardInterrupt:
+        exit(0)
     salt = input_salt
     if password and not salt:
         try:
