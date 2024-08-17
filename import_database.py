@@ -164,6 +164,8 @@ def process_tag(name: str, uid: str) -> tuple[str, str]:
         name = 'Education'
     elif name == 'Other Cards':
         name = 'Other'
+    elif name in ['AURA', 'Gemini']:
+        name = 'Work'
     return name.lower(), uid
 
 
