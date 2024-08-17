@@ -66,7 +66,7 @@ note                                                Edit note
 
 class CommandInterpreter(Cmd):
     prompt = DEFAULT_PROMPT
-    intro = 'Welcome to mypass'
+    intro = 'Welcome to this program'
 
     def __init__(self, p: Parser):
         super().__init__()
