@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import os
 from signal import signal, SIGINT, SIG_IGN
 from cmd import Cmd
 from parser import Parser, DEFAULT_PROMPT
