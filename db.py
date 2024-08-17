@@ -212,7 +212,7 @@ class Database:
         trace(f'db.tag_table_import {file_name}')
         with open(file_name, 'r') as f:
             for line in f:
-                tag_id, tag_name, _ = line.strip().split(',')
+                tag_id, tag_name = line.strip().split(',')
                 self.sql.insert_into_tag_table(int(tag_id), tag_name)
             f.close()
 
@@ -223,8 +223,8 @@ class Database:
         """
         trace(f'db.tag_table_export {file_name}')
         with open(file_name, 'w') as f:
-            for t_name, t_uid, t_count in self.sql.get_tag_table_list():
-                f.write(f'{t_name},{t_uid},{t_count}\n')
+            for t_id, t_name, _ in self.sql.get_tag_table_list():
+                f.write(f'{t_id},{t_name}\n')
             f.close()
 
     def field_table_import(self, file_name: str):
@@ -235,8 +235,8 @@ class Database:
         trace(f'db.field_table_import {file_name}')
         with open(file_name, 'r') as f:
             for line in f:
-                f_id, f_name, f_sensitive, _ = line.strip().split(',')
-                self.sql.insert_into_field_table(int(f_id), f_name, True if f_sensitive == 1 else False)
+                f_id, f_name, f_sensitive = line.strip().split(',')
+                self.sql.insert_into_field_table(int(f_id), f_name, True if int(f_sensitive) == 1 else False)
             f.close()
 
     def field_table_export(self, file_name: str):
@@ -246,8 +246,8 @@ class Database:
         """
         trace(f'db.field_table_export {file_name}')
         with open(file_name, 'w') as f:
-            for f_name, f_uid, f_sensitive, f_count in self.sql.get_field_table_list():
-                f.write(f'{f_name},{f_uid},{f_sensitive},{f_count}\n')
+            for f_name, f_uid, f_sensitive, _ in self.sql.get_field_table_list():
+                f.write(f'{f_name},{f_uid},{f_sensitive}\n')
             f.close()
 
     def import_from_json(self, file_name: str):
