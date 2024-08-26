@@ -399,7 +399,7 @@ class Database:
         """
         print('File name')
         print(f'\t{self.file_name}')
-        print('File name')
+        print('Key')
         print(f'\t{self.crypt_key}')
         print('Checksums')
         print(f'\tStored  {self.checksum}')
