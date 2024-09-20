@@ -4,7 +4,7 @@ from db import DEFAULT_DATABASE_NAME
 from command import CommandProcessor, FileFormat, NO_DATABASE
 from command import KEY_DICT_ID, KEY_DICT_NAME, KEY_DICT_TIMESTAMP, KEY_DICT_NOTE, KEY_DICT_TAGS, KEY_DICT_FIELDS
 from lexer import Lexer, Token, Tid
-from lexer import LEX_ACTIONS, LEX_STRING, LEX_VALUE, LEX_MISC
+from lexer import LEX_ACTIONS, LEX_STRING, LEX_VALUE, LEX_MISC, LEX_SHORTCUTS
 from utils import error, trace, confirm, get_crypt_key, trace_toggle, sensitive_mark, timestamp_to_string, edit_text
 
 # Error messages
@@ -837,6 +837,19 @@ class Parser:
     # Misc
     # -------------------------------------------------------------
 
+    def shortcut_commands(self, token: Token):
+        """
+        :param token:
+        :return:
+        """
+        trace('parser, shortcut_commands', token)
+        if token.tid == Tid.SC_ITEM_PRINT:
+            self.item_command(Token(Tid.PRINT, ''))
+        elif token.tid == Tid.SC_ITEM_SEARCH:
+            self.item_command(Token(Tid.SEARCH, ''))
+        else:
+            error(ERROR_UNKNOWN_COMMAND, token)
+
     @staticmethod
     def misc_commands(token: Token):
         """
@@ -894,6 +907,8 @@ class Parser:
             self.action_command(token)
         elif token.tid in LEX_MISC:
             self.misc_commands(token)
+        elif token.tid in LEX_SHORTCUTS:
+            self.shortcut_commands(token)
         elif token.tid == Tid.EOS:
             pass
         else:

@@ -60,6 +60,10 @@ field  add -fn <field_name> -fv <field_value>       Add item field
 field  delete <field_id>                            Delete item field
 field  update <field_id> [-fn <name>] [-fv <value>] Update item field
 note                                                Edit note
+
+Shortcuts:
+:      Print item contents
+/      Search for an item
 """
 
 

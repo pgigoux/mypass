@@ -28,6 +28,9 @@ def test_keywords():
     assert lx.token('report') == Token(Tid.REPORT, 'report')
     assert lx.token('trace') == Token(Tid.TRACE, 'trace')
 
+    assert lx.token(':') == Token(Tid.SC_ITEM_PRINT, ':')
+    assert lx.token('/') == Token(Tid.SC_ITEM_SEARCH, '/')
+
 
 def test_switches():
     lx = Lexer()
@@ -46,6 +49,7 @@ def test_expressions():
     assert lx.token('10/10/2020') == Token(Tid.DATE, '10/10/2020')
     assert lx.token('10/11') == Token(Tid.DATE, '10/11')
     assert lx.token('file.txt') == Token(Tid.FILE, 'file.txt')
+    assert lx.token('/home/file.txt') == Token(Tid.FILE, '/home/file.txt')
     assert lx.token('/home/file.txt') == Token(Tid.FILE, '/home/file.txt')
     assert lx.token('data/file.txt') == Token(Tid.FILE, 'data/file.txt')
     assert lx.token('word') == Token(Tid.NAME, 'word')

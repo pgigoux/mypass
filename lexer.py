@@ -48,6 +48,9 @@ class Tid(Enum):
     SW_FIELD_VALUE = auto()
     SW_TAG = auto()
     SW_NOTE = auto()
+    # shortcuts
+    SC_ITEM_PRINT = auto()
+    SC_ITEM_SEARCH = auto()
     # error
     INVALID = auto()
 
@@ -65,6 +68,7 @@ LEX_MISC = [Tid.TRACE]
 LEX_STRING = [Tid.NAME, Tid.STRING]
 LEX_NUMBER = [Tid.INT, Tid.FLOAT]
 LEX_VALUE = [Tid.INT, Tid.FLOAT, Tid.NAME, Tid.FILE, Tid.STRING]
+LEX_SHORTCUTS = [Tid.SC_ITEM_PRINT, Tid.SC_ITEM_SEARCH]
 
 # Regular expressions
 LONG_DATE_PATTERN = r'^\d\d/\d\d/\d\d\d\d'
@@ -123,7 +127,8 @@ class Lexer:
             'use': Tid.USE, 'note': Tid.NOTE, 'list': Tid.LIST, 'count': Tid.COUNT, 'search': Tid.SEARCH,
             'create': Tid.CREATE, 'copy': Tid.COPY, 'add': Tid.ADD, 'update': Tid.UPDATE,
             'rename': Tid.RENAME, 'delete': Tid.DELETE,
-            'report': Tid.REPORT, 'trace': Tid.TRACE
+            'report': Tid.REPORT, 'trace': Tid.TRACE,
+            '/': Tid.SC_ITEM_SEARCH, ':': Tid.SC_ITEM_PRINT
         }
         self.switches = {
             '-s': Tid.SW_SENSITIVE,
