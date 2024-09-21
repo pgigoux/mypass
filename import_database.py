@@ -130,8 +130,9 @@ def process_field(field: dict) -> tuple:
         f_name = 'IP address'
     elif f_name == 'Website':
         f_name = 'URL'
-    elif f_name == 'Serial':
+    elif 'Serial' in f_name:
         f_name = 'Serial number'
+        f_sensitive = True
     elif f_name == 'Login name':
         f_name = 'Login'
     elif f_name == 'ID number':
