@@ -15,7 +15,7 @@ Run the program as follows:
 
 > conda activate myp<br>
 > export XYZY_PLUGH='some_salt'<br>
-> python $HOME/PycharmProjects/mypass/mypass.py<br>
+> python mypass.py<br>
 
 The environment variable XYZY_PLUGH must contain the encryption salt. A default value is used if not defined.
 
