@@ -49,6 +49,7 @@ class Tid(Enum):
     SW_TAG = auto()
     SW_NOTE = auto()
     # shortcuts
+    SC_DB_READ = auto()
     SC_ITEM_PRINT = auto()
     SC_ITEM_SEARCH = auto()
     # error
@@ -68,7 +69,7 @@ LEX_MISC = [Tid.TRACE]
 LEX_STRING = [Tid.NAME, Tid.STRING]
 LEX_NUMBER = [Tid.INT, Tid.FLOAT]
 LEX_VALUE = [Tid.INT, Tid.FLOAT, Tid.NAME, Tid.FILE, Tid.STRING]
-LEX_SHORTCUTS = [Tid.SC_ITEM_PRINT, Tid.SC_ITEM_SEARCH]
+LEX_SHORTCUTS = [Tid.SC_DB_READ, Tid.SC_ITEM_PRINT, Tid.SC_ITEM_SEARCH]
 
 # Regular expressions
 LONG_DATE_PATTERN = r'^\d\d/\d\d/\d\d\d\d'
@@ -94,7 +95,6 @@ class Token:
     def __init__(self, tid: Tid, value: int | float | str):
         self._tid = tid
         self._value = value
-        pass
 
     def __eq__(self, token):
         if isinstance(token, Token):
@@ -127,8 +127,7 @@ class Lexer:
             'use': Tid.USE, 'note': Tid.NOTE, 'list': Tid.LIST, 'count': Tid.COUNT, 'search': Tid.SEARCH,
             'create': Tid.CREATE, 'copy': Tid.COPY, 'add': Tid.ADD, 'update': Tid.UPDATE,
             'rename': Tid.RENAME, 'delete': Tid.DELETE,
-            'report': Tid.REPORT, 'trace': Tid.TRACE,
-            '/': Tid.SC_ITEM_SEARCH, ':': Tid.SC_ITEM_PRINT
+            'report': Tid.REPORT, 'trace': Tid.TRACE
         }
         self.switches = {
             '-s': Tid.SW_SENSITIVE,
@@ -138,10 +137,14 @@ class Lexer:
             '-fv': Tid.SW_FIELD_VALUE,
             '-note': Tid.SW_NOTE,
         }
-        # The formats are handled in a separate dictionary to keep them separate from the other keywords
         self.formats = {
             'json': Tid.FMT_JSON,
             'sql': Tid.FMT_SQL,
+        }
+        self.shortcuts = {
+            '@': Tid.SC_DB_READ,
+            '/': Tid.SC_ITEM_SEARCH,
+            ':': Tid.SC_ITEM_PRINT
         }
 
     def input(self, command: str):
@@ -170,10 +173,13 @@ class Lexer:
     def token(self, word: str) -> Token:
         """
         Check word for matching patterns and return token code and data.
-        Keywords are always checked first. The order is important.
+        The different keywords are always checked first.
+        The pattern checking order is important.
         :param word: word to check against patterns
         :return: Token
         """
+        if word in self.shortcuts:
+            return Token(self.shortcuts[word], word)
         if word in self.keywords:
             return Token(self.keywords[word], word)
         if word in self.switches:
@@ -214,6 +220,8 @@ class Lexer:
             if self.state == LexState.START:
                 if c.isspace():
                     pass
+                elif c in self.shortcuts and self.count == 1:
+                    return self.token(c)
                 elif c in STRING_DELIMITERS:
                     self.state = LexState.STRING  # start of string
                     word = ''

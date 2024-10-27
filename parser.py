@@ -839,11 +839,14 @@ class Parser:
 
     def shortcut_commands(self, token: Token):
         """
-        :param token:
+        Handle command shortcuts for most often used commands
+        :param token: input token
         :return:
         """
         trace('parser, shortcut_commands', token)
-        if token.tid == Tid.SC_ITEM_PRINT:
+        if token.tid == Tid.SC_DB_READ:
+            self.database_commands(Token(Tid.READ, ''))
+        elif token.tid == Tid.SC_ITEM_PRINT:
             self.item_command(Token(Tid.PRINT, ''))
         elif token.tid == Tid.SC_ITEM_SEARCH:
             self.item_command(Token(Tid.SEARCH, ''))
