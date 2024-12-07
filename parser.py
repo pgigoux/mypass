@@ -408,6 +408,22 @@ class Parser:
                 return None
         return d
 
+    # def item_list(self):
+    #     """
+    #     List all items
+    #     """
+    #     trace('parser, item_list')
+    #     tok = self.get_token()
+    #     sort_by_name = tok.tid == Tid.SW_NAME
+    #     r = self.cp.item_list()
+    #     if r.is_ok and r.is_list:
+    #         i_list = [(x[0], x[1], x[2], x[3]) for x in
+    #                   sorted(r.value, key=lambda x: x[1].lower())] if sort_by_name else r.value
+    #         for i_id, i_name, i_timestamp, _ in i_list:
+    #             print(self._format_item(i_id, i_name, i_timestamp))
+    #     else:
+    #         print(r)
+
     def item_list(self):
         """
         List all items
@@ -415,11 +431,10 @@ class Parser:
         trace('parser, item_list')
         tok = self.get_token()
         sort_by_name = tok.tid == Tid.SW_NAME
-        r = self.cp.item_list()
+        sort_by_date = tok.tid == Tid.SW_DATE
+        r = self.cp.item_list(sort_by_name=sort_by_name, sort_by_date=sort_by_date)
         if r.is_ok and r.is_list:
-            i_list = [(x[0], x[1], x[2], x[3]) for x in
-                      sorted(r.value, key=lambda x: x[1].lower())] if sort_by_name else r.value
-            for i_id, i_name, i_timestamp, _ in i_list:
+            for i_id, i_name, i_timestamp, _ in r.value:
                 print(self._format_item(i_id, i_name, i_timestamp))
         else:
             print(r)

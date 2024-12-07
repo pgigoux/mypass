@@ -635,13 +635,13 @@ class CommandProcessor:
     # -----------------------------------------------------------------
 
     @loaded
-    def item_list(self) -> Response:
+    def item_list(self, sort_by_name=False, sort_by_date=False) -> Response:
         """
         List all items
         """
         try:
             assert isinstance(self.db, Database)
-            return self.resp.ok(self.db.sql.get_item_list())
+            return self.resp.ok(self.db.sql.get_item_list(sort_by_name=sort_by_name, sort_by_date=sort_by_date))
         except Exception as e:
             return self.resp.exception('cannot list items', e)
 
