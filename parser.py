@@ -627,14 +627,21 @@ class Parser:
         else:
             error('no item selected')
 
-    def item_print(self, token: Token):
+    def item_print(self):
         """
-        item_print_command: PRINT [SW_SENSITIVE]
-        :param token: item token
+        item_print_command: PRINT [item_id] [SW_SENSITIVE]
         """
         tok = self.get_token()
+        if tok.tid == Tid.INT:
+            item_id = tok.value
+        elif self.default_item_id is not None:
+            item_id = self.default_item_id
+        else:
+            error('item id expected', tok)
+            return
+        tok = self.get_token()
         show_encrypted = True if tok.tid == Tid.SW_SENSITIVE else False
-        r = self.cp.item_get(token.value)
+        r = self.cp.item_get(item_id)
         if r.is_ok and r.is_dict:
             d = r.value
             assert isinstance(d, dict)
@@ -644,7 +651,6 @@ class Parser:
             print(f'tags:  {d[KEY_DICT_TAGS]}')
             print('fields:')
             for f_id, f_name, f_value, f_encrypted in d[KEY_DICT_FIELDS]:
-                # f_value = self.cp.decrypt_value(f_value) if f_encrypted and show_encrypted else f_value
                 if f_encrypted and show_encrypted:
                     f_value = self.cp.decrypt_value(f_value)
                 elif f_encrypted:
@@ -718,7 +724,9 @@ class Parser:
             self.item_add()
         elif token.tid == Tid.UPDATE:
             self.item_update()
-        elif token.tid in [Tid.PRINT, Tid.NOTE, Tid.DELETE, Tid.COPY]:
+        elif token.tid == Tid.PRINT:
+            self.item_print()
+        elif token.tid in [Tid.NOTE, Tid.DELETE, Tid.COPY]:
             # These commands accept an optional item id
             # Return an error if no item id is specified and the default item id is not defined
             tok = self.get_token()
@@ -730,9 +738,7 @@ class Parser:
             else:
                 error('item id expected', tok)
                 return
-            if token.tid == Tid.PRINT:
-                self.item_print(tok)
-            elif token.tid == Tid.DELETE:
+            if token.tid == Tid.DELETE:
                 self.item_delete(tok)
             elif token.tid == Tid.COPY:
                 self.item_copy(tok)
