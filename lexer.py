@@ -44,6 +44,7 @@ class Tid(Enum):
     # switches
     SW_SENSITIVE = auto()
     SW_NAME = auto()
+    SW_DATE = auto()
     SW_FIELD_NAME = auto()
     SW_FIELD_VALUE = auto()
     SW_TAG = auto()
@@ -132,6 +133,7 @@ class Lexer:
         self.switches = {
             '-s': Tid.SW_SENSITIVE,
             '-n': Tid.SW_NAME,
+            '-d': Tid.SW_DATE,
             '-t': Tid.SW_TAG,
             '-fn': Tid.SW_FIELD_NAME,
             '-fv': Tid.SW_FIELD_VALUE,
