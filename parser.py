@@ -649,12 +649,12 @@ class Parser:
         tok = self.get_token()
         if tok.tid == Tid.INT:
             item_id = tok.value
+            tok = self.get_token()
         elif self.default_item_id is not None:
             item_id = self.default_item_id
         else:
             error('item id expected', tok)
             return
-        tok = self.get_token()
         show_encrypted = True if tok.tid == Tid.SW_SENSITIVE else False
         r = self.cp.item_get(item_id)
         if r.is_ok and r.is_dict:
