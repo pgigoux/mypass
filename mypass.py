@@ -47,7 +47,7 @@ export <file_name>              Export fields to csv file
 
 HELP_ITEM = """
 use    <item_id>                                    Set default item id
-list                                                List available items
+list   [-n] [-d]                                    List available items
 count                                               Return number of items
 search <string> [-n] [-t] [-fn] [-fv] [-note]       Search for an item    
 print  [item_id] [-s]                               Print item contents
@@ -69,7 +69,7 @@ Shortcuts:
 
 class CommandInterpreter(Cmd):
     prompt = DEFAULT_PROMPT
-    intro = 'Welcome to this program'
+    intro = 'Welcome'
 
     def __init__(self, p: Parser):
         super().__init__()
