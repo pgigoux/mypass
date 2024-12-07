@@ -151,23 +151,23 @@ def process_field(field: dict) -> tuple:
     return f_name.lower(), f_value, f_sensitive
 
 
-def process_tag(name: str, uid: str) -> tuple[str, str]:
+def process_tag(name: str) -> str:
     """
-    Rename some tags
-    :param name: tag name
-    :param uid: tag uid
-    :return: tuple with tag name and uid
+    Rename old tag name into a new one.
+    It is possible to rename more than one old name into a new one.
+    :param name: old name
+    :return: new name
     """
-    trace('process_tag', name, uid)
+    trace('process_tag', name)
     if name == 'Bank and Cards':
         name = 'Finance'
     elif name == 'Education and blogs':
         name = 'Education'
     elif name == 'Other Cards':
         name = 'Other'
-    elif name in ['AURA', 'Gemini']:
+    elif name in ['AURA', 'Gemini']:  # duplicate
         name = 'Work'
-    return name.lower(), uid
+    return name.lower()
 
 
 def save_tables(db: Database):
@@ -187,19 +187,27 @@ def import_tags(db: Database, folder_list: list) -> dict:
     """
     :param db: database
     :param folder_list: list of folders/tags
-    :return:
+    :return: dictionary with tag mapping
     """
     trace('import_tags', db, len(folder_list))
 
     # Create default tag for items that have no folder
     tag_dict = {TAG_DEFAULT_UID: db.sql.insert_into_tag_table(None, TAG_DEFAULT_NAME)}
 
+    # Create a dictionary to store the mapping between the new tags names and the new tag ids.
+    # This is needed to avoid duplication because some of the old tag names are mapped into
+    # a single new name.
+    tag_id_dict = {}
+    for folder in folder_list:
+        t_name = process_tag(folder['title'])
+        if t_name not in tag_id_dict:
+            tag_id_dict[t_name] = db.sql.insert_into_tag_table(None, t_name)
+
     # Iterate over all the folder definitions and create the dictionary with a
     # mapping between the uid from the input database and the id that will be
     # used in the new database.
     for folder in folder_list:
-        t_name, t_uid = process_tag(folder['title'], folder['uuid'])
-        tag_dict[t_uid] = db.sql.insert_into_tag_table(None, t_name)
+        tag_dict[folder['uuid']] = tag_id_dict[process_tag(folder['title'])]
 
     return tag_dict
 
@@ -230,6 +238,12 @@ def import_fields(db: Database, item_list: list):
 
 
 def import_items(db: Database, item_list: list, tag_mapping: dict):
+    """
+    Import the items into the database. The tags are converted using the tag mapping.
+    :param db: database
+    :param item_list: list of items
+    :param tag_mapping: tag mapping
+    """
     trace('import_items', db, len(tag_mapping))
 
     field_mapping = db.sql.get_field_table_name_mapping()
@@ -277,6 +291,7 @@ def import_items(db: Database, item_list: list, tag_mapping: dict):
             tag_list.append(tag_mapping[TAG_DEFAULT_UID])
 
         # Insert the item into the database
+        # print('**', tag_list)
         item_id = db.sql.insert_into_items(None, item_name, int(time_stamp), note)
         for t_id in tag_list:
             db.sql.insert_into_tags(None, item_id, t_id)
