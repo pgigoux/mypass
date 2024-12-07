@@ -46,12 +46,18 @@ def test_expressions():
     lx = Lexer()
     assert lx.token('100') == Token(Tid.INT, 100)
     assert lx.token('3.15') == Token(Tid.FLOAT, 3.15)
+
     assert lx.token('10/10/2020') == Token(Tid.DATE, '10/10/2020')
     assert lx.token('10/11') == Token(Tid.DATE, '10/11')
+
     assert lx.token('file.txt') == Token(Tid.FILE, 'file.txt')
     assert lx.token('/home/file.txt') == Token(Tid.FILE, '/home/file.txt')
-    assert lx.token('/home/file.txt') == Token(Tid.FILE, '/home/file.txt')
+    assert lx.token('/home/file1.txt') == Token(Tid.FILE, '/home/file1.txt')
     assert lx.token('data/file.txt') == Token(Tid.FILE, 'data/file.txt')
+    assert lx.token('/home/file-1.txt') == Token(Tid.FILE, '/home/file-1.txt')
+    assert lx.token('/home/File_1.txt') == Token(Tid.FILE, '/home/File_1.txt')
+    assert lx.token('./data/file.txt') == Token(Tid.FILE, './data/file.txt')
+
     assert lx.token('word') == Token(Tid.NAME, 'word')
     assert lx.token('o123') == Token(Tid.NAME, 'o123')
     assert lx.token('123-456-789') == Token(Tid.NAME, '123-456-789')
