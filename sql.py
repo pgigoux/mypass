@@ -487,14 +487,21 @@ class Sql:
         self.cursor.execute(f'select * from items where id=?', (item_id,))
         return len(self.cursor.fetchall()) > 0
 
-    def get_item_list(self, item_id: Optional[int] = None) -> list:
+    def get_item_list(self, item_id: Optional[int] = None,
+                      sort_by_name = False, sort_by_date = False) -> list:
         """
         Select all items for a given item id, or all items if item id is None.
         Return a list of tuples containing the item id, item name, timestamp and  note.
         :param item_id: item id
+        :param sort_by_name: sort items by name
+        :param sort_by_date: sort parameters by date
         :return: list of tuples with item data
         """
         cmd = f'select * from items' if item_id is None else f'select * from items where id={item_id}'
+        if sort_by_name:
+            cmd += f' order by name asc'
+        elif sort_by_date:
+            cmd += ' f order by date asc'
         self.cursor.execute(cmd)
         return self.cursor.fetchall()
 
